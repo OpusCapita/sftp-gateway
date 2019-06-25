@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:8
+      - image: ayltai/circleci-openjdk-node:jdk8-node11
     working_directory: ~/build
     steps:
       - checkout
@@ -11,7 +11,7 @@ jobs:
       - run:
           name: "prepare buildprocess scripts"
           command: |
-              git clone https://github.com/OpusCapita/duriel.git -b master ../buildprocess
+              git clone https://github.com/OpusCapita/duriel.git -b feature/secret-creation ../buildprocess
               cd ../buildprocess
               npm install
               npm test
@@ -28,9 +28,10 @@ jobs:
       - run:
           name: "After Deployment"
           command: "node ../buildprocess/bp_after_deployment.js"
+
   copy_to_env:
     docker:
-      - image: circleci/node:8
+      - image: ayltai/circleci-openjdk-node:jdk8-node11
     working_directory: ~/build
 
     steps:
@@ -43,9 +44,10 @@ jobs:
             curl -f --header "Authorization: token $GIT_TOKEN" https://raw.githubusercontent.com/OpusCapita/andariel/$andariel_branch/mirrorscript.sh > mirrorscript.sh
             chmod +x mirrorscript.sh
             ./mirrorscript.sh opuscapita/$CIRCLE_PROJECT_REPONAME $FROM_ENV $TO_ENV $GIT_TOKEN
+
   build_base:
     docker:
-      - image: circleci/node:8
+      - image: ayltai/circleci-openjdk-node:jdk8-node11
     working_directory: ~/build
     steps:
       - checkout
@@ -63,11 +65,13 @@ jobs:
       - run:
           name: "Build Base Image"
           command: "node ../buildprocess/bp_build_base.js opuscapita/$CIRCLE_PROJECT_REPONAME ;"
+
 workflows:
   version: 2
   commit:
     jobs:
-      - build
+      - build:
+          context: peppol
   nightly:
     triggers:
       - schedule:
@@ -75,7 +79,8 @@ workflows:
           filters:
             branches:
               only:
-                - develop
+                - dev
                 - nbp
     jobs:
-      - build_base
+      - build_base:
+          context: peppol

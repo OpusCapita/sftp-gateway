@@ -1,0 +1,41 @@
+{
+  "default": {
+    "name": "${serviceName}",
+    "log-driver": "gelf",
+    "log-opt": ["gelf-address=udp://${logstash_ip}:12201", "tag=\"${serviceName}\""],
+    "constraint": ["engine.labels.nodetype==worker"],
+    "publish": ["mode=host,target=3052,published=3052,protocol=tcp"],
+    "host": ["consul:172.17.0.1"],
+    "env": [
+      "SERVICE_NAME=${serviceName}",
+      "SERVICE_3052_CHECK_HTTP=/api/health/check",
+      "SERVICE_3052_CHECK_INTERVAL=15s",
+      "SERVICE_3052_CHECK_TIMEOUT=3s",
+      "RABBITMQ_USER=${SECRET_:env_RABBITMQUSER}",
+      "RABBITMQ_PASS=${SECRET_:env_RABBITMQPASS}"
+    ],
+    "oc-consul-injection": {
+      "redis/password": "${SECRET_:env_REDIS}",
+      "mq/user": "${SECRET_:env_RABBITMQUSER}",
+      "mq/password": "${SECRET_:env_RABBITMQPASS}",
+      "snc/enabled": "true",
+      "snc/rest/url": "${PEPPOL_:env_SNCURL}",
+      "snc/rest/scope": "${PEPPOL_:env_SNCSCOPE}",
+      "snc/rest/username": "${PEPPOL_:env_SNCUSER}",
+      "snc/rest/password": "${PEPPOL_:env_SNCPASS}",
+      "snc/bsc": "peppol-AP",
+      "snc/from": "peppol-AP@",
+      "snc/businessGroup": "Itella Information"
+    },
+    "limit-cpu": "0.3",
+    "limit-memory": "900M",
+    "reserve-cpu": "0.2",
+    "reserve-memory": "500M",
+    "oc-service-user-create-override": "true"
+  },
+  "prod": {
+    "replicas": 2,
+    "limit-cpu": "0.4",
+    "limit-memory": "2200M"
+  }
+}
