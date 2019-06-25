@@ -1,0 +1,8 @@
+version: '3'
+services:
+    main:
+        build: .
+        volumes:
+            - ./src:/usr/app/src
+            - ./mvn:/usr/app/mvn
+        command: 'mvn spring-boot:run'
