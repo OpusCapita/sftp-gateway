@@ -11,6 +11,7 @@ services:
       - kong
       - rabbitmq
       - api-registry
+      - auth
       labels:
          SERVICE_NAME: sftp-gateway
          SERVICE_TAGS: kong
@@ -18,13 +19,176 @@ services:
          PORT: 2222
          SERVICE_NAME: ${SERVICE_NAME}
          SERVICE_2222_NAME: ${SERVICE_NAME}
-         SERVICE_2222_CHECK_HTTP: /api/health/check
-         SERVICE_2222_CHECK_INTERVAL: 15s
-         SERVICE_2222_CHECK_TIMEOUT: 3s
          RABBITMQ_USER: ${SECRET_develop_RABBITMQUSER}
          RABBITMQ_PASS: ${SECRET_develop_RABBITMQPASS}
       ports:
       - 2222:2222
+
+   auth:
+      image: opuscapita/auth:dev
+      labels:
+         SERVICE_NAME: $AUTH_SERVICE_NAME
+      ports:
+      - 3005:3005
+      environment:
+         NODE_ENV: $NODE_ENV
+         APP_HOST: '0.0.0.0'
+         APP_HOST_PROTOCOL: $APP_HOST_PROTOCOL
+         APP_HOST_PORT: $APP_HOST_PORT
+         GATEWAY_SCHEME: $AUTH_GATEWAY_SCHEME
+         GATEWAY_IP: $AUTH_GATEWAY_IP
+         GATEWAY_PORT: $AUTH_GATEWAY_PORT
+         GATEWAY_CALLBACK: $AUTH_GATEWAY_CALLBACK
+         MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+         MYSQL_DATABASE: $MYSQL_DATABASE
+         REDIS_AUTH: ${REDIS_AUTH}
+         USER_NAME: 'auth'
+         PASSWORD: 'svc_auth'
+         SMTP_HOST: ${SMTP_HOST}
+         SMTP_PORT: ${SMTP_PORT}
+         SMTP_USER: ${SMTP_USER}
+         SMTP_PASSWORD: ${SMTP_PASSWORD}
+         SERVICE_3005_CHECK_HTTP: /auth/certs
+         SERVICE_3005_CHECK_INTERVAL: 15s
+         SERVICE_3005_CHECK_TIMEOUT: 3s
+         RABBITMQ_USER: ${RABBITMQ_USER}
+         RABBITMQ_PASS: ${RABBITMQ_PASS}
+      depends_on:
+      - kong
+      - consul
+      - rabbitmq
+      command: 'npm run dev'
+      
+#   auth:
+#      image: opuscapita/auth:dev
+#      depends_on:
+#      - redis
+#      - mysql
+#      - consul
+#      - registrator
+#      - kong
+#      - api-registry
+#      - rabbitmq
+##      - blob
+#      - user
+##      - email
+##      - acl
+#      labels:
+#         SERVICE_NAME: auth
+#         SERVICE_TAGS: kong,external
+#      environment:
+#         SERVICE_3005_CHECK_HTTP: /api/health/check
+#         SERVICE_3005_CHECK_INTERVAL: 15s
+#         SERVICE_3005_CHECK_TIMEOUT: 3s
+#         PROTOCOL: ${AUTH_PROTOCOL}
+#         NODE_ENV: ${AUTH_NODE_ENV}
+#         GATEWAY_SCHEME: ${AUTH_GATEWAY_SCHEME}
+#         GATEWAY_IP: ${AUTH_GATEWAY_IP}
+#         GATEWAY_PORT: ${AUTH_GATEWAY_PORT}
+#         GATEWAY_CALLBACK: ${AUTH_GATEWAY_CALLBACK}
+#         MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+#         MYSQL_DATABASE: ${AUTH_MYSQL_DATABASE}
+#         REDIS_AUTH: $REDIS_AUTH
+#         HOST_IP: $HOST_IP
+#         DEBUG: $DEBUG
+#         RABBITMQ_USER: ${RABBITMQ_USER}
+#         RABBITMQ_PASS: ${RABBITMQ_PASS}
+#         SERVICE_NAME: ${AUTH_SERVICE_NAME}
+#      ports:
+#      - 3005:3005
+#   blob:
+#      image: opuscapita/blob:dev
+#      depends_on:
+#      - mysql
+#      - consul
+#      - registrator
+#      labels:
+#         SERVICE_NAME: 'blob'
+#      extra_hosts:
+#      - 'consul:${HOST_IP}'
+#      environment:
+#         HOST_IP: ${HOST_IP}
+#         MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+#         MYSQL_DATABASE: ${MYSQL_DATABASE}
+#         BLOB_KEY : ${BLOB_KEY}
+#         BLOB_ACCOUNT: ${BLOB_ACCOUNT}
+#         SERVICE_3012_CHECK_HTTP: /api/health/check
+#         SERVICE_3012_CHECK_INTERVAL: 15s
+#         SERVICE_3012_CHECK_TIMEOUT: 3s
+#      ports:
+#      - '3012:3012'
+#      command: "npm run dev"
+
+#   user:
+#      image: opuscapita/user:dev
+#      depends_on:
+#      - mysql
+#      - consul
+#      - registrator
+#      - redis
+#      labels:
+#         SERVICE_NAME: user
+#         SERVICE_TAGS: kong,external
+#      extra_hosts:
+#      - consul:${HOST_IP}
+#      environment:
+#         PORT: 3008
+#         HOST_IP: $HOST_IP
+#         MYSQL_DATABASE: $MYSQL_DATABASE
+#         MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+#         REDIS_AUTH: $REDIS_AUTH
+#         RABBITMQ_USER: ${RABBITMQ_USER}
+#         RABBITMQ_PASS: ${RABBITMQ_PASS}
+#         SERVICE_3008_CHECK_HTTP: /api/health/check
+#         SERVICE_3008_CHECK_INTERVAL: 15s
+#         SERVICE_3008_CHECK_TIMEOUT: 3s
+#      ports:
+#      - 3008:3008
+#      command: 'npm run dev'
+#   email:
+#      image: opuscapita/email:dev
+#      ports:
+#      - '3050:3050'
+#      environment:
+#         REDIS_AUTH: ${REDIS_AUTH}
+#         PORT: 3050
+#         SERVICE_NAME: 'email'
+#         SERVICE_3050_CHECK_HTTP: /api/health/check
+#         SERVICE_3050_CHECK_INTERVAL: 15s
+#         SERVICE_3050_CHECK_TIMEOUT: 3s
+#         MAIL_API_KEY: $MJ_APIKEY_PUBLIC
+#         MAIL_API_SECRET: $MJ_APIKEY_PRIVATE
+#         MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+#         MYSQL_DATABASE: ${MYSQL_DATABASE}
+#         RABBITMQ_USER: ${RABBITMQ_USER}
+#         RABBITMQ_PASS: ${RABBITMQ_PASS}
+#         EXT_URL_SCHEME: ${EXT_URL_SCHEME}
+#         EXT_URL_HOST: ${EXT_URL_HOST}
+#         EXT_URL_PORT: ${EXT_URL_PORT}
+#         WEB_HOOK_SECRET: ${WEB_HOOK_SECRET}
+#         CLIENT_KEY: ${CLIENT_KEY}
+#         CLIENT_SECRET: ${CLIENT_SECRET}
+#      depends_on:
+#      - registrator
+#      command: 'npm run dev'
+#   acl:
+#      image: opuscapita/acl:dev
+#      labels:
+#        SERVICE_NAME: acl
+#        SERVICE_TAGS: external,kong
+#      environment:
+#         MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+#         MYSQL_DATABASE: ${MYSQL_DATABASE}
+#         RABBITMQ_USER: ${RABBITMQ_USER}
+#         RABBITMQ_PASS: ${RABBITMQ_PASS}
+#         SERVICE_3013_CHECK_HTTP: '/api/health/check'
+#         SERVICE_3013_CHECK_INTERVAL: '15s'
+#         SERVICE_3013_CHECK_TIMEOUT: '3s'
+#      ports:
+#      - 3013:3013
+#      depends_on:
+#      - kong
+#      command: 'npm run dev'
    mysql:
       image: mysql:5.7
       command:
@@ -97,6 +261,10 @@ services:
          SERVICE_3002_CHECK_HTTP: /api/health/check
          SERVICE_3002_CHECK_INTERVAL: 15s
          SERVICE_3002_CHECK_TIMEOUT: 3s
+         AUTH_SERVER: $HOST_IP
+         AUTH_SERVER_PORT: 3005
+         API_REGISTRY_PORT: 3004
+         GATEWAY_CALLBACK: $GATEWAY_CALLBACK
       depends_on:
       - kong
    postgres:

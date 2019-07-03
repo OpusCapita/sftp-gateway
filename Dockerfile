@@ -23,7 +23,8 @@ RUN ls -lAh $APPDIR
 RUN mv $TRGTDIR/SFTPj-0.0.1.jar $APPDIR/SFTPj.jar
 RUN rm -r $WRKDIR
 
-#HEALTHCHECK --interval=15s --timeout=30s --start-period=40s --retries=15 \
+HEALTHCHECK --interval=15s --timeout=30s --start-period=40s --retries=15 \
+CMD netstat -an | grep 2222 > /dev/null; if [ 0 != $? ]; then exit 1; fi;
 #CMD curl --silent --fail http://localhost:3052/api/health/check || exit 1
 
 EXPOSE 2222
