@@ -30,4 +30,4 @@ CMD netstat -an | grep 2222 > /dev/null; if [ 0 != $? ]; then exit 1; fi;
 #CMD curl --silent --fail http://localhost:3052/api/health/check || exit 1
 
 EXPOSE 2222
-ENTRYPOINT exec java -jar $APPDIR/SFTPj.jar
+ENTRYPOINT exec java -jar $APPDIR/SFTPj.jar --debug
