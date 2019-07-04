@@ -7,6 +7,8 @@ RUN apk add maven
 ENV WRKDIR=/code
 ENV TRGTDIR=$WRKDIR/target
 ENV APPDIR=/usr/app
+
+ENV SERVICE_NAME=sftp-gateway
  
 WORKDIR $WRKDIR
 

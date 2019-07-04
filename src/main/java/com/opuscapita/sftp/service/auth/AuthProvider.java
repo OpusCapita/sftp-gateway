@@ -33,8 +33,6 @@ public class AuthProvider implements PublickeyAuthenticator, PasswordAuthenticat
 
 	@Override
 	public boolean authenticate(String username, PublicKey key, ServerSession session) throws AsyncAuthException {
-		log.info("User " + username + " tried the Public Key authentication: " + key.toString() + "\n --- \n\n");
-		log.info(AuthorizedKeyEntry.toString(key));
 		if (this.users.contains(new User(username, null, AuthorizedKeyEntry.toString(key)))) {
 			log.info("User " + username + " successfully logged in with public key");
 			return true;
