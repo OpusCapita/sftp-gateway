@@ -7,7 +7,8 @@ import org.apache.sshd.server.ServerAuthenticationManager;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.subsystem.sftp.SftpSubsystemFactory;
-import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -15,24 +16,27 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 
-@Service
+@Component
 public class SFTPDaemon extends AbstractLoggingBean {
 
-    private int port = 2222;
-    private String hostKeyPath = "host.ser";
-    private String welcomeBanner = "\n\nWelcome to OpusCapita SFTP- Gateway\n\n";
+    @Value("${sftp.server.port:2222}")
+    private int port;
+    @Value("${sftp.server.welcome")
+    private String welcomeBanner;
+    @Value("${sftp.server.hostKey:host.ser}")
+    private String hostKeyPath;
 
-    //    private Log log = LogFactory.getLog(SFTPDaemon.class);
+
     private SftpSubsystemFactory factory;
     private final SshServer sshd = SshServer.setUpDefaultServer();
     private AuthProvider authProvider = new AuthProvider();
 
     public SFTPDaemon() {
-        log.isDebugEnabled();
-        this.sshd.setPort(this.port);
-        this.sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File(hostKeyPath).toPath()));
+        log.info(String.valueOf(this.port));
+        this.sshd.setPort(2222);
+        this.sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("host.ser").toPath()));
         PropertyResolverUtils.updateProperty(this.sshd, ServerAuthenticationManager.WELCOME_BANNER,
-                this.welcomeBanner);
+                "blub");
 
         this.factory = new SftpSubsystemFactory.Builder().build();
         this.factory.addSftpEventListener(new SFTPEventListener());
@@ -47,7 +51,7 @@ public class SFTPDaemon extends AbstractLoggingBean {
         if (!this.sshd.isStarted()) {
             this.sshd.start();
         }
-        log.info("SFTP server started");
+        log.info("SFTP server is running on port " + this.port);
     }
 
     @PreDestroy
