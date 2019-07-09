@@ -1,9 +1,9 @@
 version: '3'
 services:
-   main:
-      build: .
-      image: opuscapita/sftp-gateway:dev
-      depends_on:
+  main:
+    build: .
+    image: opuscapita/sftp-gateway:dev
+    depends_on:
       - mysql
       - consul
       - registrator
@@ -12,158 +12,231 @@ services:
       - rabbitmq
       - api-registry
       - auth
-      labels:
-         SERVICE_NAME: sftp-gateway
-         SERVICE_TAGS: kong
-      environment:
-         PORT: 2222
-         SERVICE_NAME: ${SERVICE_NAME}
-         SERVICE_2222_NAME: ${SERVICE_NAME}
-         RABBITMQ_USER: ${SECRET_develop_RABBITMQUSER}
-         RABBITMQ_PASS: ${SECRET_develop_RABBITMQPASS}
-      ports:
+      - blob
+    labels:
+      SERVICE_NAME: sftp-gateway
+      SERVICE_TAGS: kong
+    environment:
+      PORT: 2222
+      SERVICE_NAME: ${SERVICE_NAME}
+      SERVICE_2222_NAME: ${SERVICE_NAME}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+    ports:
       - 2222:2222
 
-   auth:
-      image: opuscapita/auth:dev
-      labels:
-         SERVICE_NAME: $AUTH_SERVICE_NAME
-      ports:
-      - 3005:3005
-      environment:
-         NODE_ENV: $NODE_ENV
-         APP_HOST: '0.0.0.0'
-         APP_HOST_PROTOCOL: $APP_HOST_PROTOCOL
-         APP_HOST_PORT: $APP_HOST_PORT
-         GATEWAY_SCHEME: $AUTH_GATEWAY_SCHEME
-         GATEWAY_IP: $AUTH_GATEWAY_IP
-         GATEWAY_PORT: $AUTH_GATEWAY_PORT
-         GATEWAY_CALLBACK: $AUTH_GATEWAY_CALLBACK
-         MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
-         MYSQL_DATABASE: $MYSQL_DATABASE
-         REDIS_AUTH: ${REDIS_AUTH}
-         USER_NAME: 'auth'
-         PASSWORD: 'svc_auth'
-         SMTP_HOST: ${SMTP_HOST}
-         SMTP_PORT: ${SMTP_PORT}
-         SMTP_USER: ${SMTP_USER}
-         SMTP_PASSWORD: ${SMTP_PASSWORD}
-         SERVICE_3005_CHECK_HTTP: /auth/certs
-         SERVICE_3005_CHECK_INTERVAL: 15s
-         SERVICE_3005_CHECK_TIMEOUT: 3s
-         RABBITMQ_USER: ${RABBITMQ_USER}
-         RABBITMQ_PASS: ${RABBITMQ_PASS}
-      depends_on:
+  auth:
+    image: opuscapita/auth:dev
+    ports:
+      - $APP_HOST_PORT:$APP_HOST_PORT
+    environment:
+      NODE_ENV: $NODE_ENV
+      APP_HOST: '0.0.0.0'
+      APP_HOST_PROTOCOL: $APP_HOST_PROTOCOL
+      APP_HOST_PORT: $APP_HOST_PORT
+      GATEWAY_SCHEME: $GATEWAY_SCHEME
+      GATEWAY_IP: $GATEWAY_IP
+      GATEWAY_PORT: $GATEWAY_PORT
+      GATEWAY_CALLBACK: $GATEWAY_CALLBACK
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+      MYSQL_DATABASE: $MYSQL_DATABASE
+      REDIS_AUTH: ${REDIS_AUTH}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+      SERVICE_3005_CHECK_HTTP: /api/health/check
+      SERVICE_3005_CHECK_INTERVAL: 15s
+      SERVICE_3005_CHECK_TIMEOUT: 3s
+    depends_on:
+      - mysql
       - kong
       - consul
-      - rabbitmq
-      command: 'npm run dev'
+      - registrator
+      - acl
+      - user
+    command: 'npm run dev'
 
-   mysql:
-      image: mysql:5.7
-      command:
+  blob:
+    image: opuscapita/blob:dev
+    depends_on:
+      - mysql
+      - consul
+      - registrator
+      - acl
+    labels:
+      SERVICE_TAGS: 'external,kong'
+      SERVICE_NAME: blob
+    environment:
+      REDIS_AUTH: $REDIS_AUTH
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      BLOB_KEY: ${BLOB_KEY}
+      BLOB_ACCOUNT: ${BLOB_ACCOUNT}
+      SERVICE_3012_CHECK_HTTP: /api/health/check
+      SERVICE_3012_CHECK_INTERVAL: 15s
+      SERVICE_3012_CHECK_TIMEOUT: 3s
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+    ports:
+      - 3012:3012
+    command: "npm run dev"
+
+  user:
+    image: opuscapita/user:dev
+    depends_on:
+      - mysql
+      - consul
+      - registrator
+      - redis
+    labels:
+      SERVICE_NAME: user
+      SERVICE_TAGS: kong,external
+    environment:
+      PORT: 3008
+      MYSQL_DATABASE: $MYSQL_DATABASE
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+      REDIS_AUTH: $REDIS_AUTH
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+      SERVICE_3008_CHECK_HTTP: /api/health/check
+      SERVICE_3008_CHECK_INTERVAL: 15s
+      SERVICE_3008_CHECK_TIMEOUT: 3s
+    ports:
+      - 3008:3008
+    command: 'npm run dev'
+
+  acl:
+    image: opuscapita/acl:dev
+    labels:
+      - 'SERVICE_NAME=acl'
+      - 'SERVICE_TAGS=external,kong'
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      REDIS_AUTH: ${REDIS_AUTH}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+      SECURITY_MODE: local
+      SERVICE_3013_CHECK_HTTP: /api/health/check
+      SERVICE_3013_CHECK_INTERVAL: 15s
+      SERVICE_3013_CHECK_TIMEOUT: 3s
+    ports:
+      - '3013:3013'
+    depends_on:
+      - registrator
+      - mysql
+    command: 'npm run dev'
+
+  mysql:
+    image: mysql:5.7
+    command:
       - --character-set-server=utf8
       - --collation-server=utf8_general_ci
-      ports:
+    ports:
       - 3306:3306
-      labels:
-         SERVICE_3306_NAME: mysql
-      environment:
-         MYSQL_ROOT_PASSWORD: test
-         MYSQL_DATABASE: ${SERVICE_NAME}
-      depends_on:
+    labels:
+      SERVICE_3306_NAME: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${SERVICE_NAME}
+    depends_on:
       - registrator
-   rabbitmq:
-      image: rabbitmq:3-management
-      ports:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
       - 4369:4369
       - 5671:5671
       - 5672:5672
       - 15672:15672
-      environment:
-         RABBITMQ_DEFAULT_USER: ${SECRET_develop_RABBITMQUSER}
-         RABBITMQ_DEFAULT_PASS: ${SECRET_develop_RABBITMQPASS}
-         SERVICE_5672_NAME: rabbitmq
-   redis:
-      image: opuscapita/redis:dev
-      ports:
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+      SERVICE_5672_NAME: rabbitmq-amqp
+
+  redis:
+    image: opuscapita/redis:dev
+    ports:
       - 6379:6379
-      environment:
-         REDIS_AUTH: ${REDIS_AUTH}
-      depends_on:
+    environment:
+      REDIS_AUTH: ${REDIS_AUTH}
+    depends_on:
       - registrator
-   kong:
-      image: opuscapita/kong:dev
-      environment:
-         KONG_DATABASE: postgres
-         KONG_PG_HOST: $KONG_PG_HOST
-         KONG_PG_PORT: $KONG_PG_PORT
-         APP_HOST: $HOST_IP
-         APP_HOST_PROTOCOL: $APP_HOST_PROTOCOL
-         APP_HOST_PORT: $APP_HOST_PORT
-         GATEWAY_SCHEME: $GATEWAY_SCHEME
-         GATEWAY_IP: $GATEWAY_IP
-         GATEWAY_PORT: $GATEWAY_PORT
-         GATEWAY_CALLBACK: $GATEWAY_CALLBACK
-         POSTGRES_USER: $POSTGRES_USER
-         POSTGRES_DB: $POSTGRES_DB
-         POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-         REDIS_HOST: $HOST_IP # TODO: remove after api-gw is using config
-         REDIS_PORT: 6379 # TODO: remove after api-gw is using config
-         REDIS_AUTH: $REDIS_AUTH # TODO: remove after api-gw is using config
-         SERVICE_8001_NAME: kong
-         SERVICE_8080_NAME: kong-http
-      ports:
+
+  kong:
+    image: opuscapita/kong:dev
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: $KONG_PG_HOST
+      KONG_PG_PORT: $KONG_PG_PORT
+      APP_HOST: $HOST_IP
+      APP_HOST_PROTOCOL: $APP_HOST_PROTOCOL
+      APP_HOST_PORT: $APP_HOST_PORT
+      GATEWAY_SCHEME: $GATEWAY_SCHEME
+      GATEWAY_IP: $GATEWAY_IP
+      GATEWAY_PORT: $GATEWAY_PORT
+      GATEWAY_CALLBACK: $GATEWAY_CALLBACK
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_DB: $POSTGRES_DB
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      REDIS_HOST: $HOST_IP # TODO: remove after api-gw is using config
+      REDIS_PORT: 6379 # TODO: remove after api-gw is using config
+      REDIS_AUTH: $REDIS_AUTH # TODO: remove after api-gw is using config
+      SERVICE_8001_NAME: kong
+      SERVICE_8080_NAME: kong-http
+    ports:
       - 8080:8080
       - 8443:8443
       - 8001:8001
       - 7946:7946
       - 7946:7946/udp
-      depends_on:
+    depends_on:
       - postgres
       - mysql
       - redis
-   api-registry:
-      image: opuscapita/api-registrator:dev
-      ports:
+
+  api-registry:
+    image: opuscapita/api-registrator:dev
+    ports:
       - 3004:3004
-      environment:
-         SERVICE_3002_CHECK_HTTP: /api/health/check
-         SERVICE_3002_CHECK_INTERVAL: 15s
-         SERVICE_3002_CHECK_TIMEOUT: 3s
-         AUTH_SERVER: $HOST_IP
-         AUTH_SERVER_PORT: 3005
-         API_REGISTRY_PORT: 3004
-         GATEWAY_CALLBACK: $GATEWAY_CALLBACK
-      depends_on:
+    environment:
+      SERVICE_3002_CHECK_HTTP: /api/health/check
+      SERVICE_3002_CHECK_INTERVAL: 15s
+      SERVICE_3002_CHECK_TIMEOUT: 3s
+      AUTH_SERVER: $HOST_IP
+      AUTH_SERVER_PORT: 3005
+      API_REGISTRY_PORT: 3004
+      GATEWAY_CALLBACK: $GATEWAY_CALLBACK
+    depends_on:
       - kong
-   postgres:
-      image: postgres:9.4
-      ports:
+
+  postgres:
+    image: postgres:9.4
+    ports:
       - 5432:5432
-      environment:
-         POSTGRES_USER: $POSTGRES_DB
-         POSTGRES_DB: $POSTGRES_USER
-         POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-      depends_on:
+    environment:
+      POSTGRES_USER: $POSTGRES_DB
+      POSTGRES_DB: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+    depends_on:
       - registrator
-   registrator:
-      image: gliderlabs/registrator
-      command: consul://consul:8500
-      volumes:
+
+  registrator:
+    image: gliderlabs/registrator
+    command: consul://consul:8500
+    volumes:
       - /var/run/docker.sock:/tmp/docker.sock
-      depends_on:
+    depends_on:
       - consul
-      restart: on-failure
-   consul:
-      image: consul:latest
-      ports:
+    restart: on-failure
+
+  consul:
+    image: consul:latest
+    ports:
       - 8400:8400
       - 8500:8500
       - 8600:53/udp
-      labels:
-         SERVICE_IGNORE: 'true'
-      command:
+    labels:
+      SERVICE_IGNORE: true
+    command:
       - agent
       - -server
       - -ui
