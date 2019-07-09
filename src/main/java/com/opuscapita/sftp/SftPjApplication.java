@@ -7,8 +7,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.env.Environment;
 
 @SpringBootApplication
-//@EnableConfigurationProperties
-//@ComponentScan({"com.opuscapita.sftp"})
 public class SftPjApplication implements CommandLineRunner {
 
     @Autowired

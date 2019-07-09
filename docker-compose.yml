@@ -51,6 +51,7 @@ services:
       - kong
       - consul
       - registrator
+      - api-registry
       - acl
       - user
     command: 'npm run dev'
