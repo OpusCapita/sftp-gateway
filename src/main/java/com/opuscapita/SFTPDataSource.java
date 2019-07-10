@@ -1,4 +1,4 @@
-package com.opuscapita.sftp;
+package com.opuscapita;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.DataSourceBuilder;

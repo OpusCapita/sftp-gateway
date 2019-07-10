@@ -5,10 +5,10 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConfigurationProperties(prefix = "auth.server")
-public class AuthConfigiguration {
+public class AuthConfiguration {
     private String url;
     private String endpoint;
-    private String clientId;
+    private String clientKey;
     private String clientSecret;
 
     public String getUrl() {
@@ -19,8 +19,8 @@ public class AuthConfigiguration {
         return this.endpoint;
     }
 
-    public String getClientId() {
-        return this.clientId;
+    public String getClientKey() {
+        return this.clientKey;
     }
 
     public String getClientSecret() {
@@ -35,8 +35,8 @@ public class AuthConfigiguration {
         this.endpoint = endpoint;
     }
 
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
+    public void setClientKey(String clientKey) {
+        this.clientKey = clientKey;
     }
 
     public void setClientSecret(String clientSecret) {

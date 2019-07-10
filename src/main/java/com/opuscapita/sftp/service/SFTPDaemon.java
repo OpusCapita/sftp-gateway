@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.Collections;
 
 @Component
-@ComponentScan(value = "com.opuscapita.sftp.config")
+@ComponentScan
 public class SFTPDaemon extends AbstractLoggingBean {
 
     private SFTPConfiguration configuration;
@@ -27,11 +27,12 @@ public class SFTPDaemon extends AbstractLoggingBean {
 
     private SftpSubsystemFactory factory;
     private final SshServer sshd = SshServer.setUpDefaultServer();
-    private AuthProvider authProvider = new AuthProvider();
+    private AuthProvider authProvider;
 
     @Autowired
-    public SFTPDaemon(SFTPConfiguration configuration) {
+    public SFTPDaemon(SFTPConfiguration configuration, AuthProvider authProvider) {
         this.configuration = configuration;
+        this.authProvider = authProvider;
         log.info(this.configuration.getWelcome());
         this.sshd.setPort(this.configuration.getPort());
         this.sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("host.ser").toPath()));
