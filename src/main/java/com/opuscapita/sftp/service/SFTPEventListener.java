@@ -1,7 +1,9 @@
 package com.opuscapita.sftp.service;
 
+import com.opuscapita.auth.model.AuthResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sshd.common.AttributeRepository;
 import org.apache.sshd.server.session.ServerSession;
 import org.apache.sshd.server.subsystem.sftp.AbstractSftpEventListenerAdapter;
 import org.apache.sshd.server.subsystem.sftp.FileHandle;
@@ -11,6 +13,7 @@ import java.nio.file.Path;
 
 public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
     private Log log = LogFactory.getLog(SFTPEventListener.class);
+    private AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey;
 
     public SFTPEventListener() {
         super();
@@ -22,7 +25,9 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
         Loading the backend filesystem from Azure Blob container
          */
         super.initialized(session, version);
-        log.info("initialized");
+        AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey = this.findAttributeKey(session, AuthResponse.class);
+        AuthResponse authResponse = session.getAttribute(authResponseAttributeKey);
+        log.info("initialized with AccessToken: " + authResponse.getAccess_token());
     }
 
     @Override
@@ -60,5 +65,14 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
             ServerSession session, String remoteHandle, FileHandle localHandle,
             long offset, byte[] data, int dataOffset, int dataLen, Throwable thrown) {
         log.info("written(" + session + ")[" + localHandle.getFile() + "] offset=" + offset + ", requested=" + dataLen);
+    }
+
+    private AttributeRepository.AttributeKey findAttributeKey(ServerSession session, Class instanceOf) {
+        for (AttributeRepository.AttributeKey attributeKey : session.attributeKeys()) {
+            if (instanceOf.isInstance(session.getAttribute(attributeKey))) {
+                return attributeKey;
+            }
+        }
+        return null;
     }
 }

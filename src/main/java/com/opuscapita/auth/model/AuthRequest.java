@@ -20,6 +20,7 @@ public class AuthRequest {
     private final String PASSWORD = "password";
     private final String PUBLICKEY = "publickey";
     private final String SCOPE = "scope";
+
     private String grant_type = "password";
     private String username;
     private String password;

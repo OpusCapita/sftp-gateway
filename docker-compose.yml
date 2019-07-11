@@ -13,6 +13,7 @@ services:
       - api-registry
       - auth
       - blob
+      - acl
     labels:
       SERVICE_NAME: sftp-gateway
       SERVICE_TAGS: kong
@@ -39,7 +40,7 @@ services:
       GATEWAY_PORT: $GATEWAY_PORT
       GATEWAY_CALLBACK: $GATEWAY_CALLBACK
       MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
-      MYSQL_DATABASE: $MYSQL_DATABASE
+      MYSQL_DATABASE: $AUTH_MYSQL_DATABASE
       REDIS_AUTH: ${REDIS_AUTH}
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASS: ${RABBITMQ_PASS}
@@ -69,7 +70,7 @@ services:
     environment:
       REDIS_AUTH: $REDIS_AUTH
       MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_DATABASE: ${BLOB_MYSQL_DATABASE}
       BLOB_KEY: ${BLOB_KEY}
       BLOB_ACCOUNT: ${BLOB_ACCOUNT}
       SERVICE_3012_CHECK_HTTP: /api/health/check
@@ -93,7 +94,7 @@ services:
       SERVICE_TAGS: kong,external
     environment:
       PORT: 3008
-      MYSQL_DATABASE: $MYSQL_DATABASE
+      MYSQL_DATABASE: $USER_MYSQL_DATABASE
       MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
       REDIS_AUTH: $REDIS_AUTH
       RABBITMQ_USER: ${RABBITMQ_USER}
@@ -108,11 +109,11 @@ services:
   acl:
     image: opuscapita/acl:dev
     labels:
-      - 'SERVICE_NAME=acl'
-      - 'SERVICE_TAGS=external,kong'
+      - SERVICE_NAME=acl
+      - SERVICE_TAGS=external,kong
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_DATABASE: ${ACL_MYSQL_DATABASE}
       REDIS_AUTH: ${REDIS_AUTH}
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASS: ${RABBITMQ_PASS}
@@ -121,7 +122,7 @@ services:
       SERVICE_3013_CHECK_INTERVAL: 15s
       SERVICE_3013_CHECK_TIMEOUT: 3s
     ports:
-      - '3013:3013'
+      - 3013:3013
     depends_on:
       - registrator
       - mysql
@@ -138,7 +139,7 @@ services:
       SERVICE_3306_NAME: mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${SERVICE_NAME}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     depends_on:
       - registrator
   rabbitmq:
