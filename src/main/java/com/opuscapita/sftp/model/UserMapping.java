@@ -5,57 +5,34 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
+@Data
 public class UserMapping {
-	@Id
+    @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator = "native")
     @GenericGenerator(name = "native", strategy = "native")
-	private Integer id;
+    @Getter
+    private Integer id;
 
-	private String username;
+    @Getter
+    @Setter
+    private String username;
 
-	private String path;
+    @Getter
+    @Setter
+    private String path;
 
-	private String fileExtension;
+    @Getter
+    @Setter
+    private String fileExtension;
 
-	private String tenantId;
-
-	public Integer getId() {
-		return id;
-	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	public String getPath() {
-		return path;
-	}
-
-	public void setPath(String path) {
-		this.path = path;
-	}
-
-	public String getFileExtension() {
-		return fileExtension;
-	}
-
-	public void setFileExtension(String fileExtension) {
-		this.fileExtension = fileExtension;
-	}
-
-	public String getTenantId() {
-		return tenantId;
-	}
-
-	public void setTenantId(String tenantId) {
-		this.tenantId = tenantId;
-	}
+    @Getter
+    @Setter
+    private String tenantId;
 
 }

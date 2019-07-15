@@ -2,7 +2,12 @@ package com.opuscapita.sftp.service;
 
 import com.opuscapita.sftp.config.SFTPConfiguration;
 import com.opuscapita.sftp.service.auth.AuthProvider;
+import org.apache.commons.io.monitor.FileAlterationListener;
+import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
+import org.apache.commons.io.monitor.FileAlterationMonitor;
+import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.apache.sshd.common.PropertyResolverUtils;
+import org.apache.sshd.common.file.FileSystemFactory;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 import org.apache.sshd.server.ServerAuthenticationManager;
 import org.apache.sshd.server.SshServer;
@@ -33,17 +38,44 @@ public class SFTPDaemon extends AbstractLoggingBean {
     public SFTPDaemon(SFTPConfiguration configuration, AuthProvider authProvider) {
         this.configuration = configuration;
         this.authProvider = authProvider;
-        log.info(this.configuration.getWelcome());
         this.sshd.setPort(this.configuration.getPort());
         this.sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("host.ser").toPath()));
         PropertyResolverUtils.updateProperty(this.sshd, ServerAuthenticationManager.WELCOME_BANNER,
                 this.configuration.getWelcome());
 
         this.factory = new SftpSubsystemFactory.Builder().build();
-        this.factory.addSftpEventListener(new SFTPEventListener());
+        SFTPEventListener sftpEventListener = new SFTPEventListener();
+
+        this.factory.addSftpEventListener(sftpEventListener);
         this.sshd.setSubsystemFactories(Collections.singletonList(this.factory));
         this.sshd.setPublickeyAuthenticator(this.authProvider);
         this.sshd.setPasswordAuthenticator(this.authProvider);
+        FileSystemFactory fs = new BlobFileSystem();
+        this.sshd.setFileSystemFactory(fs);
+
+//        FileAlterationObserver observer = new FileAlterationObserver(((BlobFileSystem) fs).getRootPath().toString());
+//        FileAlterationMonitor monitor = new FileAlterationMonitor();
+//        FileAlterationListener listener = new FileAlterationListenerAdaptor() {
+//
+//            @Override
+//            public void onFileCreate(File file) {
+//                try {
+//
+//                    log.info("[SFTPFileListner] Received :" + file.getName());
+//                    log.info("[SFTPFileListner] Received File Path :" + file.getCanonicalPath());
+//                } catch (IOException e) {
+//                    throw new RuntimeException("ERROR: Unrecoverable error when creating files " + e.getMessage(), e);
+//                }
+//            }
+//        };
+//
+//        observer.addListener(listener);
+//        monitor.addObserver(observer);
+//        try {
+//            monitor.start();
+//        } catch (Exception e) {
+//            log.error(e.getMessage());
+//        }
 
     }
 

@@ -1,15 +1,19 @@
 package com.opuscapita.sftp.service;
 
 import com.opuscapita.auth.model.AuthResponse;
+import com.opuscapita.sftp.utils.SFTPHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sshd.common.AttributeRepository;
 import org.apache.sshd.server.session.ServerSession;
 import org.apache.sshd.server.subsystem.sftp.AbstractSftpEventListenerAdapter;
+import org.apache.sshd.server.subsystem.sftp.DirectoryHandle;
 import org.apache.sshd.server.subsystem.sftp.FileHandle;
 import org.apache.sshd.server.subsystem.sftp.Handle;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Map;
 
 public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
     private Log log = LogFactory.getLog(SFTPEventListener.class);
@@ -25,16 +29,14 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
         Loading the backend filesystem from Azure Blob container
          */
         super.initialized(session, version);
-        AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey = this.findAttributeKey(session, AuthResponse.class);
+        AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey = SFTPHelper.findAttributeKey(session, AuthResponse.class);
         AuthResponse authResponse = session.getAttribute(authResponseAttributeKey);
         log.info("initialized with AccessToken: " + authResponse.getAccess_token());
     }
 
     @Override
     public void destroying(ServerSession session) {
-        /*
-        Removing the backend filesystem safely
-         */
+        log.info(session.getActiveSessionCountForUser(session.getUsername()));
         log.info("destroying");
     }
 
@@ -67,12 +69,34 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
         log.info("written(" + session + ")[" + localHandle.getFile() + "] offset=" + offset + ", requested=" + dataLen);
     }
 
-    private AttributeRepository.AttributeKey findAttributeKey(ServerSession session, Class instanceOf) {
-        for (AttributeRepository.AttributeKey attributeKey : session.attributeKeys()) {
-            if (instanceOf.isInstance(session.getAttribute(attributeKey))) {
-                return attributeKey;
-            }
-        }
-        return null;
+    @Override
+    public void creating(ServerSession session, Path path, Map<String, ?> attrs) throws IOException {
+        super.creating(session, path, attrs);
+        log.info("creating(" + session + ")[" + path.toString() + "]");
+    }
+
+    @Override
+    public void created(ServerSession session, Path path, Map<String, ?> attrs, Throwable thrown) throws IOException {
+        super.created(session, path, attrs, thrown);
+        log.info("created(" + session + ")[" + path.toString() + "]");
+    }
+
+    @Override
+    public void read(ServerSession session, String remoteHandle, DirectoryHandle localHandle, Map<String, Path> entries) throws IOException {
+        entries.clear();
+        super.read(session, remoteHandle, localHandle, entries);
+        log.info("List Files: " + entries.toString());
+    }
+
+    @Override
+    public void read(ServerSession session, String remoteHandle, FileHandle localHandle, long offset, byte[] data, int dataOffset, int dataLen, int readLen, Throwable thrown) throws IOException {
+//        super.read(session, remoteHandle, localHandle, offset, data, dataOffset, dataLen, readLen, thrown);
+        log.info("Get File: " + remoteHandle);
+    }
+
+    @Override
+    public void reading(ServerSession session, String remoteHandle, FileHandle localHandle, long offset, byte[] data, int dataOffset, int dataLen) throws IOException {
+//        super.reading(session, remoteHandle, localHandle, offset, data, dataOffset, dataLen);
+        log.info("Reading File: " + remoteHandle + ", " + localHandle.getFile().toAbsolutePath().toString());
     }
 }

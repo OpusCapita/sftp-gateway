@@ -1,10 +1,8 @@
 package com.opuscapita.auth.model;
 
 
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.opuscapita.auth.AuthService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.http.HttpStatus;
@@ -14,12 +12,14 @@ public class AuthResponse {
 
     private Log log = LogFactory.getLog(AuthResponse.class);
 
+
     private HttpStatus statusCode;
     private String refresh_token;
     private String token_type;
     private String access_token;
     private String id_token;
     private int expires_in;
+    private User user;
 
     public AuthResponse(HttpStatus _statusCode) {
         this.setStatusCode(_statusCode);
@@ -78,6 +78,7 @@ public class AuthResponse {
 
     public AuthResponse setId_token(String id_token) {
         this.id_token = id_token;
+        this.setUser(new User(id_token));
         return this;
     }
 
@@ -96,6 +97,15 @@ public class AuthResponse {
 
     public AuthResponse setStatusCode(HttpStatus statusCode) {
         this.statusCode = statusCode;
+        return this;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public AuthResponse setUser(User user) {
+        this.user = user;
         return this;
     }
 }

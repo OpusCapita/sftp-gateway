@@ -132,10 +132,10 @@ public class AuthRequest {
     public String getMultiFormDataAsString() {
         String map = new String();
         MultiValueMap<String, String> multiFormData = this.getMultiFormData();
-        for(String key : multiFormData.keySet()) {
+        for (String key : multiFormData.keySet()) {
             map += key + "=" + multiFormData.get(key).get(0) + "&";
         }
-        map = map.substring(0,map.length()-1);
+        map = map.substring(0, map.length() - 1);
         return map;
     }
 }

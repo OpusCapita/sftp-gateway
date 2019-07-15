@@ -31,12 +31,7 @@ public class AuthService {
         RestTemplate rest = new RestTemplate();
         AuthRequest request = AuthRequest.createPasswordRequest(_username, _password);
         HttpEntity<String> entity = new HttpEntity<>(request.getMultiFormDataAsString(), request.getHttpHeader(this.configuration.getClientKey(), this.configuration.getClientSecret()));
-
-        log.info("Rquest Entity Body: " + entity.getBody());
-        log.info("Rquest Entity Header: " + entity.getHeaders().toString());
         ResponseEntity<String> response = rest.exchange(this.configuration.getUrl() + this.configuration.getEndpoint(), HttpMethod.POST, entity, String.class);
-
-        log.info("AuthResponse: " + response.getBody());
         return new AuthResponse(response.getStatusCode(), response.getBody());
     }
 
