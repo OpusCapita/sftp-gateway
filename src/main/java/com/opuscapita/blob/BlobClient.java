@@ -3,18 +3,22 @@ package com.opuscapita.blob;
 import com.opuscapita.auth.model.AuthResponse;
 import com.opuscapita.blob.model.Scope;
 import com.opuscapita.blob.service.BlobInterface;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
-import lombok.Setter;
-import lombok.Getter;
+import org.springframework.web.client.RestTemplate;
+
 @Service
 public class BlobClient implements BlobInterface {
 
-    @Getter
-    @Setter
+    private RestTemplate restTemplate;
     private AuthResponse authResponse;
 
-    private BlobClient() {
-    }
+//    @Autowired
+//    private BlobClient(AuthResponse _authResponse, RestTemplateBuilder _restTemplateBuilder) {
+//        this.authResponse = _authResponse;
+//        this.restTemplate = _restTemplateBuilder.build();
+//    }
 
     public static BlobClient createTempFileClient(AuthResponse _response) {
         return new BlobClient();

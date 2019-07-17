@@ -32,6 +32,7 @@ public class AuthService {
         AuthRequest request = AuthRequest.createPasswordRequest(_username, _password);
         HttpEntity<String> entity = new HttpEntity<>(request.getMultiFormDataAsString(), request.getHttpHeader(this.configuration.getClientKey(), this.configuration.getClientSecret()));
         ResponseEntity<String> response = rest.exchange(this.configuration.getUrl() + this.configuration.getEndpoint(), HttpMethod.POST, entity, String.class);
+        log.info(entity.getHeaders().toString());
         return new AuthResponse(response.getStatusCode(), response.getBody());
     }
 

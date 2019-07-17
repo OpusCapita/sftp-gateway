@@ -31,7 +31,7 @@ public class BlobFileSystem extends AbstractLoggingBean implements FileSystemFac
         String tenantId = this.computeTenatId(session);
         this.rootPath = new File("/upload/" + tenantId + "/" + session.getSessionId() + "/").getAbsoluteFile().toPath();
         if (!Files.exists(this.rootPath)) {
-            Files.createDirectory(this.rootPath);
+            new File(this.rootPath.toString()).mkdirs();
         }
         if (this.rootPath == null) {
             throw new InvalidPathException(tenantId, "Cannot resolve home directory");
