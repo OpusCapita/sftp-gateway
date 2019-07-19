@@ -1,6 +1,7 @@
 package com.opuscapita.sftp.service;
 
 import com.opuscapita.sftp.config.SFTPConfiguration;
+import com.opuscapita.sftp.filesystem.BlobFileSystemFactory;
 import com.opuscapita.sftp.service.auth.AuthProvider;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
@@ -29,11 +30,14 @@ public class SFTPDaemon extends AbstractLoggingBean {
     private SFTPConfiguration configuration;
     private SshServer sshd = SshServer.setUpDefaultServer();
     private AuthProvider authProvider;
+    private OCSftpSubsystemFactory.Builder builder;
 
     @Autowired
-    public SFTPDaemon(SFTPConfiguration configuration, AuthProvider authProvider) {
-        this.configuration = configuration;
-        this.authProvider = authProvider;
+    public SFTPDaemon(SFTPConfiguration _configuration, AuthProvider _authProvider,OCSftpSubsystemFactory.Builder _builder) {
+        this.configuration = _configuration;
+        this.authProvider = _authProvider;
+        this.builder = _builder;
+
         List<NamedFactory<Command>> subsystemFactories = new ArrayList<>();
         subsystemFactories.add(this.createDefaultSftpSubsystem());
         this.sshd.setSubsystemFactories(subsystemFactories);
@@ -44,14 +48,17 @@ public class SFTPDaemon extends AbstractLoggingBean {
                 this.configuration.getWelcome());
         this.sshd.setPublickeyAuthenticator(this.authProvider);
         this.sshd.setPasswordAuthenticator(this.authProvider);
-        FileSystemFactory fs = new BlobFileSystem();
+        FileSystemFactory fs = new BlobFileSystemFactory();
         this.sshd.setFileSystemFactory(fs);
-
     }
 
     private SftpSubsystemFactory createDefaultSftpSubsystem() {
-        OCSftpSubsystemFactory factory = new OCSftpSubsystemFactory.Builder().build();
-
+//        OCSftpSubsystemFactory factory = this.builder.build();
+        SftpSubsystemFactory factory = new SftpSubsystemFactory
+                .Builder()
+//                .withFileSystemAccessor(new OCSftpFileSystemAccessor())
+                .build();
+//        factory.setFileSystemAccessor(new OCSftpFileSystemAccessor());
         SFTPEventListener sftpEventListener = new SFTPEventListener();
         factory.addSftpEventListener(sftpEventListener);
 

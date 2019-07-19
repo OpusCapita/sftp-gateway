@@ -9,9 +9,7 @@ import org.springframework.http.HttpStatus;
 
 public class AuthResponse {
 
-
     private Log log = LogFactory.getLog(AuthResponse.class);
-
 
     private HttpStatus statusCode;
     private String refresh_token;
@@ -107,5 +105,9 @@ public class AuthResponse {
     public AuthResponse setUser(User user) {
         this.user = user;
         return this;
+    }
+
+    public String getTenantId() {
+        return (!this.getUser().getCustomerId().isEmpty() && this.getUser().getCustomerId() != null ? "c_" + this.getUser().getCustomerId() : "s_" + this.getUser().getSupplierId());
     }
 }

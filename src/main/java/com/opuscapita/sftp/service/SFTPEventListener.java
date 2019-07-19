@@ -2,6 +2,7 @@ package com.opuscapita.sftp.service;
 
 import com.opuscapita.auth.model.AuthResponse;
 import com.opuscapita.sftp.utils.SFTPHelper;
+import lombok.Getter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sshd.common.AttributeRepository;
@@ -23,7 +24,8 @@ import java.util.Map;
 public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
     private Log log = LogFactory.getLog(SFTPEventListener.class);
     private AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey;
-
+    @Getter
+    private AuthResponse authResponse;
     public SFTPEventListener() {
         super();
     }
@@ -36,12 +38,14 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
         super.initialized(session, version);
         AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey = SFTPHelper.findAttributeKey(session, AuthResponse.class);
         AuthResponse authResponse = session.getAttribute(authResponseAttributeKey);
+        this.authResponse = authResponse;
         log.info("initialized with AccessToken: " + authResponse.getAccess_token());
     }
 
 
     public interface FileUploadCompleteListener {
         void onFileReady(File file);
+
         void onFileReadyForUpload(File file);
     }
 
@@ -63,14 +67,16 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
 
     @Override
     public void open(ServerSession serverSession, String remoteHandle, Handle localHandle) {
+        /**
+         * LS
+         */
         File openedFile = localHandle.getFile().toFile();
-        if (openedFile.exists() && openedFile.isFile()) {
-        }
+        log.info("open " + remoteHandle);
     }
 
     @Override
     public void read(ServerSession serverSession, String remoteHandle, DirectoryHandle localHandle, Map<String, Path> entries) {
-        log.info("read");
+        log.info("read " + remoteHandle + " - " + localHandle.toString());
     }
 
     @Override
@@ -99,14 +105,8 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
 
     @Override
     public void opening(ServerSession session, String remoteHandle, Handle localHandle) throws IOException {
-        File closedFile = localHandle.getFile().toFile();
-        if (closedFile.exists() && closedFile.isFile()) {
-            log.info(String.format("User %s opening file: \"%s\"", session.getUsername(), localHandle.getFile().toAbsolutePath()));
-
-            for (FileUploadCompleteListener fileReadyListener : fileReadyListeners) {
-                fileReadyListener.onFileReady(closedFile);
-            }
-        }
+        File toUpload = localHandle.getFile().toFile();
+        log.info("PUT file " + toUpload);
     }
 
     @Override
@@ -119,12 +119,6 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
                 fileReadyListener.onFileReady(closedFile);
             }
         }
-    }
-
-    @Override
-    public void creating(ServerSession serverSession, Path path, Map<String, ?> attrs) throws UnsupportedOperationException {
-        log.warn(String.format("Blocked:  user %s attempt to create a directory \"%s\"", serverSession.getUsername(), path.toString()));
-        throw new UnsupportedOperationException("Creating sub-directories is not permitted.");
     }
 
     @Override

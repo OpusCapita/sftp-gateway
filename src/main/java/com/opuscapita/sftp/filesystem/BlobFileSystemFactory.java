@@ -1,4 +1,4 @@
-package com.opuscapita.sftp.service;
+package com.opuscapita.sftp.filesystem;
 
 import com.opuscapita.auth.model.AuthResponse;
 import com.opuscapita.auth.model.User;
@@ -6,6 +6,7 @@ import com.opuscapita.sftp.utils.SFTPHelper;
 import org.apache.sshd.common.AttributeRepository;
 import org.apache.sshd.common.file.FileSystemFactory;
 import org.apache.sshd.common.file.root.RootedFileSystemProvider;
+import org.apache.sshd.common.file.virtualfs.VirtualFileSystemFactory;
 import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 import org.apache.sshd.server.session.ServerSession;
@@ -18,11 +19,11 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Collections;
 
-public class BlobFileSystem extends AbstractLoggingBean implements FileSystemFactory {
+public class BlobFileSystemFactory extends AbstractLoggingBean implements FileSystemFactory {
 
     private Path rootPath;
 
-    public BlobFileSystem() {
+    public BlobFileSystemFactory() {
         super();
     }
 
@@ -36,7 +37,10 @@ public class BlobFileSystem extends AbstractLoggingBean implements FileSystemFac
         if (this.rootPath == null) {
             throw new InvalidPathException(tenantId, "Cannot resolve home directory");
         }
-        return new RootedFileSystemProvider().newFileSystem(this.rootPath, Collections.emptyMap());
+
+//        return new RootedFileSystemProvider().newFileSystem(this.rootPath, Collections.emptyMap());
+        return new BlobFileSystemProvider().newFileSystem(this.rootPath, Collections.emptyMap());
+//        return new VirtualFileSystemFactory().createFileSystem(session);
     }
 
     private String computeTenatId(Session session) {
@@ -45,6 +49,7 @@ public class BlobFileSystem extends AbstractLoggingBean implements FileSystemFac
         User user = authResponse.getUser();
         return (!user.getCustomerId().isEmpty() && user.getCustomerId() != null ? "c_" + user.getCustomerId() : "s_" + user.getSupplierId());
     }
+
 
     public Path getRootPath() {
         return this.rootPath;
