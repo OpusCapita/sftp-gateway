@@ -1,7 +1,7 @@
 package com.opuscapita.sftp.service;
 
 import com.opuscapita.sftp.config.SFTPConfiguration;
-import com.opuscapita.sftp.filesystem.BlobFileSystemFactory;
+import com.opuscapita.sftp.filesystem.RestFileSystemFactory;
 import com.opuscapita.sftp.service.auth.AuthProvider;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
@@ -33,7 +33,7 @@ public class SFTPDaemon extends AbstractLoggingBean {
     private OCSftpSubsystemFactory.Builder builder;
 
     @Autowired
-    public SFTPDaemon(SFTPConfiguration _configuration, AuthProvider _authProvider,OCSftpSubsystemFactory.Builder _builder) {
+    public SFTPDaemon(SFTPConfiguration _configuration, AuthProvider _authProvider, OCSftpSubsystemFactory.Builder _builder) {
         this.configuration = _configuration;
         this.authProvider = _authProvider;
         this.builder = _builder;
@@ -48,17 +48,16 @@ public class SFTPDaemon extends AbstractLoggingBean {
                 this.configuration.getWelcome());
         this.sshd.setPublickeyAuthenticator(this.authProvider);
         this.sshd.setPasswordAuthenticator(this.authProvider);
-        FileSystemFactory fs = new BlobFileSystemFactory();
+        RestFileSystemFactory fs = new RestFileSystemFactory();
+//        FileSystemFactory fs = new VirtualFileSystemFactory();
         this.sshd.setFileSystemFactory(fs);
     }
 
     private SftpSubsystemFactory createDefaultSftpSubsystem() {
-//        OCSftpSubsystemFactory factory = this.builder.build();
         SftpSubsystemFactory factory = new SftpSubsystemFactory
                 .Builder()
-//                .withFileSystemAccessor(new OCSftpFileSystemAccessor())
                 .build();
-//        factory.setFileSystemAccessor(new OCSftpFileSystemAccessor());
+//        OCSftpSubsystemFactory factory = this.builder.build();
         SFTPEventListener sftpEventListener = new SFTPEventListener();
         factory.addSftpEventListener(sftpEventListener);
 

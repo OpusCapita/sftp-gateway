@@ -5,42 +5,35 @@ import com.opuscapita.auth.model.User;
 import com.opuscapita.sftp.utils.SFTPHelper;
 import org.apache.sshd.common.AttributeRepository;
 import org.apache.sshd.common.file.FileSystemFactory;
-import org.apache.sshd.common.file.root.RootedFileSystemProvider;
-import org.apache.sshd.common.file.virtualfs.VirtualFileSystemFactory;
 import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 import org.apache.sshd.server.session.ServerSession;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
 import java.util.Collections;
 
-public class BlobFileSystemFactory extends AbstractLoggingBean implements FileSystemFactory {
+public class RestFileSystemFactory extends AbstractLoggingBean implements FileSystemFactory {
 
-    private Path rootPath;
+    private URI rootUri;
 
-    public BlobFileSystemFactory() {
+    public RestFileSystemFactory() {
         super();
     }
 
     @Override
     public FileSystem createFileSystem(Session session) throws IOException {
+
         String tenantId = this.computeTenatId(session);
-        this.rootPath = new File("/upload/" + tenantId + "/" + session.getSessionId() + "/").getAbsoluteFile().toPath();
-        if (!Files.exists(this.rootPath)) {
-            new File(this.rootPath.toString()).mkdirs();
-        }
-        if (this.rootPath == null) {
-            throw new InvalidPathException(tenantId, "Cannot resolve home directory");
+        try {
+            this.rootUri = new URI("http://jsonplaceholder.typicode.com/todos/");
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
-//        return new RootedFileSystemProvider().newFileSystem(this.rootPath, Collections.emptyMap());
-        return new BlobFileSystemProvider().newFileSystem(this.rootPath, Collections.emptyMap());
-//        return new VirtualFileSystemFactory().createFileSystem(session);
+        return new RestHttpFileSystemProvider().newFileSystem(this.rootUri, Collections.emptyMap());
+
     }
 
     private String computeTenatId(Session session) {
@@ -48,10 +41,5 @@ public class BlobFileSystemFactory extends AbstractLoggingBean implements FileSy
         AuthResponse authResponse = session.getAttribute(authResponseAttributeKey);
         User user = authResponse.getUser();
         return (!user.getCustomerId().isEmpty() && user.getCustomerId() != null ? "c_" + user.getCustomerId() : "s_" + user.getSupplierId());
-    }
-
-
-    public Path getRootPath() {
-        return this.rootPath;
     }
 }

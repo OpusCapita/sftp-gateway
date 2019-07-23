@@ -7,15 +7,16 @@ import com.opuscapita.sftp.utils.SFTPHelper;
 import org.apache.sshd.common.AttributeRepository;
 import org.apache.sshd.common.subsystem.sftp.SftpConstants;
 import org.apache.sshd.common.subsystem.sftp.SftpException;
+import org.apache.sshd.common.subsystem.sftp.SftpHelper;
 import org.apache.sshd.common.util.buffer.Buffer;
+import org.apache.sshd.common.util.buffer.BufferUtils;
+import org.apache.sshd.common.util.io.IoUtils;
 import org.apache.sshd.common.util.threads.CloseableExecutorService;
 import org.apache.sshd.server.session.ServerSession;
 import org.apache.sshd.server.subsystem.sftp.*;
 
 import java.io.IOException;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.*;
 
 public class OCSftpSubsystem extends SftpSubsystem {
@@ -42,6 +43,81 @@ public class OCSftpSubsystem extends SftpSubsystem {
     }
 
     @Override
+    protected void doReadDir(Buffer buffer, int id) throws IOException {
+        String handle = buffer.getString();
+        Handle h = handles.get(handle);
+        ServerSession session = getServerSession();
+//        boolean debugEnabled = log.isDebugEnabled();
+        boolean debugEnabled = true;
+        if (debugEnabled) {
+            log.info("doReadDir({})[id={}] SSH_FXP_READDIR (handle={}[{}])", session, id, handle, h);
+        }
+
+        Buffer reply = null;
+        try {
+            DirectoryHandle dh = validateHandle(handle, h, DirectoryHandle.class);
+            if (dh.isDone()) {
+                sendStatus(prepareReply(buffer), id, SftpConstants.SSH_FX_EOF, "Directory reading is done");
+                return;
+            }
+
+            Path file = dh.getFile();
+            LinkOption[] options =
+                    getPathResolutionLinkOption(SftpConstants.SSH_FXP_READDIR, "", file);
+            Boolean status = IoUtils.checkFileExists(file, options);
+            if (status == null) {
+                throw new AccessDeniedException(file.toString(), file.toString(), "Cannot determine existence of read-dir");
+            }
+
+            if (!status) {
+                throw new NoSuchFileException(file.toString(), file.toString(), "Non-existent directory");
+            } else if (!Files.isDirectory(file, options)) {
+                throw new NotDirectoryException(file.toString());
+            } else if (!Files.isReadable(file)) {
+                throw new AccessDeniedException(file.toString(), file.toString(), "Not readable");
+            }
+
+            if (dh.isSendDot() || dh.isSendDotDot() || dh.hasNext()) {
+                // There is at least one file in the directory or we need to send the "..".
+                // Send only a few files at a time to not create packets of a too
+                // large size or have a timeout to occur.
+
+                reply = prepareReply(buffer);
+                reply.putByte((byte) SftpConstants.SSH_FXP_NAME);
+                reply.putInt(id);
+
+                int lenPos = reply.wpos();
+                reply.putInt(0);
+
+                int maxDataSize = session.getIntProperty(MAX_READDIR_DATA_SIZE_PROP, DEFAULT_MAX_READDIR_DATA_SIZE);
+                int count = doReadDir(id, handle, dh, reply, maxDataSize, IoUtils.getLinkOptions(false));
+                BufferUtils.updateLengthPlaceholder(reply, lenPos, count);
+                if ((!dh.isSendDot()) && (!dh.isSendDotDot()) && (!dh.hasNext())) {
+                    dh.markDone();
+                }
+
+                Boolean indicator =
+                        SftpHelper.indicateEndOfNamesList(reply, getVersion(), session, dh.isDone());
+                if (debugEnabled) {
+                    log.info("doReadDir({})({})[{}] - seding {} entries - eol={}", session, handle, h, count, indicator);
+                }
+            } else {
+                // empty directory
+                dh.markDone();
+                sendStatus(prepareReply(buffer), id, SftpConstants.SSH_FX_EOF, "Empty directory");
+                return;
+            }
+
+            Objects.requireNonNull(reply, "No reply buffer created");
+        } catch (IOException | RuntimeException e) {
+            sendStatus(prepareReply(buffer), id, e, SftpConstants.SSH_FXP_READDIR, handle);
+            return;
+        }
+
+        send(reply);
+    }
+
+    @Override
     protected int doReadDir(
             int id,
             String handle,
@@ -52,7 +128,6 @@ public class OCSftpSubsystem extends SftpSubsystem {
     ) throws IOException {
 
 //        return super.doReadDir(id, handle, dir, buffer, maxSize, options);
-
 
         if (!this.getServerSession().isAuthenticated()) {
             throw new IOException();
@@ -78,8 +153,8 @@ public class OCSftpSubsystem extends SftpSubsystem {
             nb++;
         }
 
-//        SftpEventListener listener = getSftpEventListenerProxy();
-//        listener.read(getServerSession(), handle, dir, entries);
+        SftpEventListener listener = getSftpEventListenerProxy();
+        listener.read(getServerSession(), handle, dir, entries);
         return nb;
     }
 
