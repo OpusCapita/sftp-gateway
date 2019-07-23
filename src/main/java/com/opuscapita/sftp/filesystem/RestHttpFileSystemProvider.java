@@ -1,5 +1,8 @@
 package com.opuscapita.sftp.filesystem;
 
+import org.springframework.stereotype.Service;
+
+@Service
 public class RestHttpFileSystemProvider extends AbstractRestFileSystemProvider {
 
     public static final String SCHEME = "http";

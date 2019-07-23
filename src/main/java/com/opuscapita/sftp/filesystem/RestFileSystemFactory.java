@@ -12,6 +12,7 @@ import org.apache.sshd.server.session.ServerSession;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.FileSystem;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.Collections;
 
 public class RestFileSystemFactory extends AbstractLoggingBean implements FileSystemFactory {
@@ -32,7 +33,13 @@ public class RestFileSystemFactory extends AbstractLoggingBean implements FileSy
             log.error(e.getMessage());
         }
 
-        return new RestHttpFileSystemProvider().newFileSystem(this.rootUri, Collections.emptyMap());
+        RestHttpFileSystemProvider httpFsProvider = new RestHttpFileSystemProvider();
+        RestHttpsFileSystemProvider httpsFsProvider = new RestHttpsFileSystemProvider();
+
+//        FileSystemProvider.installedProviders().add(httpFsProvider);
+//        FileSystemProvider.installedProviders().add(httpsFsProvider);
+
+        return httpFsProvider.newFileSystem(this.rootUri, Collections.emptyMap());
 
     }
 

@@ -25,7 +25,7 @@ abstract class AbstractRestFileSystemProvider extends FileSystemProvider {
         Utils.nonNull(uri, () -> "URI is null");
         Utils.nonNull(uri.getAuthority(),
                 () -> String.format("%s requires URI with authority: invalid %s", this, uri));
-        if (!this.getScheme().equalsIgnoreCase(uri.getScheme())) {
+        if (!getScheme().equalsIgnoreCase(uri.getScheme())) {
             throw new ProviderMismatchException(String.format("Invalid scheme for %s: %s",
                     this, uri.getScheme()));
         }
@@ -37,11 +37,11 @@ abstract class AbstractRestFileSystemProvider extends FileSystemProvider {
             throws IOException {
         checkUri(uri);
 
-        if (this.fileSystems.containsKey(uri.getAuthority())) {
+        if (fileSystems.containsKey(uri.getAuthority())) {
             throw new FileSystemAlreadyExistsException("URI: " + uri);
         }
 
-        this.fileSystems.computeIfAbsent(uri.getAuthority(), (auth) -> new RestFileSystem(this, auth));
+        fileSystems.computeIfAbsent(uri.getAuthority(), (auth) -> new RestFileSystem(this, auth));
 
         return this.getFileSystem(uri);
     }

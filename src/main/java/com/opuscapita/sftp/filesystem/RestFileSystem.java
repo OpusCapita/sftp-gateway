@@ -74,7 +74,7 @@ public class RestFileSystem extends FileSystem {
 
     @Override
     public RestPath getPath(String first, String... more) {
-        final String path = Utils.nonNull(first, () -> "null first")
+        String path = Utils.nonNull(first, () -> "null first")
                 + String.join(getSeparator(), Utils.nonNull(more, () -> "null more"));
 
         if (!path.isEmpty() && !path.startsWith(getSeparator())) {
@@ -89,7 +89,7 @@ public class RestFileSystem extends FileSystem {
     }
 
 
-    public RestPath getPath(final URI uri) {
+    public RestPath getPath(URI uri) {
         return new RestPath(this, uri.getPath(), uri.getQuery(), uri.getFragment());
     }
 

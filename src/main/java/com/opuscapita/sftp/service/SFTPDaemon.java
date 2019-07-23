@@ -3,9 +3,9 @@ package com.opuscapita.sftp.service;
 import com.opuscapita.sftp.config.SFTPConfiguration;
 import com.opuscapita.sftp.filesystem.RestFileSystemFactory;
 import com.opuscapita.sftp.service.auth.AuthProvider;
+import com.opuscapita.sftp.service.commands.OCSftpSubsystemFactory;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
-import org.apache.sshd.common.file.FileSystemFactory;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 import org.apache.sshd.server.ServerAuthenticationManager;
 import org.apache.sshd.server.SshServer;
@@ -49,7 +49,6 @@ public class SFTPDaemon extends AbstractLoggingBean {
         this.sshd.setPublickeyAuthenticator(this.authProvider);
         this.sshd.setPasswordAuthenticator(this.authProvider);
         RestFileSystemFactory fs = new RestFileSystemFactory();
-//        FileSystemFactory fs = new VirtualFileSystemFactory();
         this.sshd.setFileSystemFactory(fs);
     }
 

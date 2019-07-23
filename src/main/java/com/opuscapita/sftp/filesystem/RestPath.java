@@ -81,7 +81,6 @@ public class RestPath implements Path {
 
     @Override
     public boolean startsWith(Path other) {
-        // different FileSystems return false
         if (!this.getFileSystem().equals(Utils.nonNull(other, () -> "null path").getFileSystem())) {
             return false;
         }
@@ -159,7 +158,6 @@ public class RestPath implements Path {
     @Override
     public Path normalize() {
         return Paths.get(this.toUri());
-//        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override

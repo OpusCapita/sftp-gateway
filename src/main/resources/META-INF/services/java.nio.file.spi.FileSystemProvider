@@ -1,0 +1,2 @@
+com.opuscapita.sftp.filesystem.RestHttpFileSystemProvider
+com.opuscapita.sftp.filesystem.RestHttpsFileSystemProvider

@@ -1,7 +1,6 @@
-package com.opuscapita.sftp.service;
+package com.opuscapita.sftp.service.commands;
 
 import com.opuscapita.blob.BlobService;
-import com.opuscapita.sftp.service.commands.OCSftpSubsystem;
 import org.apache.sshd.common.util.GenericUtils;
 import org.apache.sshd.common.util.ObjectBuilder;
 import org.apache.sshd.server.command.Command;
