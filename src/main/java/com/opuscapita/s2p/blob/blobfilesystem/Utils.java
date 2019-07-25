@@ -1,4 +1,4 @@
-package com.opuscapita.sftp.filesystem;
+package com.opuscapita.s2p.blob.blobfilesystem;
 
 import java.util.function.Supplier;
 

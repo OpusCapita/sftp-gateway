@@ -1,9 +1,9 @@
-package com.opuscapita.sftp.filesystem;
+package com.opuscapita.s2p.blob.blobfilesystem;
 
 import org.springframework.stereotype.Service;
 
 @Service
-public class RestHttpFileSystemProvider extends AbstractRestFileSystemProvider {
+public class BlobHttpFileSystemProvider extends AbstractBlobFileSystemProvider {
 
     public static final String SCHEME = "http";
 

@@ -2,6 +2,8 @@ package com.opuscapita.sftp.filesystem;
 
 import com.opuscapita.auth.model.AuthResponse;
 import com.opuscapita.auth.model.User;
+import com.opuscapita.blob.config.BlobConfiguration;
+import com.opuscapita.s2p.blob.blobfilesystem.BlobHttpFileSystemProvider;
 import com.opuscapita.sftp.utils.SFTPHelper;
 import org.apache.sshd.common.AttributeRepository;
 import org.apache.sshd.common.file.FileSystemFactory;
@@ -11,36 +13,38 @@ import org.apache.sshd.server.session.ServerSession;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.FileSystem;
-import java.nio.file.spi.FileSystemProvider;
 import java.util.Collections;
 
-public class RestFileSystemFactory extends AbstractLoggingBean implements FileSystemFactory {
+public class BlobFileSystemFactory extends AbstractLoggingBean implements FileSystemFactory {
 
-    private URI rootUri;
+    private final BlobConfiguration blobConfiguration;
 
-    public RestFileSystemFactory() {
+    public BlobFileSystemFactory(BlobConfiguration configuration) {
         super();
+        this.blobConfiguration = configuration;
     }
 
     @Override
     public FileSystem createFileSystem(Session session) throws IOException {
-
-        String tenantId = this.computeTenatId(session);
         try {
-            this.rootUri = new URI("http://jsonplaceholder.typicode.com/todos/");
+            return new BlobHttpFileSystemProvider().newFileSystem(this.computeRootUri(session), Collections.emptyMap());
         } catch (Exception e) {
-            log.error(e.getMessage());
+            throw new IOException(e);
         }
+    }
 
-        RestHttpFileSystemProvider httpFsProvider = new RestHttpFileSystemProvider();
-        RestHttpsFileSystemProvider httpsFsProvider = new RestHttpsFileSystemProvider();
-
-//        FileSystemProvider.installedProviders().add(httpFsProvider);
-//        FileSystemProvider.installedProviders().add(httpsFsProvider);
-
-        return httpFsProvider.newFileSystem(this.rootUri, Collections.emptyMap());
-
+    private URI computeRootUri(Session session) throws URISyntaxException {
+        final String tenantId = this.computeTenatId(session);
+        return new URI(
+                this.blobConfiguration.getMethod() + "://"
+                        + this.blobConfiguration.getUrl() + ":"
+                        + this.blobConfiguration.getPort() + "/api/"
+                        + tenantId + "/"
+                        + this.blobConfiguration.getType() + "/"
+                        + this.blobConfiguration.getAccess() + "/"
+        );
     }
 
     private String computeTenatId(Session session) {

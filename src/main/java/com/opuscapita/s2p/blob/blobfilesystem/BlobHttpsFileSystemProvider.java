@@ -1,9 +1,9 @@
-package com.opuscapita.sftp.filesystem;
+package com.opuscapita.s2p.blob.blobfilesystem;
 
 import org.springframework.stereotype.Service;
 
 @Service
-public class RestHttpsFileSystemProvider extends AbstractRestFileSystemProvider {
+public class BlobHttpsFileSystemProvider extends AbstractBlobFileSystemProvider {
     public static final String SCHEME = "https";
 
     @Override

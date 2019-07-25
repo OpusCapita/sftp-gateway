@@ -1,2 +1,2 @@
-com.opuscapita.sftp.filesystem.RestHttpFileSystemProvider
-com.opuscapita.sftp.filesystem.RestHttpsFileSystemProvider
+com.opuscapita.s2p.blob.blobfilesystem.BlobHttpFileSystemProvider
+com.opuscapita.s2p.blob.blobfilesystem.BlobHttpsFileSystemProvider

@@ -1,4 +1,4 @@
-package com.opuscapita.sftp.filesystem;
+package com.opuscapita.s2p.blob.blobfilesystem;
 
 import java.io.IOException;
 import java.net.URI;
@@ -13,9 +13,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-abstract class AbstractRestFileSystemProvider extends FileSystemProvider {
+abstract class AbstractBlobFileSystemProvider extends FileSystemProvider {
 
-    private final Map<String, RestFileSystem> fileSystems = new ConcurrentHashMap<>();
+    private final Map<String, BlobFileSystem> fileSystems = new ConcurrentHashMap<>();
+    public byte[] normalizedPath;
 
     @Override
     public abstract String getScheme();
@@ -33,22 +34,29 @@ abstract class AbstractRestFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
-    public RestFileSystem newFileSystem(URI uri, Map<String, ?> env)
+    public BlobFileSystem newFileSystem(URI uri, Map<String, ?> env)
             throws IOException {
-        checkUri(uri);
+        synchronized (fileSystems) {
+            checkUri(uri);
+            String schemeSpecificPart = uri.getSchemeSpecificPart();
+            int i = schemeSpecificPart.indexOf("!/");
+            if (i >= 0) {
+                schemeSpecificPart = schemeSpecificPart.substring(0, i);
+            }
+            if (fileSystems.containsKey(schemeSpecificPart)) {
+                throw new FileSystemAlreadyExistsException("URI: " + uri);
+            }
+            this.normalizedPath = uri.getPath().getBytes();
+            fileSystems.computeIfAbsent(uri.getAuthority(), (auth) -> new BlobFileSystem(this, auth, uri.getPath().toString()));
 
-        if (fileSystems.containsKey(uri.getAuthority())) {
-            throw new FileSystemAlreadyExistsException("URI: " + uri);
+            return this.getFileSystem(uri);
         }
-
-        fileSystems.computeIfAbsent(uri.getAuthority(), (auth) -> new RestFileSystem(this, auth));
-
-        return this.getFileSystem(uri);
     }
 
     @Override
-    public RestFileSystem getFileSystem(URI uri) {
-        RestFileSystem fs = fileSystems.get(checkUri(uri).getAuthority());
+    public BlobFileSystem getFileSystem(URI uri) {
+        String authority = checkUri(uri).getAuthority();
+        BlobFileSystem fs = fileSystems.get(authority);
         if (fs == null) {
             throw new FileSystemNotFoundException("URI: " + uri);
         }
@@ -56,10 +64,10 @@ abstract class AbstractRestFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
-    public RestPath getPath(URI uri) {
+    public BlobPath getPath(URI uri) {
         checkUri(uri);
         return fileSystems
-                .computeIfAbsent(uri.getAuthority(), (auth) -> new RestFileSystem(this, auth))
+                .computeIfAbsent(uri.getAuthority(), (auth) -> new BlobFileSystem(this, auth, uri.getPath().toString()))
                 .getPath(uri);
     }
 
@@ -72,7 +80,7 @@ abstract class AbstractRestFileSystemProvider extends FileSystemProvider {
         if (options.isEmpty() ||
                 (options.size() == 1 && options.contains(StandardOpenOption.READ))) {
             URL url = checkUri(path.toUri()).toURL();
-            if (!RestUtils.exists(url)) {
+            if (!BlobUtils.exists(url)) {
                 throw new NoSuchFileException(url.toString());
             }
             return new URLSeekableByteChannel(url);
@@ -142,7 +150,7 @@ abstract class AbstractRestFileSystemProvider extends FileSystemProvider {
     public final void checkAccess(Path path, AccessMode... modes) throws IOException {
         Utils.nonNull(path, () -> "null path");
         final URI uri = checkUri(path.toUri());
-        if (!RestUtils.exists(uri.toURL())) {
+        if (!BlobUtils.exists(uri.toURL())) {
             throw new NoSuchFileException(uri.toString());
         }
         for (AccessMode access : modes) {

@@ -1,4 +1,4 @@
-package com.opuscapita.sftp.filesystem;
+package com.opuscapita.s2p.blob.blobfilesystem;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,17 +13,20 @@ import java.util.Collections;
 import java.util.Set;
 
 
-public class RestFileSystem extends FileSystem {
+public class BlobFileSystem extends FileSystem {
 
-    private Logger log = LoggerFactory.getLogger(RestFileSystem.class);
+    private Logger log = LoggerFactory.getLogger(BlobFileSystem.class);
 
-    private final AbstractRestFileSystemProvider provider;
+    private final AbstractBlobFileSystemProvider provider;
 
     private final String authority;
 
-    RestFileSystem(AbstractRestFileSystemProvider provider, String authority) {
+    private final String rootPath;
+
+    BlobFileSystem(AbstractBlobFileSystemProvider provider, String authority, String rootPath) {
         this.provider = Utils.nonNull(provider, () -> "FileSystemProvider is null");
         this.authority = Utils.nonNull(authority, () -> "Authority is null");
+        this.rootPath = Utils.nonNull(rootPath, () -> "RootPath is null");
     }
 
     @Override
@@ -52,12 +55,12 @@ public class RestFileSystem extends FileSystem {
 
     @Override
     public String getSeparator() {
-        return RestUtils.HTTP_PATH_SEPARATOR_STRING;
+        return BlobUtils.HTTP_PATH_SEPARATOR_STRING;
     }
 
     @Override
     public Iterable<Path> getRootDirectories() {
-        return Collections.singleton(new RestPath(this, "", null, null));
+        return Collections.singleton(new BlobPath(this, "", null, null));
     }
 
     @Override
@@ -73,7 +76,7 @@ public class RestFileSystem extends FileSystem {
     }
 
     @Override
-    public RestPath getPath(String first, String... more) {
+    public BlobPath getPath(String first, String... more) {
         String path = Utils.nonNull(first, () -> "null first")
                 + String.join(getSeparator(), Utils.nonNull(more, () -> "null more"));
 
@@ -89,8 +92,8 @@ public class RestFileSystem extends FileSystem {
     }
 
 
-    public RestPath getPath(URI uri) {
-        return new RestPath(this, uri.getPath(), uri.getQuery(), uri.getFragment());
+    public BlobPath getPath(URI uri) {
+        return new BlobPath(this, uri.getPath(), uri.getQuery(), uri.getFragment());
     }
 
     @Override
@@ -120,8 +123,8 @@ public class RestFileSystem extends FileSystem {
     public boolean equals(Object other) {
         if (this == other) {
             return true;
-        } else if (other instanceof RestFileSystem) {
-            final RestFileSystem ofs = (RestFileSystem) other;
+        } else if (other instanceof BlobFileSystem) {
+            final BlobFileSystem ofs = (BlobFileSystem) other;
             return provider() == ofs.provider() && getAuthority()
                     .equalsIgnoreCase(ofs.getAuthority());
         }
@@ -131,5 +134,9 @@ public class RestFileSystem extends FileSystem {
     @Override
     public int hashCode() {
         return 31 * provider.hashCode() + getAuthority().toLowerCase().hashCode();
+    }
+
+    public String getRootPath() {
+        return rootPath;
     }
 }

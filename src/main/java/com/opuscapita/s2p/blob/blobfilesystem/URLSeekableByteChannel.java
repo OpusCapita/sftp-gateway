@@ -1,4 +1,4 @@
-package com.opuscapita.sftp.filesystem;
+package com.opuscapita.s2p.blob.blobfilesystem;
 
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 
@@ -85,7 +85,7 @@ public class URLSeekableByteChannel extends AbstractLoggingBean implements Seeka
                     throw new IOException("Unable to retrieve content length for " + url);
                 }
             } finally {
-                RestUtils.disconnect(connection);
+                BlobUtils.disconnect(connection);
             }
         }
         return size;
@@ -109,7 +109,7 @@ public class URLSeekableByteChannel extends AbstractLoggingBean implements Seeka
     private synchronized void instantiateChannel(final long position) throws IOException {
         final URLConnection connection = url.openConnection();
         if (position > 0) {
-            RestUtils.setRangeRequest(connection, position, -1);
+            BlobUtils.setRangeRequest(connection, position, -1);
         }
 
         backedStream = connection.getInputStream();

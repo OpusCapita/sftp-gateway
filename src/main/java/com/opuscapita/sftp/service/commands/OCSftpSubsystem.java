@@ -41,7 +41,7 @@ public class OCSftpSubsystem extends SftpSubsystem {
     public void setFileSystem(FileSystem fileSystem) {
         if (fileSystem != this.fileSystem) {
             this.fileSystem = fileSystem;
-            this.defaultDir = fileSystem.getPath("/").toAbsolutePath().normalize();
+            this.defaultDir = fileSystem.getPath("").toAbsolutePath().normalize();
         }
     }
 

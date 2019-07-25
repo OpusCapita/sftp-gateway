@@ -1,4 +1,4 @@
-package com.opuscapita.sftp.filesystem;
+package com.opuscapita.s2p.blob.blobfilesystem;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +10,7 @@ import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 
-public class RestUtils {
+public class BlobUtils {
 
     public static final String HTTP_PATH_SEPARATOR_STRING = "/";
     public static final char HTTP_PATH_SEPARATOR_CHAR = '/';
@@ -23,9 +23,9 @@ public class RestUtils {
     private static final String RANGE_REQUEST_PROPERTY_VALUE_SEPARATOR = "-";
 
 
-    private static final Logger log = LoggerFactory.getLogger(RestUtils.class);
+    private static final Logger log = LoggerFactory.getLogger(BlobUtils.class);
 
-    private RestUtils() {
+    private BlobUtils() {
     }
 
     public static void disconnect(URLConnection connection) {

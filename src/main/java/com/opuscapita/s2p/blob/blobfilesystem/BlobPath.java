@@ -1,4 +1,4 @@
-package com.opuscapita.sftp.filesystem;
+package com.opuscapita.s2p.blob.blobfilesystem;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -11,9 +11,9 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Objects;
 
-public class RestPath implements Path {
+public class BlobPath implements Path {
 
-    private final RestFileSystem fs;
+    private final BlobFileSystem fs;
 
     private final byte[] normalizedPath;
     private volatile int[] offsets;
@@ -21,8 +21,9 @@ public class RestPath implements Path {
     private final String query;
     private final String reference;
 
-    private RestPath(final RestFileSystem fs,
-                     final String query, final String reference,
+    private BlobPath(final BlobFileSystem fs,
+                     final String query,
+                     final String reference,
                      final byte... normalizedPath) {
         this.fs = fs;
 
@@ -32,13 +33,13 @@ public class RestPath implements Path {
         this.normalizedPath = normalizedPath;
     }
 
-    RestPath(final RestFileSystem fs, final String path, final String query, final String reference) {
+    BlobPath(final BlobFileSystem fs, final String path, final String query, final String reference) {
         this(Utils.nonNull(fs, () -> "null fs"), query, reference,
                 getNormalizedPathBytes(Utils.nonNull(path, () -> "null path"), true));
     }
 
     @Override
-    public RestFileSystem getFileSystem() {
+    public BlobFileSystem getFileSystem() {
         return fs;
     }
 
@@ -49,12 +50,11 @@ public class RestPath implements Path {
 
     @Override
     public Path getRoot() {
-        return new RestPath(fs, null, null);
+        return new BlobPath(fs, null, null);
     }
 
     @Override
     public Path getFileName() {
-        System.out.println("getFileName");
         throw new UnsupportedOperationException("getFileName not implemented");
     }
 
@@ -85,7 +85,7 @@ public class RestPath implements Path {
             return false;
         }
 
-        return startsWith(((RestPath) other).normalizedPath);
+        return startsWith(((BlobPath) other).normalizedPath);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class RestPath implements Path {
         }
 
         return i >= this.normalizedPath.length
-                || this.normalizedPath[i] == RestUtils.HTTP_PATH_SEPARATOR_CHAR;
+                || this.normalizedPath[i] == BlobUtils.HTTP_PATH_SEPARATOR_CHAR;
     }
 
     @Override
@@ -118,7 +118,7 @@ public class RestPath implements Path {
             return false;
         }
 
-        return endsWith(((RestPath) other).normalizedPath, true);
+        return endsWith(((BlobPath) other).normalizedPath, true);
     }
 
     @Override
@@ -151,13 +151,15 @@ public class RestPath implements Path {
         if (pathVersion) {
             return true;
         } else {
-            return this.normalizedPath[last] == RestUtils.HTTP_PATH_SEPARATOR_CHAR;
+            return this.normalizedPath[last] == BlobUtils.HTTP_PATH_SEPARATOR_CHAR;
         }
     }
 
     @Override
     public Path normalize() {
-        return Paths.get(this.toUri());
+        Path p = Paths.get(this.toUri());
+        return p;
+//        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
@@ -190,7 +192,7 @@ public class RestPath implements Path {
         try {
             return new URI(fs.provider().getScheme(),
                     fs.getAuthority(),
-                    new String(normalizedPath, RestUtils.HTTP_PATH_CHARSET),
+                    fs.getRootPath() + new String(normalizedPath, BlobUtils.HTTP_PATH_CHARSET),
                     query, reference);
         } catch (final URISyntaxException e) {
             throw new IOError(e);
@@ -241,7 +243,7 @@ public class RestPath implements Path {
             return 0;
         }
 
-        RestPath httpOther = (RestPath) other;
+        BlobPath httpOther = (BlobPath) other;
         // object comparison - should be from the same provider
         if (fs.provider() != httpOther.fs.provider()) {
             throw new ClassCastException();
@@ -301,7 +303,7 @@ public class RestPath implements Path {
         final StringBuilder sb = new StringBuilder(fs.provider().getScheme())
                 .append("://")
                 .append(fs.getAuthority())
-                .append(new String(normalizedPath, RestUtils.HTTP_PATH_CHARSET));
+                .append(new String(normalizedPath, BlobUtils.HTTP_PATH_CHARSET));
         if (query != null) {
             sb.append('?').append(query);
         }
@@ -318,7 +320,7 @@ public class RestPath implements Path {
             int index = 0;
             for (; index < length; index++) {
                 final byte c = normalizedPath[index];
-                if (c == RestUtils.HTTP_PATH_SEPARATOR_CHAR) {
+                if (c == BlobUtils.HTTP_PATH_SEPARATOR_CHAR) {
                     count++;
                     index++;
                 }
@@ -328,7 +330,7 @@ public class RestPath implements Path {
             count = 0;
             for (index = 0; index < length; index++) {
                 final byte c = normalizedPath[index];
-                if (c == RestUtils.HTTP_PATH_SEPARATOR_CHAR) {
+                if (c == BlobUtils.HTTP_PATH_SEPARATOR_CHAR) {
                     result[count++] = index++;
                 }
             }
@@ -343,11 +345,11 @@ public class RestPath implements Path {
 
     private static byte[] getNormalizedPathBytes(final String path, final boolean checkRelative) {
 
-        if (checkRelative && !path.isEmpty() && !path.startsWith(RestUtils.HTTP_PATH_SEPARATOR_STRING)) {
+        if (checkRelative && !path.isEmpty() && !path.startsWith(BlobUtils.HTTP_PATH_SEPARATOR_STRING)) {
             throw new InvalidPathException(path, "Relative HTTP/S path are not supported");
         }
 
-        if (RestUtils.HTTP_PATH_SEPARATOR_STRING.equals(path) || path.isEmpty()) {
+        if (BlobUtils.HTTP_PATH_SEPARATOR_STRING.equals(path) || path.isEmpty()) {
             return new byte[0];
         }
         final int len = path.length();
@@ -360,27 +362,27 @@ public class RestPath implements Path {
             }
             prevChar = checkNotNull(path, c);
         }
-        if (prevChar == RestUtils.HTTP_PATH_SEPARATOR_CHAR) {
+        if (prevChar == BlobUtils.HTTP_PATH_SEPARATOR_CHAR) {
             return getNormalizedPathBytes(path, len, len - 1);
         }
 
-        return path.getBytes(RestUtils.HTTP_PATH_CHARSET);
+        return path.getBytes(BlobUtils.HTTP_PATH_CHARSET);
     }
 
     private static byte[] getNormalizedPathBytes(final String path, final int len,
                                                  final int offset) {
         int lastOffset = len;
         while (lastOffset > 0
-                && path.charAt(lastOffset - 1) == RestUtils.HTTP_PATH_SEPARATOR_CHAR) {
+                && path.charAt(lastOffset - 1) == BlobUtils.HTTP_PATH_SEPARATOR_CHAR) {
             lastOffset--;
         }
         if (lastOffset == 0) {
-            return new byte[]{RestUtils.HTTP_PATH_SEPARATOR_CHAR};
+            return new byte[]{BlobUtils.HTTP_PATH_SEPARATOR_CHAR};
         }
 
         try (final ByteArrayOutputStream os = new ByteArrayOutputStream(len)) {
             if (offset > 0) {
-                os.write(path.substring(0, offset).getBytes(RestUtils.HTTP_PATH_CHARSET));
+                os.write(path.substring(0, offset).getBytes(BlobUtils.HTTP_PATH_CHARSET));
             }
             char prevChar = 0;
             for (int i = offset; i < len; i++) {
@@ -399,8 +401,8 @@ public class RestPath implements Path {
     }
 
     private static boolean isDoubleSeparator(final char prevChar, final char c) {
-        return c == RestUtils.HTTP_PATH_SEPARATOR_CHAR
-                && prevChar == RestUtils.HTTP_PATH_SEPARATOR_CHAR;
+        return c == BlobUtils.HTTP_PATH_SEPARATOR_CHAR
+                && prevChar == BlobUtils.HTTP_PATH_SEPARATOR_CHAR;
     }
 
     private static char checkNotNull(final String path, char c) {
@@ -412,7 +414,7 @@ public class RestPath implements Path {
 
     private static int getLastIndexWithoutTrailingSlash(final byte[] path) {
         int len = path.length - 1;
-        if (len > 0 && path[len] == RestUtils.HTTP_PATH_SEPARATOR_CHAR) {
+        if (len > 0 && path[len] == BlobUtils.HTTP_PATH_SEPARATOR_CHAR) {
             len--;
         }
         return len;
