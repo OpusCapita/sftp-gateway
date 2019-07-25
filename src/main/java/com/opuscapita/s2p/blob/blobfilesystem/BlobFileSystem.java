@@ -1,46 +1,134 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
+import com.opuscapita.s2p.blob.blobfilesystem.utils.JsonReader;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import javax.xml.bind.DatatypeConverter;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 
 public class BlobFileSystem extends FileSystem {
+    private final AbstractBlobFileSystemProvider fileSystemProvider;
+    private final String encodedAuthorization;
+    private final String endpoint;
+    private final ConcurrentMap<String, Object> contents = new ConcurrentHashMap<>();
 
-    private Logger log = LoggerFactory.getLogger(BlobFileSystem.class);
 
-    private final AbstractBlobFileSystemProvider provider;
-
-    private final String authority;
-
-    private final String rootPath;
-
-    BlobFileSystem(AbstractBlobFileSystemProvider provider, String authority, String rootPath) {
-        this.provider = Utils.nonNull(provider, () -> "FileSystemProvider is null");
-        this.authority = Utils.nonNull(authority, () -> "Authority is null");
-        this.rootPath = Utils.nonNull(rootPath, () -> "RootPath is null");
+    public BlobFileSystem(AbstractBlobFileSystemProvider fileSystemProvider, String repository, Map<String, ?> env) throws IOException {
+        String userInfo;
+        String query;
+        int index = repository.indexOf('@');
+        if (index >= 0) {
+            userInfo = repository.substring(0, index);
+            repository = repository.substring(index + 1);
+        } else {
+            userInfo = null;
+        }
+        index = repository.indexOf('?');
+        if (index >= 0) {
+            query = repository.substring(index + 1);
+            repository = repository.substring(0, index);
+        } else {
+            query = null;
+        }
+        String endpoint = "https://api.github.com";
+        String revision = null;
+        String login = null;
+        String oauth = null;
+        String password = null;
+        if (env != null) {
+            login = (String) env.get("login");
+            oauth = (String) env.get("oauth");
+            password = (String) env.get("password");
+            endpoint = (String) env.get("endpoint");
+        }
+        if (query != null) {
+            for (String pair : query.split("&")) {
+                index = pair.indexOf("=");
+                String key = URLDecoder.decode(pair.substring(0, index), "UTF-8");
+                String val = URLDecoder.decode(pair.substring(index + 1), "UTF-8");
+                switch (key) {
+                    case "revision":
+                        revision = val;
+                        break;
+                    case "login":
+                        login = val;
+                        break;
+                    case "oauth":
+                        oauth = val;
+                        break;
+                    case "password":
+                        password = val;
+                        break;
+                    case "endpoint":
+                        endpoint = val;
+                        break;
+                }
+            }
+        }
+        if (userInfo != null) {
+            String[] infos = userInfo.split(":");
+            login = infos[0];
+            password = infos[1];
+        }
+        if (password == null && oauth == null) {
+            Path p = Paths.get(System.getProperty("user.home"), ".github");
+            if (Files.isRegularFile(p)) {
+                Properties properties = new Properties();
+                try (Reader r = Files.newBufferedReader(p, Charset.defaultCharset())) {
+                    properties.load(r);
+                }
+                String pLogin = properties.getProperty("login");
+                String pPassword = properties.getProperty("password");
+                String pOauth = properties.getProperty("oauth");
+                if (login == null || login.equals(pLogin)) {
+                    login = pLogin;
+                    password = pPassword;
+                    oauth = pOauth;
+                }
+            }
+        }
+        String encodedAuthorization = null;
+        if (oauth != null) {
+            encodedAuthorization = "token " + oauth;
+        } else {
+            if (password != null) {
+                String authorization = (login + ':' + password);
+                encodedAuthorization = "Basic " + DatatypeConverter.printBase64Binary(authorization.getBytes());
+            }
+        }
+        this.fileSystemProvider = fileSystemProvider;
+        this.encodedAuthorization = encodedAuthorization;
+        this.endpoint = endpoint;
     }
 
     @Override
     public FileSystemProvider provider() {
-        return provider;
-    }
-
-    public String getAuthority() {
-        return authority;
+        return this.fileSystemProvider;
     }
 
     @Override
-    public void close() {
-        log.warn("{} is always open (no closed)", this.getClass());
+    public void close() throws IOException {
+
     }
 
     @Override
@@ -50,7 +138,7 @@ public class BlobFileSystem extends FileSystem {
 
     @Override
     public boolean isReadOnly() {
-        return true;
+        return false;
     }
 
     @Override
@@ -60,83 +148,390 @@ public class BlobFileSystem extends FileSystem {
 
     @Override
     public Iterable<Path> getRootDirectories() {
-        return Collections.singleton(new BlobPath(this, "", null, null));
+        return Collections.<Path>singleton(new BlobPath(this, new byte[]{'/'}));
     }
 
     @Override
     public Iterable<FileStore> getFileStores() {
-        log.info("getFileStores");
-        throw new UnsupportedOperationException("Not implemented");
+        return null;
     }
 
     @Override
     public Set<String> supportedFileAttributeViews() {
-        log.info("supportedFileAttributeViews");
-        throw new UnsupportedOperationException("Not implemented");
+        return null;
     }
 
     @Override
-    public BlobPath getPath(String first, String... more) {
-        String path = Utils.nonNull(first, () -> "null first")
-                + String.join(getSeparator(), Utils.nonNull(more, () -> "null more"));
-
-        if (!path.isEmpty() && !path.startsWith(getSeparator())) {
-            throw new InvalidPathException(path, "Relative paths are not supported", 0);
+    public Path getPath(String first, String... more) {
+        String path;
+        if (more.length == 0) {
+            path = first;
+        } else {
+            StringBuilder sb = new StringBuilder();
+            sb.append(first);
+            for (String segment : more) {
+                if (segment.length() > 0) {
+                    if (sb.length() > 0) {
+                        sb.append('/');
+                    }
+                    sb.append(segment);
+                }
+            }
+            path = sb.toString();
         }
-
-        try {
-            return getPath(new URI(path));
-        } catch (URISyntaxException e) {
-            throw new InvalidPathException(e.getInput(), e.getReason(), e.getIndex());
-        }
-    }
-
-
-    public BlobPath getPath(URI uri) {
-        return new BlobPath(this, uri.getPath(), uri.getQuery(), uri.getFragment());
+        return new BlobPath(this, path.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
     public PathMatcher getPathMatcher(String syntaxAndPattern) {
-        log.info("getPathMatcher");
-        throw new UnsupportedOperationException("Not implemented");
+        int colonIndex = syntaxAndPattern.indexOf(':');
+        if (colonIndex <= 0 || colonIndex == syntaxAndPattern.length() - 1) {
+            throw new IllegalArgumentException("syntaxAndPattern must have form \"syntax:pattern\" but was \"" + syntaxAndPattern + "\"");
+        }
+
+        String syntax = syntaxAndPattern.substring(0, colonIndex);
+        String pattern = syntaxAndPattern.substring(colonIndex + 1);
+        String expr;
+        switch (syntax) {
+            case "glob":
+                expr = globToRegex(pattern);
+                break;
+            case "regex":
+                expr = pattern;
+                break;
+            default:
+                throw new UnsupportedOperationException("Unsupported syntax \'" + syntax + "\'");
+        }
+        final Pattern regex = Pattern.compile(expr);
+        return new PathMatcher() {
+            @Override
+            public boolean matches(Path path) {
+                return regex.matcher(path.toString()).matches();
+            }
+        };
     }
 
     @Override
     public UserPrincipalLookupService getUserPrincipalLookupService() {
-        log.info("getUserPrincipalLookupService");
-        throw new UnsupportedOperationException("Not implemented");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public WatchService newWatchService() throws IOException {
-        log.info("newWatchService");
-        throw new UnsupportedOperationException("Not implemented");
+        throw new UnsupportedOperationException();
     }
 
-    @Override
-    public String toString() {
-        return String.format("%s[%s]@%s", this.getClass().getSimpleName(), provider, hashCode());
-    }
 
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        } else if (other instanceof BlobFileSystem) {
-            final BlobFileSystem ofs = (BlobFileSystem) other;
-            return provider() == ofs.provider() && getAuthority()
-                    .equalsIgnoreCase(ofs.getAuthority());
+    public InputStream newInputStream(Path path, OpenOption[] options) throws IOException {
+        Object content = loadContent(path.toAbsolutePath().toString());
+        if (content instanceof List) {
+            throw new IOException("Is a directory");
         }
-        return false;
+        String base64 = ((Map<String, String>) content).get("content");
+        byte[] data = DatatypeConverter.parseBase64Binary(base64);
+        return new ByteArrayInputStream(data);
     }
 
-    @Override
-    public int hashCode() {
-        return 31 * provider.hashCode() + getAuthority().toLowerCase().hashCode();
+    public DirectoryStream<Path> newDirectoryStream(final Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
+        final Object content = loadContent(dir.toAbsolutePath().toString());
+        if (content instanceof Map) {
+            throw new IOException("Is a file");
+        }
+        return new DirectoryStream<Path>() {
+            @Override
+            public Iterator<Path> iterator() {
+                return new Iterator<Path>() {
+                    final Iterator<Map<String, Object>> delegate = ((List<Map<String, Object>>) content).iterator();
+
+                    @Override
+                    public boolean hasNext() {
+                        return delegate.hasNext();
+                    }
+
+                    @Override
+                    public Path next() {
+                        Map<String, Object> val = delegate.next();
+                        return new BlobPath(BlobFileSystem.this, ((String) val.get("path")).getBytes(StandardCharsets.UTF_8));
+                    }
+
+                    @Override
+                    public void remove() {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+
+            @Override
+            public void close() throws IOException {
+            }
+        };
     }
 
-    public String getRootPath() {
-        return rootPath;
+    public <A extends BasicFileAttributes> SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>[] attrs) throws IOException {
+        Object content = loadContent(path.toAbsolutePath().toString());
+        if (content instanceof List) {
+            throw new IOException("Is a directory");
+        }
+        String base64 = ((Map<String, String>) content).get("content");
+        final byte[] data = DatatypeConverter.parseBase64Binary(base64);
+        return new SeekableByteChannel() {
+            long position;
+
+            @Override
+            public int read(ByteBuffer dst) throws IOException {
+                int l = (int) Math.min(dst.remaining(), size() - position);
+                dst.put(data, (int) position, l);
+                position += l;
+                return l;
+            }
+
+            @Override
+            public int write(ByteBuffer src) throws IOException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public long position() throws IOException {
+                return position;
+            }
+
+            @Override
+            public SeekableByteChannel position(long newPosition) throws IOException {
+                position = newPosition;
+                return this;
+            }
+
+            @Override
+            public long size() throws IOException {
+                return data.length;
+            }
+
+            @Override
+            public SeekableByteChannel truncate(long size) throws IOException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean isOpen() {
+                return true;
+            }
+
+            @Override
+            public void close() throws IOException {
+            }
+        };
+    }
+
+    public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> clazz, LinkOption... options) throws IOException {
+        if (clazz != BasicFileAttributes.class) {
+            throw new UnsupportedOperationException();
+        }
+        Path absolute = path.toAbsolutePath();
+        Path parent = absolute.getParent();
+        Object desc = contents.get(absolute.toString());
+        if (desc == null) {
+            Object parentContent = contents.get(parent.toString());
+            if (parentContent != null) {
+                for (Map<String, ?> child : (List<Map<String, ?>>) parentContent) {
+                    if (child.get("path").equals(absolute.toString().substring(1))) {
+                        desc = child;
+                        break;
+                    }
+                }
+            }
+        }
+        if (desc == null) {
+            desc = loadContent(absolute.toString());
+        }
+        String type;
+        long size;
+        if (desc instanceof List) {
+            type = "directory";
+            size = 0;
+        } else {
+            type = (String) ((Map) desc).get("type");
+            size = ((Number) ((Map) desc).get("size")).longValue();
+        }
+        return (A) new GitHubFileAttributes(type, size);
+    }
+
+    private Object loadContent(String path) throws IOException {
+        Object content = contents.get(path);
+        if (content == null) {
+            URL url = new URL(endpoint + path);
+            HttpURLConnection uc = (HttpURLConnection) url.openConnection();
+            try {
+                uc.setRequestProperty("Authorization", encodedAuthorization);
+                uc.setRequestProperty("Accept-Encoding", "gzip");
+                try (Reader r = new InputStreamReader(wrapStream(uc, uc.getInputStream()), StandardCharsets.UTF_8)) {
+                    content = JsonReader.read(r);
+                    contents.putIfAbsent(path, content);
+                }
+            } finally {
+                uc.disconnect();
+            }
+        }
+        return content;
+    }
+
+    private InputStream wrapStream(HttpURLConnection uc, InputStream in) throws IOException {
+        String encoding = uc.getContentEncoding();
+        if (encoding == null || in == null) {
+            return in;
+        }
+        if (encoding.equals("gzip")) {
+            return new GZIPInputStream(in);
+        }
+        throw new UnsupportedOperationException("Unexpected Content-Encoding: " + encoding);
+    }
+
+    private static class GitHubFileAttributes implements BasicFileAttributes {
+
+        private final String type;
+        private final long size;
+
+        private GitHubFileAttributes(String type, long size) {
+            this.type = type;
+            this.size = size;
+        }
+
+        @Override
+        public FileTime lastModifiedTime() {
+            return null;
+        }
+
+        @Override
+        public FileTime lastAccessTime() {
+            return null;
+        }
+
+        @Override
+        public FileTime creationTime() {
+            return null;
+        }
+
+        @Override
+        public boolean isRegularFile() {
+            return "file".equals(type);
+        }
+
+        @Override
+        public boolean isDirectory() {
+            return "directory".equals(type);
+        }
+
+        @Override
+        public boolean isSymbolicLink() {
+            return false;
+        }
+
+        @Override
+        public boolean isOther() {
+            return false;
+        }
+
+        @Override
+        public long size() {
+            return size;
+        }
+
+        @Override
+        public Object fileKey() {
+            return null;
+        }
+    }
+
+
+    /**
+     * Helper Functions
+     */
+
+    private String globToRegex(String pattern) {
+        StringBuilder sb = new StringBuilder(pattern.length());
+        int inGroup = 0;
+        int inClass = 0;
+        int firstIndexInClass = -1;
+        char[] arr = pattern.toCharArray();
+        for (int i = 0; i < arr.length; i++) {
+            char ch = arr[i];
+            switch (ch) {
+                case '\\':
+                    if (++i >= arr.length) {
+                        sb.append('\\');
+                    } else {
+                        char next = arr[i];
+                        switch (next) {
+                            case ',':
+                                // escape not needed
+                                break;
+                            case 'Q':
+                            case 'E':
+                                // extra escape needed
+                                sb.append('\\');
+                            default:
+                                sb.append('\\');
+                        }
+                        sb.append(next);
+                    }
+                    break;
+                case '*':
+                    if (inClass == 0)
+                        sb.append(".*");
+                    else
+                        sb.append('*');
+                    break;
+                case '?':
+                    if (inClass == 0)
+                        sb.append('.');
+                    else
+                        sb.append('?');
+                    break;
+                case '[':
+                    inClass++;
+                    firstIndexInClass = i + 1;
+                    sb.append('[');
+                    break;
+                case ']':
+                    inClass--;
+                    sb.append(']');
+                    break;
+                case '.':
+                case '(':
+                case ')':
+                case '+':
+                case '|':
+                case '^':
+                case '$':
+                case '@':
+                case '%':
+                    if (inClass == 0 || (firstIndexInClass == i && ch == '^'))
+                        sb.append('\\');
+                    sb.append(ch);
+                    break;
+                case '!':
+                    if (firstIndexInClass == i)
+                        sb.append('^');
+                    else
+                        sb.append('!');
+                    break;
+                case '{':
+                    inGroup++;
+                    sb.append('(');
+                    break;
+                case '}':
+                    inGroup--;
+                    sb.append(')');
+                    break;
+                case ',':
+                    if (inGroup > 0)
+                        sb.append('|');
+                    else
+                        sb.append(',');
+                    break;
+                default:
+                    sb.append(ch);
+            }
+        }
+        return sb.toString();
     }
 }

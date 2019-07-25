@@ -1,8 +1,8 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
-import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -16,183 +16,151 @@ import java.util.concurrent.ConcurrentHashMap;
 abstract class AbstractBlobFileSystemProvider extends FileSystemProvider {
 
     private final Map<String, BlobFileSystem> fileSystems = new ConcurrentHashMap<>();
-    public byte[] normalizedPath;
 
     @Override
     public abstract String getScheme();
 
-    private URI checkUri(URI uri) {
-
-        Utils.nonNull(uri, () -> "URI is null");
-        Utils.nonNull(uri.getAuthority(),
-                () -> String.format("%s requires URI with authority: invalid %s", this, uri));
-        if (!getScheme().equalsIgnoreCase(uri.getScheme())) {
-            throw new ProviderMismatchException(String.format("Invalid scheme for %s: %s",
-                    this, uri.getScheme()));
-        }
-        return uri;
-    }
 
     @Override
-    public BlobFileSystem newFileSystem(URI uri, Map<String, ?> env)
-            throws IOException {
+    public BlobFileSystem newFileSystem(URI uri, Map<String, ?> env) throws IOException {
         synchronized (fileSystems) {
-            checkUri(uri);
             String schemeSpecificPart = uri.getSchemeSpecificPart();
             int i = schemeSpecificPart.indexOf("!/");
             if (i >= 0) {
                 schemeSpecificPart = schemeSpecificPart.substring(0, i);
             }
-            if (fileSystems.containsKey(schemeSpecificPart)) {
-                throw new FileSystemAlreadyExistsException("URI: " + uri);
+            BlobFileSystem fileSystem = fileSystems.get(schemeSpecificPart);
+            if (fileSystem != null) {
+                throw new FileSystemAlreadyExistsException(schemeSpecificPart);
             }
-            this.normalizedPath = uri.getPath().getBytes();
-            fileSystems.computeIfAbsent(uri.getAuthority(), (auth) -> new BlobFileSystem(this, auth, uri.getPath().toString()));
-
-            return this.getFileSystem(uri);
+            fileSystem = new BlobFileSystem(this, schemeSpecificPart, env);
+            fileSystems.put(schemeSpecificPart, fileSystem);
+            return fileSystem;
         }
     }
 
     @Override
     public BlobFileSystem getFileSystem(URI uri) {
-        String authority = checkUri(uri).getAuthority();
-        BlobFileSystem fs = fileSystems.get(authority);
-        if (fs == null) {
-            throw new FileSystemNotFoundException("URI: " + uri);
-        }
-        return fs;
+        return getFileSystem(uri, false);
     }
 
-    @Override
-    public BlobPath getPath(URI uri) {
-        checkUri(uri);
-        return fileSystems
-                .computeIfAbsent(uri.getAuthority(), (auth) -> new BlobFileSystem(this, auth, uri.getPath().toString()))
-                .getPath(uri);
-    }
-
-    @Override
-    public final SeekableByteChannel newByteChannel(Path path,
-                                                    Set<? extends OpenOption> options, FileAttribute<?>... attrs)
-            throws IOException {
-        Utils.nonNull(path, () -> "null path");
-        Utils.nonNull(options, () -> "null options");
-        if (options.isEmpty() ||
-                (options.size() == 1 && options.contains(StandardOpenOption.READ))) {
-            URL url = checkUri(path.toUri()).toURL();
-            if (!BlobUtils.exists(url)) {
-                throw new NoSuchFileException(url.toString());
+    public BlobFileSystem getFileSystem(URI uri, boolean create) {
+        synchronized (fileSystems) {
+            String schemeSpecificPart = uri.getSchemeSpecificPart();
+            int i = schemeSpecificPart.indexOf("!/");
+            if (i >= 0) {
+                schemeSpecificPart = schemeSpecificPart.substring(0, i);
             }
-            return new URLSeekableByteChannel(url);
-        }
-        throw new UnsupportedOperationException(
-                String.format("Only %s is supported for %s, but %s options(s) are provided",
-                        StandardOpenOption.READ, this, options));
-    }
-
-    @Override
-    public final DirectoryStream<Path> newDirectoryStream(Path dir,
-                                                          DirectoryStream.Filter<? super Path> filter) throws IOException {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    /**
-     * Unsupported method.
-     */
-    @Override
-    public final void createDirectory(Path dir, FileAttribute<?>... attrs)
-            throws IOException {
-        throw new UnsupportedOperationException(this.getClass().getName() +
-                " is read-only: cannot create directory");
-    }
-
-    /**
-     * Unsupported method.
-     */
-    @Override
-    public final void delete(Path path) throws IOException {
-        throw new UnsupportedOperationException(this.getClass().getName() +
-                " is read-only: cannot delete directory");
-    }
-
-    @Override
-    public final void copy(Path source, Path target, CopyOption... options)
-            throws IOException {
-        throw new UnsupportedOperationException("Copy Function is not implemented");
-    }
-
-    /**
-     * Unsupported method.
-     */
-    @Override
-    public final void move(Path source, Path target, CopyOption... options)
-            throws IOException {
-        throw new UnsupportedOperationException(this.getClass().getName() +
-                " is read-only: cannot move paths");
-    }
-
-    @Override
-    public final boolean isSameFile(Path path, Path path2) throws IOException {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override
-    public final boolean isHidden(Path path) throws IOException {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override
-    public final FileStore getFileStore(Path path) throws IOException {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override
-    public final void checkAccess(Path path, AccessMode... modes) throws IOException {
-        Utils.nonNull(path, () -> "null path");
-        final URI uri = checkUri(path.toUri());
-        if (!BlobUtils.exists(uri.toURL())) {
-            throw new NoSuchFileException(uri.toString());
-        }
-        for (AccessMode access : modes) {
-            switch (access) {
-                case READ:
-                    break;
-                case WRITE:
-                case EXECUTE:
-                    throw new AccessDeniedException(uri.toString());
-                default:
-                    throw new UnsupportedOperationException("Unsupported access mode: " + access);
+            BlobFileSystem fileSystem = fileSystems.get(schemeSpecificPart);
+            if (fileSystem == null) {
+                if (create) {
+                    try {
+                        fileSystem = newFileSystem(uri, null);
+                    } catch (IOException e) {
+                        throw (FileSystemNotFoundException) new FileSystemNotFoundException(schemeSpecificPart).initCause(e);
+                    }
+                } else {
+                    throw new FileSystemNotFoundException(schemeSpecificPart);
+                }
             }
+            return fileSystem;
         }
     }
 
     @Override
-    public final <V extends FileAttributeView> V getFileAttributeView(Path path,
-                                                                      Class<V> type, LinkOption... options) {
-        throw new UnsupportedOperationException("Not implemented");
+    public Path getPath(URI uri) {
+        String str = uri.getSchemeSpecificPart();
+        int i = str.indexOf("!/");
+        if (i == -1) {
+            throw new IllegalArgumentException("URI: " + uri + " does not contain path info ex. github:apache/karaf#master!/");
+        }
+        return getFileSystem(uri, true).getPath(str.substring(i + 1));
     }
 
     @Override
-    public final <A extends BasicFileAttributes> A readAttributes(Path path,
-                                                                  Class<A> type, LinkOption... options) throws IOException {
-        throw new UnsupportedOperationException("Not implemented");
+    public InputStream newInputStream(Path path, OpenOption... options) throws IOException {
+        if (!(path instanceof BlobPath)) {
+            throw new ProviderMismatchException();
+        }
+        return ((BlobPath) path).getFileSystem().newInputStream(path, options);
     }
 
     @Override
-    public final Map<String, Object> readAttributes(Path path, String attributes,
-                                                    LinkOption... options) throws IOException {
-        throw new UnsupportedOperationException("Not implemented");
+    public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
+        if (!(dir instanceof BlobPath)) {
+            throw new ProviderMismatchException();
+        }
+        return ((BlobPath) dir).getFileSystem().newDirectoryStream(dir, filter);
     }
 
     @Override
-    public final void setAttribute(Path path, String attribute, Object value,
-                                   LinkOption... options) throws IOException {
-        throw new UnsupportedOperationException(this.getClass().getName() +
-                " is read-only: cannot set attributes to paths");
+    public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
+        if (!(path instanceof BlobPath)) {
+            throw new ProviderMismatchException();
+        }
+        return ((BlobPath) path).getFileSystem().newByteChannel(path, options, attrs);
     }
 
     @Override
-    public String toString() {
-        return this.getClass().getSimpleName();
+    public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
+        throw new ReadOnlyFileSystemException();
+    }
+
+    @Override
+    public void delete(Path path) throws IOException {
+        throw new ReadOnlyFileSystemException();
+    }
+
+    @Override
+    public void copy(Path source, Path target, CopyOption... options) throws IOException {
+        throw new ReadOnlyFileSystemException();
+    }
+
+    @Override
+    public void move(Path source, Path target, CopyOption... options) throws IOException {
+        throw new ReadOnlyFileSystemException();
+    }
+
+    @Override
+    public boolean isSameFile(Path path, Path path2) throws IOException {
+        return path.toAbsolutePath().equals(path2.toAbsolutePath());
+    }
+
+    @Override
+    public boolean isHidden(Path path) throws IOException {
+        return false;
+    }
+
+    @Override
+    public FileStore getFileStore(Path path) throws IOException {
+        return null;
+    }
+
+    @Override
+    public void checkAccess(Path path, AccessMode... modes) throws IOException {
+
+    }
+
+    @Override
+    public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
+        return null;
+    }
+
+    @Override
+    public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
+        if (!(path instanceof BlobPath)) {
+            throw new ProviderMismatchException();
+        }
+        return ((BlobPath) path).getFileSystem().readAttributes(path, type, options);
+    }
+
+    @Override
+    public Map<String, Object> readAttributes(Path path, String attributes, LinkOption... options) throws IOException {
+        return null;
+    }
+
+    @Override
+    public void setAttribute(Path path, String attribute, Object value, LinkOption... options) throws IOException {
+        throw new ReadOnlyFileSystemException();
     }
 }

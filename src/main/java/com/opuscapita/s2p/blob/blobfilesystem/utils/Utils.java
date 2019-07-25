@@ -1,4 +1,4 @@
-package com.opuscapita.s2p.blob.blobfilesystem;
+package com.opuscapita.s2p.blob.blobfilesystem.utils;
 
 import java.util.function.Supplier;
 

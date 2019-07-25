@@ -1,422 +1,545 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOError;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.util.Comparator;
+import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Objects;
+import java.util.NoSuchElementException;
 
 public class BlobPath implements Path {
 
-    private final BlobFileSystem fs;
+    private final BlobFileSystem fileSystem;
 
-    private final byte[] normalizedPath;
+    private final byte[] path;
     private volatile int[] offsets;
 
-    private final String query;
-    private final String reference;
+    private volatile int hash = 0;
+    private volatile byte[] resolved = null;
 
-    private BlobPath(final BlobFileSystem fs,
-                     final String query,
-                     final String reference,
-                     final byte... normalizedPath) {
-        this.fs = fs;
-
-        this.query = query;
-        this.reference = reference;
-
-        this.normalizedPath = normalizedPath;
+    public BlobPath(BlobFileSystem fileSystem, byte[] path) {
+        this(fileSystem, path, false);
     }
 
-    BlobPath(final BlobFileSystem fs, final String path, final String query, final String reference) {
-        this(Utils.nonNull(fs, () -> "null fs"), query, reference,
-                getNormalizedPathBytes(Utils.nonNull(path, () -> "null path"), true));
+    public BlobPath(BlobFileSystem fileSystem, byte[] path, boolean normalized) {
+        this.fileSystem = fileSystem;
+        if (normalized) {
+            this.path = path;
+        } else {
+            this.path = normalize(path);
+        }
     }
 
     @Override
     public BlobFileSystem getFileSystem() {
-        return fs;
+        return this.fileSystem;
     }
 
     @Override
     public boolean isAbsolute() {
-        return true;
+        return (this.path.length > 0) && (this.path[0] == '/');
     }
 
     @Override
-    public Path getRoot() {
-        return new BlobPath(fs, null, null);
+    public BlobPath getRoot() {
+        if (isAbsolute()) {
+            return new BlobPath(fileSystem, new byte[]{this.path[0]});
+        }
+        return null;
     }
 
     @Override
     public Path getFileName() {
-        throw new UnsupportedOperationException("getFileName not implemented");
+        initOffsets();
+        int nbOffsets = this.offsets.length;
+        if (nbOffsets == 0) {
+            return null;
+        }
+        if (nbOffsets == 1 && this.path[0] != '/') {
+            return this;
+        }
+        int offset = this.offsets[nbOffsets - 1];
+        int length = this.path.length - offset;
+        byte[] path = new byte[length];
+        System.arraycopy(this.path, offset, path, 0, length);
+        return new BlobPath(this.fileSystem, path);
     }
 
     @Override
-    public Path getParent() {
-        throw new UnsupportedOperationException("Not implemented");
+    public BlobPath getParent() {
+        initOffsets();
+        int nbOffsets = this.offsets.length;
+        if (nbOffsets == 0) {
+            return null;
+        }
+        int length = this.offsets[nbOffsets - 1] - 1;
+        if (length <= 0) {
+            return getRoot();
+        }
+        byte[] path = new byte[length];
+        System.arraycopy(this.path, 0, path, 0, length);
+        return new BlobPath(this.fileSystem, path);
     }
 
     @Override
     public int getNameCount() {
         initOffsets();
-        return offsets.length;
+        return this.offsets.length;
     }
 
     @Override
     public Path getName(int index) {
-        throw new UnsupportedOperationException("Not implemented");
+        initOffsets();
+        if (index < 0 || index >= this.offsets.length) {
+            throw new IllegalArgumentException();
+        }
+        int offset = this.offsets[index];
+        int length;
+        if (index == this.offsets.length - 1) {
+            length = this.path.length - offset;
+        } else {
+            length = this.offsets[index + 1] - offset - 1;
+        }
+        byte[] path = new byte[length];
+        System.arraycopy(this.path, offset, path, 0, length);
+        return new BlobPath(this.fileSystem, path);
     }
 
     @Override
     public Path subpath(int beginIndex, int endIndex) {
-        throw new UnsupportedOperationException("Not implemented");
+        initOffsets();
+        if ((beginIndex < 0) || (beginIndex >= this.offsets.length) || (endIndex > this.offsets.length) || (beginIndex >= endIndex)) {
+            throw new IllegalArgumentException();
+        }
+        int offset = this.offsets[beginIndex];
+        int length;
+        if (endIndex == this.offsets.length) {
+            length = this.path.length - offset;
+        } else {
+            length = this.offsets[endIndex] - offset - 1;
+        }
+        byte[] path = new byte[length];
+        System.arraycopy(this.path, offset, path, 0, length);
+        return new BlobPath(this.fileSystem, path);
     }
 
     @Override
     public boolean startsWith(Path other) {
-        if (!this.getFileSystem().equals(Utils.nonNull(other, () -> "null path").getFileSystem())) {
+        BlobPath p1 = this;
+        BlobPath p2 = checkPath(other);
+        if (p1.isAbsolute() != p2.isAbsolute() || p1.path.length < p2.path.length) {
             return false;
         }
-
-        return startsWith(((BlobPath) other).normalizedPath);
+        int length = p2.path.length;
+        for (int idx = 0; idx < length; idx++) {
+            if (p1.path[idx] != p2.path[idx]) {
+                return false;
+            }
+        }
+        return p1.path.length == p2.path.length
+                || p2.path[length - 1] == '/'
+                || p1.path[length] == '/';
     }
 
     @Override
     public boolean startsWith(String other) {
-        Utils.nonNull(other, () -> "null other");
-        return startsWith(getNormalizedPathBytes(other, false));
-    }
-
-    private boolean startsWith(byte[] other) {
-        final int olen = getLastIndexWithoutTrailingSlash(other);
-
-        if (olen > normalizedPath.length) {
-            return false;
-        }
-
-        int i;
-        for (i = 0; i <= olen; i++) {
-            if (normalizedPath[i] != other[i]) {
-                return false;
-            }
-        }
-
-        return i >= this.normalizedPath.length
-                || this.normalizedPath[i] == BlobUtils.HTTP_PATH_SEPARATOR_CHAR;
+        return startsWith(getFileSystem().getPath(other));
     }
 
     @Override
     public boolean endsWith(Path other) {
-        if (!this.getFileSystem().equals(Utils.nonNull(other, () -> "null path").getFileSystem())) {
+        BlobPath p1 = this;
+        BlobPath p2 = checkPath(other);
+        int i1 = p1.path.length - 1;
+        if (i1 > 0 && p1.path[i1] == '/') {
+            i1--;
+        }
+        int i2 = p2.path.length - 1;
+        if (i2 > 0 && p2.path[i2] == '/') {
+            i2--;
+        }
+        if (i2 == -1) {
+            return i1 == -1;
+        }
+        if ((p2.isAbsolute() && (!isAbsolute() || i2 != i1)) || (i1 < i2)) {
             return false;
         }
-
-        return endsWith(((BlobPath) other).normalizedPath, true);
+        for (; i2 >= 0; i1--) {
+            if (p2.path[i2] != p1.path[i1]) {
+                return false;
+            }
+            i2--;
+        }
+        return (p2.path[i2 + 1] == '/') || (i1 == -1) || (p1.path[i1] == '/');
     }
 
     @Override
     public boolean endsWith(String other) {
-        Utils.nonNull(other, () -> "null other");
-        return endsWith(getNormalizedPathBytes(other, false), false);
-    }
-
-    private boolean endsWith(byte[] other, boolean pathVersion) {
-        int olast = getLastIndexWithoutTrailingSlash(other);
-        int last = getLastIndexWithoutTrailingSlash(this.normalizedPath);
-
-        if (olast == -1) {
-            return last == -1;
-        }
-        if (last < olast) {
-            return false;
-        }
-
-        for (; olast >= 0; olast--, last--) {
-            if (other[olast] != this.normalizedPath[last]) {
-                return false;
-            }
-        }
-
-        if (last == -1) {
-            return true;
-        }
-
-        if (pathVersion) {
-            return true;
-        } else {
-            return this.normalizedPath[last] == BlobUtils.HTTP_PATH_SEPARATOR_CHAR;
-        }
+        return endsWith(getFileSystem().getPath(other));
     }
 
     @Override
     public Path normalize() {
-        Path p = Paths.get(this.toUri());
-        return p;
-//        throw new UnsupportedOperationException("Not implemented");
+        byte[] p = getResolved();
+        if (p == this.path) {
+            return this;
+        }
+        return new BlobPath(fileSystem, p, true);
     }
 
     @Override
-    public Path resolve(Path other) {
-        throw new UnsupportedOperationException("Not implemented");
+    public BlobPath resolve(Path other) {
+        BlobPath p1 = this;
+        BlobPath p2 = checkPath(other);
+        if (p2.isAbsolute()) {
+            return p2;
+        }
+        byte[] result;
+        if (p1.path[p1.path.length - 1] == '/') {
+            result = new byte[p1.path.length + p2.path.length];
+            System.arraycopy(p1.path, 0, result, 0, p1.path.length);
+            System.arraycopy(p2.path, 0, result, p1.path.length, p2.path.length);
+        } else {
+            result = new byte[p1.path.length + 1 + p2.path.length];
+            System.arraycopy(p1.path, 0, result, 0, p1.path.length);
+            result[p1.path.length] = '/';
+            System.arraycopy(p2.path, 0, result, p1.path.length + 1, p2.path.length);
+        }
+        return new BlobPath(fileSystem, result);
     }
 
     @Override
-    public Path resolve(String other) {
-        throw new UnsupportedOperationException("Not implemented");
+    public BlobPath resolve(String other) {
+        return resolve(getFileSystem().getPath(other));
     }
 
     @Override
     public Path resolveSibling(Path other) {
-        throw new UnsupportedOperationException("Not implemented");
+        if (other == null) {
+            throw new NullPointerException();
+        }
+        BlobPath parent = getParent();
+        return parent == null ? other : parent.resolve(other);
     }
 
-    @Override
     public Path resolveSibling(String other) {
-        throw new UnsupportedOperationException("Not implemented");
+        return resolveSibling(getFileSystem().getPath(other));
     }
 
     @Override
     public Path relativize(Path other) {
-        throw new UnsupportedOperationException("Not implemented");
+        BlobPath p1 = this;
+        BlobPath p2 = checkPath(other);
+        if (p2.equals(p1)) {
+            return new BlobPath(fileSystem, new byte[0], true);
+        }
+        if (p1.isAbsolute() != p2.isAbsolute()) {
+            throw new IllegalArgumentException();
+        }
+
+        int nbNames1 = p1.getNameCount();
+        int nbNames2 = p2.getNameCount();
+        int l = Math.min(nbNames1, nbNames2);
+        int nbCommon = 0;
+        while (nbCommon < l && equalsNameAt(p1, p2, nbCommon)) {
+            nbCommon++;
+        }
+        int nbUp = nbNames1 - nbCommon;
+
+        int length = nbUp * 3 - 1;
+        if (nbCommon < nbNames2) {
+            length += p2.path.length - p2.offsets[nbCommon] + 1;
+        }
+
+        byte[] result = new byte[length];
+        int idx = 0;
+        while (nbUp-- > 0) {
+            result[idx++] = '.';
+            result[idx++] = '.';
+            if (idx < length) {
+                result[idx++] = '/';
+            }
+        }
+
+        if (nbCommon < nbNames2) {
+            System.arraycopy(p2.path, p2.offsets[nbCommon], result, idx, p2.path.length - p2.offsets[nbCommon]);
+        }
+        return new BlobPath(fileSystem, result);
     }
 
     @Override
     public URI toUri() {
-        try {
-            return new URI(fs.provider().getScheme(),
-                    fs.getAuthority(),
-                    fs.getRootPath() + new String(normalizedPath, BlobUtils.HTTP_PATH_CHARSET),
-                    query, reference);
-        } catch (final URISyntaxException e) {
-            throw new IOError(e);
-        }
+        throw new UnsupportedOperationException("BlobPath.toUri is not implemented");
     }
 
     @Override
-    public Path toAbsolutePath() {
+    public BlobPath toAbsolutePath() {
         if (isAbsolute()) {
             return this;
         }
-        throw new IllegalStateException("Should not appear a relative HTTP/S paths (unsupported)");
+        byte[] result = new byte[path.length + 1];
+        result[0] = '/';
+        System.arraycopy(path, 0, result, 1, path.length);
+        return new BlobPath(fileSystem, result, true);
     }
 
     @Override
-    public Path toRealPath(LinkOption... options) throws IOException {
-        throw new UnsupportedOperationException("Not implemented");
+    public BlobPath toRealPath(LinkOption... options) throws IOException {
+        BlobPath absolute = new BlobPath(fileSystem, getResolvedPath()).toAbsolutePath();
+        fileSystem.provider().checkAccess(absolute);
+        return absolute;
     }
 
-    /**
-     * Unsupported method.
-     */
     @Override
     public File toFile() {
-        throw new UnsupportedOperationException(this.getClass() + " cannot be converted to a File");
+        throw new UnsupportedOperationException("BlobPath.toFile is not implemented");
     }
 
     @Override
-    public WatchKey register(WatchService watcher, WatchEvent.Kind<?>[] events,
-                             WatchEvent.Modifier... modifiers) throws IOException {
-        throw new UnsupportedOperationException("Not implemented");
+    public WatchKey register(WatchService watcher, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers) throws IOException {
+
+        throw new UnsupportedOperationException("BlobPath.register is not implemented");
     }
 
     @Override
-    public WatchKey register(WatchService watcher, WatchEvent.Kind<?>... events)
-            throws IOException {
-        throw new UnsupportedOperationException("Not implemented");
+    public WatchKey register(WatchService watcher, WatchEvent.Kind<?>... events) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Iterator<Path> iterator() {
-        throw new UnsupportedOperationException("Not implemented");
+        return new Iterator<Path>() {
+            private int index = 0;
+
+            public boolean hasNext() {
+                return index < getNameCount();
+            }
+
+            public Path next() {
+                if (index < getNameCount()) {
+                    Path name = getName(index);
+                    index++;
+                    return name;
+                }
+                throw new NoSuchElementException();
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
 
     @Override
     public int compareTo(Path other) {
-        if (this == other) {
-            return 0;
-        }
-
-        BlobPath httpOther = (BlobPath) other;
-        // object comparison - should be from the same provider
-        if (fs.provider() != httpOther.fs.provider()) {
-            throw new ClassCastException();
-        }
-
-        // first check the authority (case insensitive)
-        int comparison = fs.getAuthority().compareToIgnoreCase(httpOther.fs.getAuthority());
-        if (comparison != 0) {
-            return comparison;
-        }
-
-        final int len1 = normalizedPath.length;
-        final int len2 = httpOther.normalizedPath.length;
-        final int n = Math.min(len1, len2);
-        for (int k = 0; k < n; k++) {
-            comparison = Byte.compare(this.normalizedPath[k], httpOther.normalizedPath[k]);
-            if (comparison != 0) {
-                return comparison;
+        BlobPath p1 = this;
+        BlobPath p2 = checkPath(other);
+        byte[] a1 = p1.path;
+        byte[] a2 = p2.path;
+        int l1 = a1.length;
+        int l2 = a2.length;
+        for (int i = 0, l = Math.min(l1, l2); i < l; i++) {
+            int b1 = a1[i] & 0xFF;
+            int b2 = a2[i] & 0xFF;
+            if (b1 != b2) {
+                return b1 - b2;
             }
         }
-        comparison = len1 - len2;
-        if (comparison != 0) {
-            return comparison;
-        }
 
-        comparison = Comparator.nullsFirst(String::compareTo).compare(this.query, httpOther.query);
-        if (comparison != 0) {
-            return comparison;
-        }
-
-        return Comparator.nullsFirst(String::compareTo)
-                .compare(this.reference, httpOther.reference);
+        return l1 - l2;
     }
 
-    @Override
-    public boolean equals(final Object other) {
-        try {
-            return compareTo((Path) other) == 0;
-        } catch (ClassCastException e) {
-            return false;
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        int h = fs.hashCode();
-        for (int i = 0; i < normalizedPath.length; i++) {
-            h = 31 * h + (normalizedPath[i] & 0xff);
-        }
-        // this is safe for null query and reference
-        h = 31 * h + Objects.hash(query, reference);
-        return h;
-    }
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder(fs.provider().getScheme())
-                .append("://")
-                .append(fs.getAuthority())
-                .append(new String(normalizedPath, BlobUtils.HTTP_PATH_CHARSET));
-        if (query != null) {
-            sb.append('?').append(query);
-        }
-        if (reference != null) {
-            sb.append('#').append(reference);
-        }
-        return sb.toString();
-    }
+    /**
+     * Helper Functions
+     */
 
     private void initOffsets() {
-        if (offsets == null) {
-            final int length = getLastIndexWithoutTrailingSlash(normalizedPath);
+        if (this.offsets == null) {
             int count = 0;
             int index = 0;
-            for (; index < length; index++) {
-                final byte c = normalizedPath[index];
-                if (c == BlobUtils.HTTP_PATH_SEPARATOR_CHAR) {
+            while (index < this.path.length) {
+                byte c = this.path[index++];
+                if (c != '/') {
                     count++;
-                    index++;
+                    while (index < this.path.length && this.path[index] != '/') {
+                        index++;
+                    }
                 }
             }
-            // populate offsets
-            final int[] result = new int[count];
+            int[] result = new int[count];
             count = 0;
-            for (index = 0; index < length; index++) {
-                final byte c = normalizedPath[index];
-                if (c == BlobUtils.HTTP_PATH_SEPARATOR_CHAR) {
+            index = 0;
+            while (index < this.path.length) {
+                int m = this.path[index];
+                if (m == '/') {
+                    index++;
+                } else {
                     result[count++] = index++;
+                    while (index < this.path.length && this.path[index] != '/') {
+                        index++;
+                    }
                 }
             }
-            // update in a thread-safe manner
             synchronized (this) {
-                if (offsets == null) {
-                    offsets = result;
+                if (this.offsets == null) {
+                    this.offsets = result;
                 }
             }
         }
     }
 
-    private static byte[] getNormalizedPathBytes(final String path, final boolean checkRelative) {
-
-        if (checkRelative && !path.isEmpty() && !path.startsWith(BlobUtils.HTTP_PATH_SEPARATOR_STRING)) {
-            throw new InvalidPathException(path, "Relative HTTP/S path are not supported");
+    private BlobPath checkPath(Path paramPath) {
+        if (paramPath == null) {
+            throw new NullPointerException();
         }
-
-        if (BlobUtils.HTTP_PATH_SEPARATOR_STRING.equals(path) || path.isEmpty()) {
-            return new byte[0];
+        if (!(paramPath instanceof BlobPath)) {
+            throw new ProviderMismatchException();
         }
-        final int len = path.length();
-
-        char prevChar = 0;
-        for (int i = 0; i < len; i++) {
-            char c = path.charAt(i);
-            if (isDoubleSeparator(prevChar, c)) {
-                return getNormalizedPathBytes(path, len, i - 1);
-            }
-            prevChar = checkNotNull(path, c);
-        }
-        if (prevChar == BlobUtils.HTTP_PATH_SEPARATOR_CHAR) {
-            return getNormalizedPathBytes(path, len, len - 1);
-        }
-
-        return path.getBytes(BlobUtils.HTTP_PATH_CHARSET);
+        return (BlobPath) paramPath;
     }
 
-    private static byte[] getNormalizedPathBytes(final String path, final int len,
-                                                 final int offset) {
-        int lastOffset = len;
-        while (lastOffset > 0
-                && path.charAt(lastOffset - 1) == BlobUtils.HTTP_PATH_SEPARATOR_CHAR) {
-            lastOffset--;
-        }
-        if (lastOffset == 0) {
-            return new byte[]{BlobUtils.HTTP_PATH_SEPARATOR_CHAR};
-        }
 
-        try (final ByteArrayOutputStream os = new ByteArrayOutputStream(len)) {
-            if (offset > 0) {
-                os.write(path.substring(0, offset).getBytes(BlobUtils.HTTP_PATH_CHARSET));
+    private byte[] getResolvedPath() {
+        byte[] r = resolved;
+        if (r == null) {
+            r = resolved = isAbsolute() ? getResolved() : toAbsolutePath().getResolvedPath();
+        }
+        return r;
+    }
+
+
+    private byte[] normalize(byte[] path) {
+        if (path.length == 0) {
+            return path;
+        }
+        int i = 0;
+        for (int j = 0; j < path.length; j++) {
+            int k = path[j];
+            if (k == '\\') {
+                return normalize(path, j);
             }
-            char prevChar = 0;
-            for (int i = offset; i < len; i++) {
-                char c = path.charAt(i);
-                if (isDoubleSeparator(prevChar, c)) {
+            if ((k == '/') && (i == '/')) {
+                return normalize(path, j - 1);
+            }
+            if (k == 0) {
+                throw new InvalidPathException(new String(path, StandardCharsets.UTF_8), "Path: nul character not allowed");
+            }
+            i = k;
+        }
+        return path;
+    }
+
+    private byte[] normalize(byte[] path, int index) {
+        byte[] arrayOfByte = new byte[path.length];
+        int i = 0;
+        while (i < index) {
+            arrayOfByte[i] = path[i];
+            i++;
+        }
+        int j = i;
+        int k = 0;
+        while (i < path.length) {
+            int m = path[i++];
+            if (m == '\\') {
+                m = '/';
+            }
+            if ((m != '/') || (k != '/')) {
+                if (m == 0) {
+                    throw new InvalidPathException(new String(path, StandardCharsets.UTF_8), "Path: nul character not allowed");
+                }
+                arrayOfByte[j++] = (byte) m;
+                k = m;
+            }
+        }
+        if ((j > 1) && (arrayOfByte[j - 1] == '/')) {
+            j--;
+        }
+        return j == arrayOfByte.length ? arrayOfByte : Arrays.copyOf(arrayOfByte, j);
+    }
+
+    private byte[] getResolved() {
+        if (path.length == 0) {
+            return path;
+        }
+        for (byte c : path) {
+            if (c == '.') {
+                return doGetResolved(this);
+            }
+        }
+        return path;
+    }
+
+    private static byte[] doGetResolved(BlobPath p) {
+        int nc = p.getNameCount();
+        byte[] path = p.path;
+        int[] offsets = p.offsets;
+        byte[] to = new byte[path.length];
+        int[] lastM = new int[nc];
+        int lastMOff = -1;
+        int m = 0;
+        for (int i = 0; i < nc; i++) {
+            int n = offsets[i];
+            int len = (i == offsets.length - 1) ? (path.length - n) : (offsets[i + 1] - n - 1);
+            if (len == 1 && path[n] == (byte) '.') {
+                if (m == 0 && path[0] == '/')   // absolute path
+                    to[m++] = '/';
+                continue;
+            }
+            if (len == 2 && path[n] == '.' && path[n + 1] == '.') {
+                if (lastMOff >= 0) {
+                    m = lastM[lastMOff--];  // retreat
                     continue;
                 }
-                prevChar = checkNotNull(path, c);
-                os.write(c);
+                if (path[0] == '/') {  // "/../xyz" skip
+                    if (m == 0)
+                        to[m++] = '/';
+                } else {               // "../xyz" -> "../xyz"
+                    if (m != 0 && to[m - 1] != '/')
+                        to[m++] = '/';
+                    while (len-- > 0)
+                        to[m++] = path[n++];
+                }
+                continue;
             }
-
-            return os.toByteArray();
-        } catch (final IOException e) {
-            throw new Utils.ShouldNotHappenException(e);
+            if (m == 0 && path[0] == '/' ||   // absolute path
+                    m != 0 && to[m - 1] != '/') {   // not the first name
+                to[m++] = '/';
+            }
+            lastM[++lastMOff] = m;
+            while (len-- > 0)
+                to[m++] = path[n++];
         }
+        if (m > 1 && to[m - 1] == '/')
+            m--;
+        return (m == to.length) ? to : Arrays.copyOf(to, m);
     }
 
-    private static boolean isDoubleSeparator(final char prevChar, final char c) {
-        return c == BlobUtils.HTTP_PATH_SEPARATOR_CHAR
-                && prevChar == BlobUtils.HTTP_PATH_SEPARATOR_CHAR;
-    }
-
-    private static char checkNotNull(final String path, char c) {
-        if (c == '\u0000') {
-            throw new InvalidPathException(path, "Null character not allowed in path");
+    private static boolean equalsNameAt(BlobPath p1, BlobPath p2, int index) {
+        int beg1 = p1.offsets[index];
+        int len1;
+        if (index == p1.offsets.length - 1) {
+            len1 = p1.path.length - beg1;
+        } else {
+            len1 = p1.offsets[index + 1] - beg1 - 1;
         }
-        return c;
+        int beg2 = p2.offsets[index];
+        int len2;
+        if (index == p2.offsets.length - 1) {
+            len2 = p2.path.length - beg2;
+        } else {
+            len2 = p2.offsets[index + 1] - beg2 - 1;
+        }
+        if (len1 != len2) {
+            return false;
+        }
+        for (int n = 0; n < len1; n++) {
+            if (p1.path[beg1 + n] != p2.path[beg2 + n]) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    private static int getLastIndexWithoutTrailingSlash(final byte[] path) {
-        int len = path.length - 1;
-        if (len > 0 && path[len] == BlobUtils.HTTP_PATH_SEPARATOR_CHAR) {
-            len--;
-        }
-        return len;
-    }
 }

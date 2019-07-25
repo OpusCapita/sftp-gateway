@@ -1,5 +1,7 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
+import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
+import com.opuscapita.s2p.blob.blobfilesystem.utils.Utils;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 
 import java.io.IOException;

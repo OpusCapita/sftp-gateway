@@ -1,4 +1,4 @@
-package com.opuscapita.s2p.blob.blobfilesystem;
+package com.opuscapita.s2p.blob.blobfilesystem.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
