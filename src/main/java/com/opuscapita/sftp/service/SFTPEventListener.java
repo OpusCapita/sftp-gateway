@@ -67,11 +67,6 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
 
     @Override
     public void open(ServerSession serverSession, String remoteHandle, Handle localHandle) {
-        /**
-         * LS
-         */
-        File openedFile = localHandle.getFile().toFile();
-        log.info("open " + remoteHandle);
     }
 
     @Override
@@ -105,20 +100,10 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
 
     @Override
     public void opening(ServerSession session, String remoteHandle, Handle localHandle) throws IOException {
-        File toUpload = localHandle.getFile().toFile();
-        log.info("PUT file " + toUpload);
     }
 
     @Override
     public void closing(ServerSession serverSession, String remoteHandle, Handle localHandle) {
-        File closedFile = localHandle.getFile().toFile();
-        if (closedFile.exists() && closedFile.isFile()) {
-            log.info(String.format("User %s closed file: \"%s\"", serverSession.getUsername(), localHandle.getFile().toAbsolutePath()));
-
-            for (FileUploadCompleteListener fileReadyListener : fileReadyListeners) {
-                fileReadyListener.onFileReady(closedFile);
-            }
-        }
     }
 
     @Override

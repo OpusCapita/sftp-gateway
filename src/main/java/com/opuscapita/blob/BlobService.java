@@ -66,19 +66,19 @@ public class BlobService extends AbstractLoggingBean implements BlobInterface {
 
     @Override
     public BlobResponse storeFile(InputStream data, String path) throws BlobException, SftpException {
-        log.debug("File storage requested from blob service to path: " + path);
+        log.info("File storage requested from blob service to path: " + path);
         try {
             String endpoint = getEndpoint(path);
-            log.debug("Putting file to endpoint: " + endpoint);
+            log.info("Putting file to endpoint: " + endpoint);
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("Transfer-Encoding", "chunked");
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
             headers.set("X-User-Id-Token", this.authResponse.getId_token());
             HttpEntity<Resource> entity = new HttpEntity<>(new InputStreamResource(data), headers);
-            log.debug("Wrapped and set the request body as input stream");
+            log.info("Wrapped and set the request body as input stream");
             ResponseEntity<BlobResponse> result = restTemplate.exchange(endpoint, HttpMethod.PUT, entity, BlobResponse.class);
-            log.debug("File stored successfully to blob service path: " + path);
+            log.info("File stored successfully to blob service path: " + path);
             return result.getBody();
         } catch (Exception e) {
             throw new BlobException("Error occurred while trying to put the file to blob service");
@@ -87,48 +87,54 @@ public class BlobService extends AbstractLoggingBean implements BlobInterface {
 
     @Override
     public void readFile(String tenantId, String path, Scope scope) {
-
+        throw new UnsupportedOperationException("readFile is not implemented");
     }
 
     @Override
     public void getFileInfo(String tenantId, String path, Scope scope) {
+        throw new UnsupportedOperationException("getFileInfo is not implemented");
 
     }
 
     @Override
     public void deleteFile(String tenantId, String path, Scope scope) {
+        throw new UnsupportedOperationException("deleteFile is not implemented");
 
     }
 
     @Override
     public void copyFile(String tenantId, String path, Scope scope) {
+        throw new UnsupportedOperationException("copyFile is not implemented");
 
     }
 
     @Override
     public void moveFile(String tenantId, String path, Scope scope) {
+        throw new UnsupportedOperationException("moveFile is not implemented");
 
     }
 
     @Override
     public void copyDirectory(String tenantId, String path, Scope scope) {
+        throw new UnsupportedOperationException("copyDirectory is not implemented");
 
     }
 
     @Override
     public void moveDirectory(String tenantId, String path, Scope scope) {
+        throw new UnsupportedOperationException("moveDirectory is not implemented");
 
     }
 
     private <T> ResponseEntity<T> get(String path, Class<T> type) throws Exception {
-        log.debug("Reading file from endpoint: " + path);
+        log.info("Reading file from endpoint: " + path);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         headers.set("X-User-Id-Token", this.authResponse.getId_token());
         HttpEntity<String> entity = new HttpEntity<>("body", headers);
-        log.debug("Setting http headers content type to application json");
+        log.info("Setting http headers content type to application json");
 
         return restTemplate.exchange(this.getEndpoint(path), HttpMethod.GET, entity, type);
     }

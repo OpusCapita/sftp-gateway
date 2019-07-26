@@ -19,6 +19,7 @@ RUN mvn dependency:resolve
 
 # Adding source, compile and package into a fat jar
 
+RUN ls -lAh $WRKDIR
 ADD src $WRKDIR/src
 RUN mvn package
 RUN ls -lAh $TRGTDIR

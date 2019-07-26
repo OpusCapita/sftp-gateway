@@ -1,5 +1,7 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
+import org.apache.sshd.common.util.logging.AbstractLoggingBean;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -9,7 +11,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class BlobPath implements Path {
+public class BlobPath extends AbstractLoggingBean implements Path {
 
     private final BlobFileSystem fileSystem;
 
@@ -349,6 +351,27 @@ public class BlobPath implements Path {
         }
 
         return l1 - l2;
+    }
+
+    @Override
+    public int hashCode() {
+        int h = hash;
+        if (h == 0) {
+            h = hash = Arrays.hashCode(path);
+        }
+        return h;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof BlobPath
+                && ((BlobPath) obj).fileSystem == fileSystem
+                && compareTo((BlobPath) obj) == 0;
+    }
+
+    @Override
+    public String toString() {
+        return new String(path, StandardCharsets.UTF_8);
     }
 
     /**

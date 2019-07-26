@@ -1,16 +1,12 @@
 package com.opuscapita.sftp.service;
 
 import com.opuscapita.blob.config.BlobConfiguration;
-import com.opuscapita.s2p.blob.blobfilesystem.BlobFileSystem;
-import com.opuscapita.s2p.blob.blobfilesystem.BlobHttpFileSystemProvider;
 import com.opuscapita.sftp.config.SFTPConfiguration;
 import com.opuscapita.sftp.filesystem.BlobFileSystemFactory;
 import com.opuscapita.sftp.service.auth.AuthProvider;
 import com.opuscapita.sftp.service.commands.OCSftpSubsystemFactory;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
-import org.apache.sshd.common.file.root.RootedFileSystemProvider;
-import org.apache.sshd.common.file.virtualfs.VirtualFileSystemFactory;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 import org.apache.sshd.server.ServerAuthenticationManager;
 import org.apache.sshd.server.SshServer;
@@ -25,9 +21,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,7 +55,6 @@ public class SFTPDaemon extends AbstractLoggingBean {
         this.sshd.setPasswordAuthenticator(this.authProvider);
 
         BlobFileSystemFactory fs = new BlobFileSystemFactory(this.blobConfiguration);
-//        VirtualFileSystemFactory fs = new VirtualFileSystemFactory();
         this.sshd.setFileSystemFactory(fs);
     }
 
@@ -71,19 +63,10 @@ public class SFTPDaemon extends AbstractLoggingBean {
                 .Builder()
                 .build();
 //        OCSftpSubsystemFactory factory = this.builder.build();
-        SFTPEventListener sftpEventListener = new SFTPEventListener();
-        factory.addSftpEventListener(sftpEventListener);
+//        SFTPEventListener sftpEventListener = new SFTPEventListener();
+//        factory.addSftpEventListener(sftpEventListener);
 
         return factory;
-    }
-
-    private void testFileSystem() {
-        try {
-            FileSystem bfs = FileSystems.getFileSystem(new URI("https://jsonplaceholder.typicode.com/"));
-            bfs.getPath("todos/1");
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
     }
 
     @PostConstruct

@@ -16,6 +16,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.FileSystem;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BlobFileSystemFactory extends AbstractLoggingBean implements FileSystemFactory {
 
@@ -29,7 +31,14 @@ public class BlobFileSystemFactory extends AbstractLoggingBean implements FileSy
     @Override
     public FileSystem createFileSystem(Session session) throws IOException {
         try {
-            return new BlobHttpFileSystemProvider().newFileSystem(this.computeRootUri(session), Collections.emptyMap());
+            Map<String, String> env = new HashMap<>();
+            AuthResponse authResponse = this.authResponse(session);
+            env.put("tenant_id", this.computeTenatId(session));
+            env.put("refresh_token", authResponse.getRefresh_token());
+            env.put("token_type", authResponse.getToken_type());
+            env.put("access_token", authResponse.getAccess_token());
+            env.put("id_token", authResponse.getId_token());
+            return new BlobHttpFileSystemProvider().newFileSystem(this.computeRootUri(session), env);
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -52,5 +61,11 @@ public class BlobFileSystemFactory extends AbstractLoggingBean implements FileSy
         AuthResponse authResponse = session.getAttribute(authResponseAttributeKey);
         User user = authResponse.getUser();
         return (!user.getCustomerId().isEmpty() && user.getCustomerId() != null ? "c_" + user.getCustomerId() : "s_" + user.getSupplierId());
+    }
+
+    private AuthResponse authResponse(Session session) {
+        AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey = SFTPHelper.findAttributeKey((ServerSession) session, AuthResponse.class);
+        return session.getAttribute(authResponseAttributeKey);
+
     }
 }

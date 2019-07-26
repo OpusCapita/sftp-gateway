@@ -1,123 +1,59 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFileAttributes;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.JsonReader;
+import org.springframework.web.client.RestTemplate;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.FileTime;
-import java.nio.file.attribute.UserPrincipalLookupService;
+import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
 
 
 public class BlobFileSystem extends FileSystem {
     private final AbstractBlobFileSystemProvider fileSystemProvider;
-    private final String encodedAuthorization;
     private final String endpoint;
     private final ConcurrentMap<String, Object> contents = new ConcurrentHashMap<>();
+    private final String refresh_token;
+    private final String token_type;
+    private final String access_token;
+    private final String id_token;
+    private final String tenant_id;
+    private final RestTemplate restTemplate;
 
+    public BlobFileSystem(AbstractBlobFileSystemProvider fileSystemProvider, Map<String, ?> env) throws IOException {
 
-    public BlobFileSystem(AbstractBlobFileSystemProvider fileSystemProvider, String repository, Map<String, ?> env) throws IOException {
-        String userInfo;
-        String query;
-        int index = repository.indexOf('@');
-        if (index >= 0) {
-            userInfo = repository.substring(0, index);
-            repository = repository.substring(index + 1);
-        } else {
-            userInfo = null;
-        }
-        index = repository.indexOf('?');
-        if (index >= 0) {
-            query = repository.substring(index + 1);
-            repository = repository.substring(0, index);
-        } else {
-            query = null;
-        }
-        String endpoint = "https://api.github.com";
-        String revision = null;
-        String login = null;
-        String oauth = null;
-        String password = null;
+        String refresh_token = "";
+        String token_type = "";
+        String access_token = "";
+        String id_token = "";
+        String tenant_id = "";
         if (env != null) {
-            login = (String) env.get("login");
-            oauth = (String) env.get("oauth");
-            password = (String) env.get("password");
-            endpoint = (String) env.get("endpoint");
+            refresh_token = (String) env.get("refresh_token");
+            token_type = (String) env.get("token_type");
+            access_token = (String) env.get("access_token");
+            id_token = (String) env.get("id_token");
+            tenant_id = (String) env.get("tenant_id");
         }
-        if (query != null) {
-            for (String pair : query.split("&")) {
-                index = pair.indexOf("=");
-                String key = URLDecoder.decode(pair.substring(0, index), "UTF-8");
-                String val = URLDecoder.decode(pair.substring(index + 1), "UTF-8");
-                switch (key) {
-                    case "revision":
-                        revision = val;
-                        break;
-                    case "login":
-                        login = val;
-                        break;
-                    case "oauth":
-                        oauth = val;
-                        break;
-                    case "password":
-                        password = val;
-                        break;
-                    case "endpoint":
-                        endpoint = val;
-                        break;
-                }
-            }
-        }
-        if (userInfo != null) {
-            String[] infos = userInfo.split(":");
-            login = infos[0];
-            password = infos[1];
-        }
-        if (password == null && oauth == null) {
-            Path p = Paths.get(System.getProperty("user.home"), ".github");
-            if (Files.isRegularFile(p)) {
-                Properties properties = new Properties();
-                try (Reader r = Files.newBufferedReader(p, Charset.defaultCharset())) {
-                    properties.load(r);
-                }
-                String pLogin = properties.getProperty("login");
-                String pPassword = properties.getProperty("password");
-                String pOauth = properties.getProperty("oauth");
-                if (login == null || login.equals(pLogin)) {
-                    login = pLogin;
-                    password = pPassword;
-                    oauth = pOauth;
-                }
-            }
-        }
-        String encodedAuthorization = null;
-        if (oauth != null) {
-            encodedAuthorization = "token " + oauth;
-        } else {
-            if (password != null) {
-                String authorization = (login + ':' + password);
-                encodedAuthorization = "Basic " + DatatypeConverter.printBase64Binary(authorization.getBytes());
-            }
-        }
+        String endpoint = "http://blob:3012/api/" + tenant_id + "/files/public";
         this.fileSystemProvider = fileSystemProvider;
-        this.encodedAuthorization = encodedAuthorization;
+        this.restTemplate = new RestTemplate();
+        this.access_token = access_token;
+        this.tenant_id = tenant_id;
+        this.id_token = id_token;
+        this.refresh_token = refresh_token;
+        this.token_type = token_type;
         this.endpoint = endpoint;
     }
 
@@ -128,7 +64,6 @@ public class BlobFileSystem extends FileSystem {
 
     @Override
     public void close() throws IOException {
-
     }
 
     @Override
@@ -148,7 +83,7 @@ public class BlobFileSystem extends FileSystem {
 
     @Override
     public Iterable<Path> getRootDirectories() {
-        return Collections.<Path>singleton(new BlobPath(this, new byte[]{'/'}));
+        return Collections.singleton(new BlobPath(this, new byte[]{'/'}));
     }
 
     @Override
@@ -184,9 +119,9 @@ public class BlobFileSystem extends FileSystem {
 
     @Override
     public PathMatcher getPathMatcher(String syntaxAndPattern) {
-        int colonIndex = syntaxAndPattern.indexOf(':');
+        int colonIndex = syntaxAndPattern.indexOf('/');
         if (colonIndex <= 0 || colonIndex == syntaxAndPattern.length() - 1) {
-            throw new IllegalArgumentException("syntaxAndPattern must have form \"syntax:pattern\" but was \"" + syntaxAndPattern + "\"");
+            throw new IllegalArgumentException("syntaxAndPattern was \"" + syntaxAndPattern + "\"");
         }
 
         String syntax = syntaxAndPattern.substring(0, colonIndex);
@@ -213,12 +148,12 @@ public class BlobFileSystem extends FileSystem {
 
     @Override
     public UserPrincipalLookupService getUserPrincipalLookupService() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("getUserPrincipalLookupService is not implemented");
     }
 
     @Override
     public WatchService newWatchService() throws IOException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("newWatchService is not implemented");
     }
 
 
@@ -274,62 +209,27 @@ public class BlobFileSystem extends FileSystem {
         }
         String base64 = ((Map<String, String>) content).get("content");
         final byte[] data = DatatypeConverter.parseBase64Binary(base64);
-        return new SeekableByteChannel() {
-            long position;
-
-            @Override
-            public int read(ByteBuffer dst) throws IOException {
-                int l = (int) Math.min(dst.remaining(), size() - position);
-                dst.put(data, (int) position, l);
-                position += l;
-                return l;
-            }
-
-            @Override
-            public int write(ByteBuffer src) throws IOException {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public long position() throws IOException {
-                return position;
-            }
-
-            @Override
-            public SeekableByteChannel position(long newPosition) throws IOException {
-                position = newPosition;
-                return this;
-            }
-
-            @Override
-            public long size() throws IOException {
-                return data.length;
-            }
-
-            @Override
-            public SeekableByteChannel truncate(long size) throws IOException {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isOpen() {
-                return true;
-            }
-
-            @Override
-            public void close() throws IOException {
-            }
-        };
+        return new URLSeekableByteChannel(data);
     }
 
-    public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> clazz, LinkOption... options) throws IOException {
+//
+//    public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
+//        if (type.isAssignableFrom(PosixFileAttributes.class)) {
+//            return type.cast(this.provider().getFileAttributeView(path, PosixFileAttributeView.class, options).readAttributes());
+//        }
+//
+//        throw new UnsupportedOperationException("readAttributes(" + path + ")[" + type.getSimpleName() + "] N/A");
+//    }
+
+
+    public <A extends BasicFileAttributes> A readAttributes(BlobPath path, Class<A> clazz, LinkOption... options) throws IOException {
         if (clazz != BasicFileAttributes.class) {
             throw new UnsupportedOperationException();
         }
-        Path absolute = path.toAbsolutePath();
-        Path parent = absolute.getParent();
+        BlobPath absolute = path.toAbsolutePath();
+        BlobPath parent = absolute.getParent();
         Object desc = contents.get(absolute.toString());
-        if (desc == null) {
+        if (desc == null && parent != null) {
             Object parentContent = contents.get(parent.toString());
             if (parentContent != null) {
                 for (Map<String, ?> child : (List<Map<String, ?>>) parentContent) {
@@ -352,17 +252,29 @@ public class BlobFileSystem extends FileSystem {
             type = (String) ((Map) desc).get("type");
             size = ((Number) ((Map) desc).get("size")).longValue();
         }
-        return (A) new GitHubFileAttributes(type, size);
+        if (clazz.isAssignableFrom(PosixFileAttributes.class)) {
+            return clazz.cast(this.provider().getFileAttributeView(path, PosixFileAttributeView.class, options).readAttributes());
+        }
+        return (A) new BlobFileAttributes(type, size);
     }
 
     private Object loadContent(String path) throws IOException {
         Object content = contents.get(path);
         if (content == null) {
-            URL url = new URL(endpoint + path);
-            HttpURLConnection uc = (HttpURLConnection) url.openConnection();
+//            String url = endpoint + path;
+//            HttpHeaders headers = new HttpHeaders();
+//            headers.setContentType(MediaType.APPLICATION_JSON);
+//            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+//            headers.set("X-User-Id-Token", this.id_token);
+//            HttpEntity<String> entity = new HttpEntity<>("body", headers);
+//
+//            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+
+
+            URL _url = new URL(endpoint + path);
+            HttpURLConnection uc = (HttpURLConnection) _url.openConnection();
             try {
-                uc.setRequestProperty("Authorization", encodedAuthorization);
-                uc.setRequestProperty("Accept-Encoding", "gzip");
+                uc.setRequestProperty("X-User-Id-Token", this.id_token);
                 try (Reader r = new InputStreamReader(wrapStream(uc, uc.getInputStream()), StandardCharsets.UTF_8)) {
                     content = JsonReader.read(r);
                     contents.putIfAbsent(path, content);
@@ -379,66 +291,7 @@ public class BlobFileSystem extends FileSystem {
         if (encoding == null || in == null) {
             return in;
         }
-        if (encoding.equals("gzip")) {
-            return new GZIPInputStream(in);
-        }
         throw new UnsupportedOperationException("Unexpected Content-Encoding: " + encoding);
-    }
-
-    private static class GitHubFileAttributes implements BasicFileAttributes {
-
-        private final String type;
-        private final long size;
-
-        private GitHubFileAttributes(String type, long size) {
-            this.type = type;
-            this.size = size;
-        }
-
-        @Override
-        public FileTime lastModifiedTime() {
-            return null;
-        }
-
-        @Override
-        public FileTime lastAccessTime() {
-            return null;
-        }
-
-        @Override
-        public FileTime creationTime() {
-            return null;
-        }
-
-        @Override
-        public boolean isRegularFile() {
-            return "file".equals(type);
-        }
-
-        @Override
-        public boolean isDirectory() {
-            return "directory".equals(type);
-        }
-
-        @Override
-        public boolean isSymbolicLink() {
-            return false;
-        }
-
-        @Override
-        public boolean isOther() {
-            return false;
-        }
-
-        @Override
-        public long size() {
-            return size;
-        }
-
-        @Override
-        public Object fileKey() {
-            return null;
-        }
     }
 
 
