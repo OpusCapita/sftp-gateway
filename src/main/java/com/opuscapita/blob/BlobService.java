@@ -3,7 +3,7 @@ package com.opuscapita.blob;
 import com.opuscapita.auth.model.AuthResponse;
 import com.opuscapita.blob.Exception.BlobException;
 import com.opuscapita.blob.config.BlobConfiguration;
-import com.opuscapita.blob.model.BlobResponse;
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFile;
 import com.opuscapita.blob.model.Scope;
 import com.opuscapita.blob.service.BlobInterface;
 import lombok.Getter;
@@ -50,13 +50,13 @@ public class BlobService extends AbstractLoggingBean implements BlobInterface {
     }
 
     @Override
-    public List<BlobResponse> listFiles(String path) throws BlobException, SftpException {
+    public List<BlobFile> listFiles(String path) throws BlobException, SftpException {
         log.debug("File list requested from blob service for folder: " + path);
         if (!this.isAuthenticated()) {
             throw new SftpException(HttpStatus.UNAUTHORIZED.value(), "You are not authorized");
         }
         try {
-            ResponseEntity<BlobResponse[]> result = get(path, BlobResponse[].class);
+            ResponseEntity<BlobFile[]> result = get(path, BlobFile[].class);
             log.debug("File list fetched successfully from blob service for folder: " + path);
             return new ArrayList<>(Arrays.asList(result.getBody()));
         } catch (Exception e) {
@@ -65,7 +65,7 @@ public class BlobService extends AbstractLoggingBean implements BlobInterface {
     }
 
     @Override
-    public BlobResponse storeFile(InputStream data, String path) throws BlobException, SftpException {
+    public BlobFile storeFile(InputStream data, String path) throws BlobException, SftpException {
         log.info("File storage requested from blob service to path: " + path);
         try {
             String endpoint = getEndpoint(path);
@@ -77,7 +77,7 @@ public class BlobService extends AbstractLoggingBean implements BlobInterface {
             headers.set("X-User-Id-Token", this.authResponse.getId_token());
             HttpEntity<Resource> entity = new HttpEntity<>(new InputStreamResource(data), headers);
             log.info("Wrapped and set the request body as input stream");
-            ResponseEntity<BlobResponse> result = restTemplate.exchange(endpoint, HttpMethod.PUT, entity, BlobResponse.class);
+            ResponseEntity<BlobFile> result = restTemplate.exchange(endpoint, HttpMethod.PUT, entity, BlobFile.class);
             log.info("File stored successfully to blob service path: " + path);
             return result.getBody();
         } catch (Exception e) {

@@ -4,6 +4,7 @@ import com.opuscapita.blob.config.BlobConfiguration;
 import com.opuscapita.sftp.config.SFTPConfiguration;
 import com.opuscapita.sftp.filesystem.BlobFileSystemFactory;
 import com.opuscapita.sftp.service.auth.AuthProvider;
+import com.opuscapita.sftp.service.commands.OCRestFileSystemAccessor;
 import com.opuscapita.sftp.service.commands.OCSftpSubsystemFactory;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
@@ -61,10 +62,11 @@ public class SFTPDaemon extends AbstractLoggingBean {
     private SftpSubsystemFactory createDefaultSftpSubsystem() {
         SftpSubsystemFactory factory = new SftpSubsystemFactory
                 .Builder()
+                .withFileSystemAccessor(new OCRestFileSystemAccessor())
                 .build();
 //        OCSftpSubsystemFactory factory = this.builder.build();
-//        SFTPEventListener sftpEventListener = new SFTPEventListener();
-//        factory.addSftpEventListener(sftpEventListener);
+        SFTPEventListener sftpEventListener = new SFTPEventListener();
+        factory.addSftpEventListener(sftpEventListener);
 
         return factory;
     }

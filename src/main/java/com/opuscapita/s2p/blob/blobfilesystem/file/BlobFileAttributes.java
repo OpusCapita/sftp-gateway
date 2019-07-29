@@ -2,6 +2,7 @@ package com.opuscapita.s2p.blob.blobfilesystem.file;
 
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributes;
 
 public class BlobFileAttributes implements BasicFileAttributes {
 
@@ -15,17 +16,17 @@ public class BlobFileAttributes implements BasicFileAttributes {
 
     @Override
     public FileTime lastModifiedTime() {
-        return null;
+        return FileTime.fromMillis(System.currentTimeMillis());
     }
 
     @Override
     public FileTime lastAccessTime() {
-        return null;
+        return FileTime.fromMillis(System.currentTimeMillis());
     }
 
     @Override
     public FileTime creationTime() {
-        return null;
+        return FileTime.fromMillis(System.currentTimeMillis());
     }
 
     @Override
@@ -57,4 +58,5 @@ public class BlobFileAttributes implements BasicFileAttributes {
     public Object fileKey() {
         return null;
     }
+
 }

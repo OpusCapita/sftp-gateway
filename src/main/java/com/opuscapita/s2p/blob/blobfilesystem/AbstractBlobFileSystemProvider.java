@@ -1,10 +1,12 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFileAttributeView;
 import org.apache.sshd.client.subsystem.sftp.fs.SftpPath;
 import org.apache.sshd.common.util.GenericUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.Basic;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -15,10 +17,11 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-abstract class AbstractBlobFileSystemProvider extends FileSystemProvider {
+public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider {
 
     private final Map<String, BlobFileSystem> fileSystems = new ConcurrentHashMap<>();
     private final Logger log = LoggerFactory.getLogger(this.getClass());
+
     @Override
     public abstract String getScheme();
 
@@ -135,6 +138,7 @@ abstract class AbstractBlobFileSystemProvider extends FileSystemProvider {
 
     @Override
     public FileStore getFileStore(Path path) throws IOException {
+        System.out.println("getFileStore");
         return null;
     }
 
@@ -145,20 +149,38 @@ abstract class AbstractBlobFileSystemProvider extends FileSystemProvider {
 
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
-        return null;
+        if (isSupportedFileAttributeView(path, type)) {
+            if (BasicFileAttributeView.class.isAssignableFrom(type)) {
+                return type.cast(new BlobFileAttributeView(this, (BlobPath)path, options));
+            }
+        }
+
+        throw new UnsupportedOperationException("getFileAttributeView(" + path + ") view not supported: " + type.getSimpleName());
     }
 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
-        if (!(path instanceof BlobPath)) {
-            throw new ProviderMismatchException();
-        }
+//        if (type.isAssignableFrom(BasicFileAttributes.class)) {
+//            return type.cast(getFileAttributeView(path, PosixFileAttributeView.class, options).readAttributes());
+//        }
+//        throw new UnsupportedOperationException("readAttributes(" + path + ")[" + type.getSimpleName() + "] N/A");
         return ((BlobPath) path).getFileSystem().readAttributes((BlobPath) path, type, options);
     }
 
     @Override
     public Map<String, Object> readAttributes(Path path, String attributes, LinkOption... options) throws IOException {
-        return null;
+        String view;
+        String attrs;
+        int i = attributes.indexOf(':');
+        if (i == -1) {
+            view = "basic";
+            attrs = attributes;
+        } else {
+            view = attributes.substring(0, i++);
+            attrs = attributes.substring(i);
+        }
+
+        return readAttributes(path, view, attrs, options);
     }
 
     @Override

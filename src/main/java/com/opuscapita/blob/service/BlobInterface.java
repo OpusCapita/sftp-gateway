@@ -1,7 +1,7 @@
 package com.opuscapita.blob.service;
 
 import com.opuscapita.blob.Exception.BlobException;
-import com.opuscapita.blob.model.BlobResponse;
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFile;
 import com.opuscapita.blob.model.Scope;
 import org.apache.sshd.common.subsystem.sftp.SftpException;
 
@@ -10,9 +10,9 @@ import java.util.List;
 
 public interface BlobInterface {
 
-    List<BlobResponse> listFiles(String path) throws BlobException, SftpException;
+    List<BlobFile> listFiles(String path) throws BlobException, SftpException;
 
-    BlobResponse storeFile(InputStream data, String path) throws BlobException, SftpException;
+    BlobFile storeFile(InputStream data, String path) throws BlobException, SftpException;
 
     void readFile(String tenantId, String path, Scope scope);
 

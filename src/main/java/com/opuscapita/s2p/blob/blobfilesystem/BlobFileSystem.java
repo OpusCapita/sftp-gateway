@@ -1,8 +1,11 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFile;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFileAttributes;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.JsonReader;
+import org.apache.sshd.client.subsystem.sftp.fs.SftpFileSystem;
+import org.apache.sshd.common.util.GenericUtils;
 import org.springframework.web.client.RestTemplate;
 
 import javax.xml.bind.DatatypeConverter;
@@ -31,6 +34,8 @@ public class BlobFileSystem extends FileSystem {
     private final String id_token;
     private final String tenant_id;
     private final RestTemplate restTemplate;
+    private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
+            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "basic", "posix", "owner"));;
 
     public BlobFileSystem(AbstractBlobFileSystemProvider fileSystemProvider, Map<String, ?> env) throws IOException {
 
@@ -93,7 +98,7 @@ public class BlobFileSystem extends FileSystem {
 
     @Override
     public Set<String> supportedFileAttributeViews() {
-        return null;
+        return supportedViews;
     }
 
     @Override
@@ -169,9 +174,12 @@ public class BlobFileSystem extends FileSystem {
 
     public DirectoryStream<Path> newDirectoryStream(final Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
         final Object content = loadContent(dir.toAbsolutePath().toString());
-        if (content instanceof Map) {
+        System.out.println("test");
+        if (content instanceof BlobFile) {
             throw new IOException("Is a file");
         }
+        final Iterator<Map<String, Object>> delegate = ((List<Map<String, Object>>) content).iterator();
+        System.out.println("test");
         return new DirectoryStream<Path>() {
             @Override
             public Iterator<Path> iterator() {
@@ -184,7 +192,7 @@ public class BlobFileSystem extends FileSystem {
                     }
 
                     @Override
-                    public Path next() {
+                    public BlobPath next() {
                         Map<String, Object> val = delegate.next();
                         return new BlobPath(BlobFileSystem.this, ((String) val.get("path")).getBytes(StandardCharsets.UTF_8));
                     }
@@ -198,6 +206,7 @@ public class BlobFileSystem extends FileSystem {
 
             @Override
             public void close() throws IOException {
+                System.out.println("");
             }
         };
     }
@@ -212,14 +221,13 @@ public class BlobFileSystem extends FileSystem {
         return new URLSeekableByteChannel(data);
     }
 
-//
-//    public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
-//        if (type.isAssignableFrom(PosixFileAttributes.class)) {
-//            return type.cast(this.provider().getFileAttributeView(path, PosixFileAttributeView.class, options).readAttributes());
-//        }
-//
-//        throw new UnsupportedOperationException("readAttributes(" + path + ")[" + type.getSimpleName() + "] N/A");
-//    }
+    public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
+        if (type.isAssignableFrom(PosixFileAttributes.class)) {
+            return type.cast(this.provider().getFileAttributeView(path, PosixFileAttributeView.class, options).readAttributes());
+        }
+
+        throw new UnsupportedOperationException("readAttributes(" + path + ")[" + type.getSimpleName() + "] N/A");
+    }
 
 
     public <A extends BasicFileAttributes> A readAttributes(BlobPath path, Class<A> clazz, LinkOption... options) throws IOException {
@@ -228,6 +236,7 @@ public class BlobFileSystem extends FileSystem {
         }
         BlobPath absolute = path.toAbsolutePath();
         BlobPath parent = absolute.getParent();
+//        Object desc = loadContent(absolute.toString());
         Object desc = contents.get(absolute.toString());
         if (desc == null && parent != null) {
             Object parentContent = contents.get(parent.toString());
@@ -245,33 +254,30 @@ public class BlobFileSystem extends FileSystem {
         }
         String type;
         long size;
-        if (desc instanceof List) {
+        if (desc instanceof List || desc instanceof BlobFile[]) {
             type = "directory";
             size = 0;
         } else {
             type = (String) ((Map) desc).get("type");
             size = ((Number) ((Map) desc).get("size")).longValue();
         }
-        if (clazz.isAssignableFrom(PosixFileAttributes.class)) {
-            return clazz.cast(this.provider().getFileAttributeView(path, PosixFileAttributeView.class, options).readAttributes());
-        }
-        return (A) new BlobFileAttributes(type, size);
+        A fileAttributes = (A) new BlobFileAttributes(type, size);
+//        if (clazz.isAssignableFrom(PosixFileAttributes.class)) {
+//            fileAttributes = clazz.cast(this.provider().getFileAttributeView(path, PosixFileAttributeView.class, options).readAttributes());
+//        }
+        return fileAttributes;
     }
 
     private Object loadContent(String path) throws IOException {
         Object content = contents.get(path);
         if (content == null) {
-//            String url = endpoint + path;
+            URL _url = new URL(endpoint + path);
 //            HttpHeaders headers = new HttpHeaders();
 //            headers.setContentType(MediaType.APPLICATION_JSON);
 //            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 //            headers.set("X-User-Id-Token", this.id_token);
 //            HttpEntity<String> entity = new HttpEntity<>("body", headers);
-//
-//            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-
-
-            URL _url = new URL(endpoint + path);
+//            content = restTemplate.exchange(endpoint + path, HttpMethod.GET, entity, BlobFile[].class);
             HttpURLConnection uc = (HttpURLConnection) _url.openConnection();
             try {
                 uc.setRequestProperty("X-User-Id-Token", this.id_token);
@@ -282,7 +288,9 @@ public class BlobFileSystem extends FileSystem {
             } finally {
                 uc.disconnect();
             }
+//            contents.putIfAbsent(path, ((ResponseEntity<BlobFile[]>) content).getBody());
         }
+//        BlobFile[] cArray = ((ResponseEntity<BlobFile[]>) content).getBody();
         return content;
     }
 
@@ -293,7 +301,6 @@ public class BlobFileSystem extends FileSystem {
         }
         throw new UnsupportedOperationException("Unexpected Content-Encoding: " + encoding);
     }
-
 
     /**
      * Helper Functions
