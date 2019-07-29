@@ -26,12 +26,12 @@ public class BlobFileAttributeView extends AbstractLoggingBean implements BasicF
 
     @Override
     public String name() {
-        return "view";
+        return "blob";
     }
 
     @Override
     public BlobFileAttributes readAttributes() throws IOException {
-        return new BlobFileAttributes("file", 0);
+        return new BlobFileAttributes("directory", 0);
     }
 
     @Override

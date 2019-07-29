@@ -4,7 +4,7 @@ import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFile;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFileAttributes;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.JsonReader;
-import org.apache.sshd.client.subsystem.sftp.fs.SftpFileSystem;
+import lombok.Getter;
 import org.apache.sshd.common.util.GenericUtils;
 import org.springframework.web.client.RestTemplate;
 
@@ -27,6 +27,8 @@ import java.util.regex.Pattern;
 public class BlobFileSystem extends FileSystem {
     private final AbstractBlobFileSystemProvider fileSystemProvider;
     private final String endpoint;
+    @Getter
+    private final String access;
     private final ConcurrentMap<String, Object> contents = new ConcurrentHashMap<>();
     private final String refresh_token;
     private final String token_type;
@@ -34,8 +36,12 @@ public class BlobFileSystem extends FileSystem {
     private final String id_token;
     private final String tenant_id;
     private final RestTemplate restTemplate;
+//    private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
+//            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "basic", "posix", "owner"));
+
     private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
-            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "basic", "posix", "owner"));;
+            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "posix"));
+
 
     public BlobFileSystem(AbstractBlobFileSystemProvider fileSystemProvider, Map<String, ?> env) throws IOException {
 
@@ -51,7 +57,8 @@ public class BlobFileSystem extends FileSystem {
             id_token = (String) env.get("id_token");
             tenant_id = (String) env.get("tenant_id");
         }
-        String endpoint = "http://blob:3012/api/" + tenant_id + "/files/public";
+        this.access = "public";
+        String endpoint = "http://blob:3012/api/" + tenant_id + "/files/" + this.access;
         this.fileSystemProvider = fileSystemProvider;
         this.restTemplate = new RestTemplate();
         this.access_token = access_token;
@@ -174,12 +181,10 @@ public class BlobFileSystem extends FileSystem {
 
     public DirectoryStream<Path> newDirectoryStream(final Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
         final Object content = loadContent(dir.toAbsolutePath().toString());
-        System.out.println("test");
         if (content instanceof BlobFile) {
             throw new IOException("Is a file");
         }
-        final Iterator<Map<String, Object>> delegate = ((List<Map<String, Object>>) content).iterator();
-        System.out.println("test");
+
         return new DirectoryStream<Path>() {
             @Override
             public Iterator<Path> iterator() {
@@ -231,13 +236,8 @@ public class BlobFileSystem extends FileSystem {
 
 
     public <A extends BasicFileAttributes> A readAttributes(BlobPath path, Class<A> clazz, LinkOption... options) throws IOException {
-//        if (clazz != BasicFileAttributes.class && clazz != PosixFileAttributes.class) {
-//            throw new UnsupportedOperationException();
-//        }
-
         BlobPath absolute = path.toAbsolutePath();
         BlobPath parent = absolute.getParent();
-//        Object desc = loadContent(absolute.toString());
         Object desc = contents.get(absolute.toString());
         if (desc == null && parent != null) {
             Object parentContent = contents.get(parent.toString());
@@ -253,19 +253,18 @@ public class BlobFileSystem extends FileSystem {
         if (desc == null) {
             desc = loadContent(absolute.toString());
         }
-        String type;
-        long size;
-        if (desc instanceof List || desc instanceof BlobFile[]) {
-            type = "directory";
-            size = 0;
+//        String type;
+//        long size;
+        A fileAttributes;
+        if (desc instanceof List) {
+            fileAttributes = (A) new BlobFileAttributes("directory", 0);
         } else {
-            type = (String) ((Map) desc).get("type");
-            size = ((Number) ((Map) desc).get("size")).longValue();
+            fileAttributes = (A) new BlobFileAttributes((Map) desc);
+//            type = (String) ((Map) desc).get("is");
+//            size = ((Number) ((Map) desc).get("size")).longValue();
         }
-        A fileAttributes = (A) new BlobFileAttributes(type, size);
-//        if (clazz.isAssignableFrom(PosixFileAttributes.class)) {
-//            fileAttributes = clazz.cast(this.provider().getFileAttributeView(path, PosixFileAttributeView.class, options).readAttributes());
-//        }
+//        A fileAttributes = (A) new BlobFileAttributes(type, size);
+
         return fileAttributes;
     }
 
@@ -273,12 +272,6 @@ public class BlobFileSystem extends FileSystem {
         Object content = contents.get(path);
         if (content == null) {
             URL _url = new URL(endpoint + path);
-//            HttpHeaders headers = new HttpHeaders();
-//            headers.setContentType(MediaType.APPLICATION_JSON);
-//            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-//            headers.set("X-User-Id-Token", this.id_token);
-//            HttpEntity<String> entity = new HttpEntity<>("body", headers);
-//            content = restTemplate.exchange(endpoint + path, HttpMethod.GET, entity, BlobFile[].class);
             HttpURLConnection uc = (HttpURLConnection) _url.openConnection();
             try {
                 uc.setRequestProperty("X-User-Id-Token", this.id_token);
@@ -289,9 +282,7 @@ public class BlobFileSystem extends FileSystem {
             } finally {
                 uc.disconnect();
             }
-//            contents.putIfAbsent(path, ((ResponseEntity<BlobFile[]>) content).getBody());
         }
-//        BlobFile[] cArray = ((ResponseEntity<BlobFile[]>) content).getBody();
         return content;
     }
 

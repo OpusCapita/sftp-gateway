@@ -1,12 +1,10 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFileAttributeView;
-import org.apache.sshd.client.subsystem.sftp.fs.SftpPath;
 import org.apache.sshd.common.util.GenericUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.Basic;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -28,11 +26,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
     @Override
     public BlobFileSystem newFileSystem(URI uri, Map<String, ?> env) throws IOException {
         synchronized (fileSystems) {
-            String schemeSpecificPart = uri.getSchemeSpecificPart();
-            int i = schemeSpecificPart.indexOf("/");
-            if (i >= 0) {
-                schemeSpecificPart = schemeSpecificPart.substring(0, i);
-            }
+            String schemeSpecificPart = uri.toString();
             BlobFileSystem fileSystem = fileSystems.get(schemeSpecificPart);
             if (fileSystem != null) {
                 throw new FileSystemAlreadyExistsException(schemeSpecificPart);
@@ -50,11 +44,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 
     public BlobFileSystem getFileSystem(URI uri, boolean create) {
         synchronized (fileSystems) {
-            String schemeSpecificPart = uri.getSchemeSpecificPart();
-            int i = schemeSpecificPart.indexOf("/");
-            if (i >= 0) {
-                schemeSpecificPart = schemeSpecificPart.substring(0, i);
-            }
+            String schemeSpecificPart = uri.toString();
             BlobFileSystem fileSystem = fileSystems.get(schemeSpecificPart);
             if (fileSystem == null) {
                 if (create) {
@@ -151,7 +141,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
         if (isSupportedFileAttributeView(path, type)) {
             if (BasicFileAttributeView.class.isAssignableFrom(type)) {
-                return type.cast(new BlobFileAttributeView(this, (BlobPath)path, options));
+                return type.cast(new BlobFileAttributeView(this, (BlobPath) path, options));
             }
         }
 
@@ -160,10 +150,6 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
-//        if (type.isAssignableFrom(BasicFileAttributes.class)) {
-//            return type.cast(getFileAttributeView(path, PosixFileAttributeView.class, options).readAttributes());
-//        }
-//        throw new UnsupportedOperationException("readAttributes(" + path + ")[" + type.getSimpleName() + "] N/A");
         return ((BlobPath) path).getFileSystem().readAttributes((BlobPath) path, type, options);
     }
 
@@ -245,11 +231,10 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
             throws IOException {
         PosixFileAttributes v = readAttributes(path, PosixFileAttributes.class, options);
         if ("*".equals(attrs)) {
-            attrs = "lastModifiedTime,lastAccessTime,creationTime,size,isRegularFile,isDirectory,isSymbolicLink,isOther,fileKey,owner,permissions,group";
+            attrs = "lastModifiedTime,lastAccessTime,creationTime,size,isRegularFile,isDirectory,isSymbolicLink,isOther,fileKey,owner,permissions";
         }
 
         NavigableMap<String, Object> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-//        boolean traceEnabled = log.isTraceEnabled();
         String[] attrValues = GenericUtils.split(attrs, ',');
         for (String attr : attrValues) {
             switch (attr) {
@@ -290,9 +275,6 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
                     map.put(attr, v.group());
                     break;
                 default:
-//                    if (traceEnabled) {
-//                        log.trace("readPosixViewAttributes({})[{}:{}] ignored for {}", path, view, attr, attrs);
-//                    }
             }
         }
         return map;

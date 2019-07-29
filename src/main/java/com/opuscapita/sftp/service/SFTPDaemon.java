@@ -9,11 +9,14 @@ import com.opuscapita.sftp.service.commands.OCSftpSubsystemFactory;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
+import org.apache.sshd.common.util.threads.CloseableExecutorService;
 import org.apache.sshd.server.ServerAuthenticationManager;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
+import org.apache.sshd.server.subsystem.sftp.SftpErrorStatusDataHandler;
 import org.apache.sshd.server.subsystem.sftp.SftpSubsystemFactory;
+import org.apache.sshd.server.subsystem.sftp.UnsupportedAttributePolicy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
@@ -63,6 +66,8 @@ public class SFTPDaemon extends AbstractLoggingBean {
         SftpSubsystemFactory factory = new SftpSubsystemFactory
                 .Builder()
                 .withFileSystemAccessor(new OCRestFileSystemAccessor())
+                .withUnsupportedAttributePolicy(UnsupportedAttributePolicy.Warn)
+                .withSftpErrorStatusDataHandler(SftpErrorStatusDataHandler.DEFAULT)
                 .build();
 //        OCSftpSubsystemFactory factory = this.builder.build();
         SFTPEventListener sftpEventListener = new SFTPEventListener();

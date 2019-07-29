@@ -1,6 +1,9 @@
 package com.opuscapita.s2p.blob.blobfilesystem.file;
 
+import javax.security.auth.Subject;
 import java.nio.file.attribute.*;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class BlobFileAttributes implements PosixFileAttributes {
@@ -11,6 +14,17 @@ public class BlobFileAttributes implements PosixFileAttributes {
     public BlobFileAttributes(String type, long size) {
         this.type = type;
         this.size = size;
+    }
+
+    public BlobFileAttributes(Map<String, Object> attributes) {
+        System.out.println(attributes);
+        if((boolean)attributes.get("isDirectory")) {
+            this.type = "directory";
+        } else {
+            this.type = "file";
+        }
+
+        this.size = (long) attributes.get("size");
     }
 
     @Override
@@ -60,7 +74,18 @@ public class BlobFileAttributes implements PosixFileAttributes {
 
     @Override
     public UserPrincipal owner() {
-        return null;
+        return new UserPrincipal() {
+
+            @Override
+            public String getName() {
+                return "SFTP User";
+            }
+
+            @Override
+            public boolean implies(Subject subject) {
+                return true;
+            }
+        };
     }
 
     @Override
@@ -70,6 +95,13 @@ public class BlobFileAttributes implements PosixFileAttributes {
 
     @Override
     public Set<PosixFilePermission> permissions() {
-        return null;
+        Set<PosixFilePermission> permissionSet = new HashSet<PosixFilePermission>();
+        permissionSet.add(PosixFilePermission.OWNER_EXECUTE);
+        permissionSet.add(PosixFilePermission.OWNER_WRITE);
+        permissionSet.add(PosixFilePermission.OWNER_READ);
+        permissionSet.add(PosixFilePermission.GROUP_EXECUTE);
+        permissionSet.add(PosixFilePermission.GROUP_WRITE);
+        permissionSet.add(PosixFilePermission.GROUP_READ);
+        return permissionSet;
     }
 }

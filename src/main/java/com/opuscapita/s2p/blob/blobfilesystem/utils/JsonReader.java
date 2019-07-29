@@ -105,7 +105,13 @@ public final class JsonReader {
                 throw expected("':'");
             }
             skipWhiteSpace();
-            object.put(name, readValue());
+            Object value = readValue();
+            if(name.equals("path")) {
+                if (value.toString().startsWith("/public")) {
+                    value = value.toString().substring(7);
+                }
+            }
+            object.put(name, value);
             skipWhiteSpace();
         } while (readChar(','));
         if (!readChar('}')) {

@@ -447,7 +447,7 @@ public class BlobPath extends AbstractLoggingBean implements Path {
                 return normalize(path, j - 1);
             }
             if (k == 0) {
-                throw new InvalidPathException(new String(path, StandardCharsets.UTF_8), "Path: nul character not allowed");
+                throw new InvalidPathException(new String(path, StandardCharsets.UTF_8), "Path: null character not allowed");
             }
             i = k;
         }
@@ -470,7 +470,7 @@ public class BlobPath extends AbstractLoggingBean implements Path {
             }
             if ((m != '/') || (k != '/')) {
                 if (m == 0) {
-                    throw new InvalidPathException(new String(path, StandardCharsets.UTF_8), "Path: nul character not allowed");
+                    throw new InvalidPathException(new String(path, StandardCharsets.UTF_8), "Path: null character not allowed");
                 }
                 arrayOfByte[j++] = (byte) m;
                 k = m;
