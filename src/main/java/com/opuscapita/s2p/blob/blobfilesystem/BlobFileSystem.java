@@ -231,9 +231,10 @@ public class BlobFileSystem extends FileSystem {
 
 
     public <A extends BasicFileAttributes> A readAttributes(BlobPath path, Class<A> clazz, LinkOption... options) throws IOException {
-        if (clazz != BasicFileAttributes.class) {
-            throw new UnsupportedOperationException();
-        }
+//        if (clazz != BasicFileAttributes.class && clazz != PosixFileAttributes.class) {
+//            throw new UnsupportedOperationException();
+//        }
+
         BlobPath absolute = path.toAbsolutePath();
         BlobPath parent = absolute.getParent();
 //        Object desc = loadContent(absolute.toString());

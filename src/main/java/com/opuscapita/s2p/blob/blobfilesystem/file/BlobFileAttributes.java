@@ -1,10 +1,9 @@
 package com.opuscapita.s2p.blob.blobfilesystem.file;
 
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
-import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.*;
+import java.util.Set;
 
-public class BlobFileAttributes implements BasicFileAttributes {
+public class BlobFileAttributes implements PosixFileAttributes {
 
     private final String type;
     private final long size;
@@ -59,4 +58,18 @@ public class BlobFileAttributes implements BasicFileAttributes {
         return null;
     }
 
+    @Override
+    public UserPrincipal owner() {
+        return null;
+    }
+
+    @Override
+    public GroupPrincipal group() {
+        return null;
+    }
+
+    @Override
+    public Set<PosixFilePermission> permissions() {
+        return null;
+    }
 }

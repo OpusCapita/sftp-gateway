@@ -194,7 +194,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 
     public BlobPath toBlobPath(Path path) {
         Objects.requireNonNull(path, "No path provided");
-        if (!(path instanceof SftpPath)) {
+        if (!(path instanceof BlobPath)) {
             throw new ProviderMismatchException("Path is not HTTP / HTTPS: " + path);
         }
         return (BlobPath) path;
