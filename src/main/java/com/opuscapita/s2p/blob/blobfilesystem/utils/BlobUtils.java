@@ -9,6 +9,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BlobUtils {
 
@@ -64,5 +66,19 @@ public class BlobUtils {
 
         log.debug("Request '{}' {} for {}", RANGE_REQUEST_PROPERTY_KEY, request, connection);
         connection.setRequestProperty(RANGE_REQUEST_PROPERTY_KEY, request);
+    }
+
+    public static Map<String, Object> getDefaultAttributes() {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("name", "/");
+        attributes.put("extension", "");
+        attributes.put("localhost", "/");
+        attributes.put("path", "/");
+        attributes.put("size", 0);
+        attributes.put("isFile", false);
+        attributes.put("isDirectory", true);
+        attributes.put("contentType", null);
+        attributes.put("checksum", null);
+        return attributes;
     }
 }

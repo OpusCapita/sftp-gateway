@@ -1,5 +1,6 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
+import org.apache.sshd.common.file.util.BasePath;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 
 import java.io.File;
@@ -10,6 +11,7 @@ import java.nio.file.*;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 public class BlobPath extends AbstractLoggingBean implements Path {
 
@@ -307,7 +309,7 @@ public class BlobPath extends AbstractLoggingBean implements Path {
 
     @Override
     public WatchKey register(WatchService watcher, WatchEvent.Kind<?>... events) throws IOException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("BlobPath.register is not implemented");
     }
 
     @Override
@@ -414,13 +416,17 @@ public class BlobPath extends AbstractLoggingBean implements Path {
     }
 
     private BlobPath checkPath(Path paramPath) {
-        if (paramPath == null) {
-            throw new NullPointerException();
+        Objects.requireNonNull(paramPath, "Missing path argument");
+        if (paramPath.getClass() != getClass()) {
+            throw new ProviderMismatchException("Path is not of this class: " + paramPath + "[" + paramPath.getClass().getSimpleName() + "]");
         }
-        if (!(paramPath instanceof BlobPath)) {
-            throw new ProviderMismatchException();
+        BlobPath t = (BlobPath) paramPath;
+
+        FileSystem fs = t.getFileSystem();
+        if (fs.provider() != this.fileSystem.provider()) {
+            throw new ProviderMismatchException("Mismatched providers for " + t);
         }
-        return (BlobPath) paramPath;
+        return t;
     }
 
 

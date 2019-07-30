@@ -2,13 +2,13 @@ package com.opuscapita.s2p.blob.blobfilesystem.file;
 
 import com.opuscapita.s2p.blob.blobfilesystem.AbstractBlobFileSystemProvider;
 import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
+import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 
 import java.io.IOException;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Objects;
 
@@ -31,7 +31,8 @@ public class BlobFileAttributeView extends AbstractLoggingBean implements BasicF
 
     @Override
     public BlobFileAttributes readAttributes() throws IOException {
-        return new BlobFileAttributes("directory", 0);
+
+        return new BlobFileAttributes(BlobUtils.getDefaultAttributes());
     }
 
     @Override

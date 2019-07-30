@@ -8,23 +8,10 @@ import java.util.Set;
 
 public class BlobFileAttributes implements PosixFileAttributes {
 
-    private final String type;
-    private final long size;
+    private final Map<String, Object> attributes;
 
-    public BlobFileAttributes(String type, long size) {
-        this.type = type;
-        this.size = size;
-    }
-
-    public BlobFileAttributes(Map<String, Object> attributes) {
-        System.out.println(attributes);
-        if((boolean)attributes.get("isDirectory")) {
-            this.type = "directory";
-        } else {
-            this.type = "file";
-        }
-
-        this.size = (long) attributes.get("size");
+    public BlobFileAttributes(Map<String, Object> _attributes) {
+        this.attributes = _attributes;
     }
 
     @Override
@@ -44,12 +31,12 @@ public class BlobFileAttributes implements PosixFileAttributes {
 
     @Override
     public boolean isRegularFile() {
-        return "file".equals(type);
+        return (boolean) this.attributes.get("isFile");
     }
 
     @Override
     public boolean isDirectory() {
-        return "directory".equals(type);
+        return (boolean) this.attributes.get("isDirectory");
     }
 
     @Override
@@ -64,7 +51,7 @@ public class BlobFileAttributes implements PosixFileAttributes {
 
     @Override
     public long size() {
-        return size;
+        return (int) this.attributes.get("size");
     }
 
     @Override
@@ -103,5 +90,10 @@ public class BlobFileAttributes implements PosixFileAttributes {
         permissionSet.add(PosixFilePermission.GROUP_WRITE);
         permissionSet.add(PosixFilePermission.GROUP_READ);
         return permissionSet;
+    }
+
+    @Override
+    public String toString() {
+        return (String)this.attributes.get("path");
     }
 }

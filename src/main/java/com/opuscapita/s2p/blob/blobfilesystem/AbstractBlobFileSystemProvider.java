@@ -1,6 +1,7 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFileAttributeView;
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFileAttributes;
 import org.apache.sshd.common.util.GenericUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,13 +135,41 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 
     @Override
     public void checkAccess(Path path, AccessMode... modes) throws IOException {
+        BlobPath p = toBlobPath(path);
+        boolean w = false;
+        boolean x = false;
+        if (GenericUtils.length(modes) > 0) {
+            for (AccessMode mode : modes) {
+                switch (mode) {
+                    case READ:
+                        break;
+                    case WRITE:
+                        w = true;
+                        break;
+                    case EXECUTE:
+                        x = true;
+                        break;
+                    default:
+                        throw new UnsupportedOperationException("Unsupported mode: " + mode);
+                }
+            }
+        }
 
+        BlobFileSystem fs = p.getFileSystem();
+        BasicFileAttributes attrs = fs.readAttributes(p, BlobFileAttributes.class);
+        if ((attrs == null) && !(p.isAbsolute() && p.getNameCount() == 0)) {
+            throw new NoSuchFileException(path.toString());
+        }
+
+        if (x || (w && fs.isReadOnly())) {
+            throw new AccessDeniedException("Filesystem is read-only: " + path.toString());
+        }
     }
 
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
         if (isSupportedFileAttributeView(path, type)) {
-            if (BasicFileAttributeView.class.isAssignableFrom(type)) {
+            if (PosixFileAttributes.class.isAssignableFrom(type)) {
                 return type.cast(new BlobFileAttributeView(this, (BlobPath) path, options));
             }
         }

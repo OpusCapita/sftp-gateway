@@ -36,6 +36,9 @@ public class BlobFileSystem extends FileSystem {
     private final String id_token;
     private final String tenant_id;
     private final RestTemplate restTemplate;
+    @Getter
+    private final BlobPath defaultDir;
+
 //    private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
 //            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "basic", "posix", "owner"));
 
@@ -59,6 +62,7 @@ public class BlobFileSystem extends FileSystem {
         }
         this.access = "public";
         String endpoint = "http://blob:3012/api/" + tenant_id + "/files/" + this.access;
+        this.defaultDir = new BlobPath(BlobFileSystem.this, endpoint.getBytes());
         this.fileSystemProvider = fileSystemProvider;
         this.restTemplate = new RestTemplate();
         this.access_token = access_token;
@@ -199,7 +203,11 @@ public class BlobFileSystem extends FileSystem {
                     @Override
                     public BlobPath next() {
                         Map<String, Object> val = delegate.next();
-                        return new BlobPath(BlobFileSystem.this, ((String) val.get("path")).getBytes(StandardCharsets.UTF_8));
+                        String path = ((String) val.get("name"));
+//                        if ((boolean) val.get("isDirectory")) {
+//                            path = ((String) val.get("name"));
+//                        }
+                        return new BlobPath(BlobFileSystem.this, path.getBytes(StandardCharsets.UTF_8));
                     }
 
                     @Override
@@ -211,7 +219,6 @@ public class BlobFileSystem extends FileSystem {
 
             @Override
             public void close() throws IOException {
-                System.out.println("");
             }
         };
     }
@@ -238,34 +245,30 @@ public class BlobFileSystem extends FileSystem {
     public <A extends BasicFileAttributes> A readAttributes(BlobPath path, Class<A> clazz, LinkOption... options) throws IOException {
         BlobPath absolute = path.toAbsolutePath();
         BlobPath parent = absolute.getParent();
-        Object desc = contents.get(absolute.toString());
-        if (desc == null && parent != null) {
-            Object parentContent = contents.get(parent.toString());
-            if (parentContent != null) {
-                for (Map<String, ?> child : (List<Map<String, ?>>) parentContent) {
-                    if (child.get("path").equals(absolute.toString().substring(1))) {
-                        desc = child;
-                        break;
-                    }
-                }
-            }
-        }
-        if (desc == null) {
-            desc = loadContent(absolute.toString());
-        }
-//        String type;
-//        long size;
-        A fileAttributes;
-        if (desc instanceof List) {
-            fileAttributes = (A) new BlobFileAttributes("directory", 0);
-        } else {
-            fileAttributes = (A) new BlobFileAttributes((Map) desc);
-//            type = (String) ((Map) desc).get("is");
-//            size = ((Number) ((Map) desc).get("size")).longValue();
-        }
-//        A fileAttributes = (A) new BlobFileAttributes(type, size);
+        Object desc = loadContent(absolute.toString());
+//        if (desc == null && parent != null) {
+//            Object parentContent = contents.get(parent.toString());
+//            if (parentContent != null) {
+//                for (Map<String, ?> child : (List<Map<String, ?>>) parentContent) {
+//                    if (child.get("path").equals(absolute.toString().substring(1))) {
+//                        desc = child;
+//                        break;
+//                    }
+//                }
+//            }
+//        }
+//        if (desc == null) {
+//            desc = loadContent(absolute.toString());
+//        }
 
-        return fileAttributes;
+        BlobFileAttributes fileAttributes;
+        if (desc instanceof List) {
+            fileAttributes = new BlobFileAttributes(BlobUtils.getDefaultAttributes());
+        } else {
+            fileAttributes = new BlobFileAttributes((Map) desc);
+        }
+
+        return (A) fileAttributes;
     }
 
     private Object loadContent(String path) throws IOException {
@@ -385,5 +388,9 @@ public class BlobFileSystem extends FileSystem {
             }
         }
         return sb.toString();
+    }
+
+    public com.opuscapita.s2p.blob.blobfilesystem.file.BlobPath create(String root, List<String> names) {
+        return new com.opuscapita.s2p.blob.blobfilesystem.file.BlobPath(BlobFileSystem.this, root, names);
     }
 }
