@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class BlobFileAttributes implements PosixFileAttributes {
+public class BlobFileAttributes implements BasicFileAttributes {
 
     private final Map<String, Object> attributes;
 
@@ -59,38 +59,38 @@ public class BlobFileAttributes implements PosixFileAttributes {
         return null;
     }
 
-    @Override
-    public UserPrincipal owner() {
-        return new UserPrincipal() {
-
-            @Override
-            public String getName() {
-                return "SFTP User";
-            }
-
-            @Override
-            public boolean implies(Subject subject) {
-                return true;
-            }
-        };
-    }
-
-    @Override
-    public GroupPrincipal group() {
-        return null;
-    }
-
-    @Override
-    public Set<PosixFilePermission> permissions() {
-        Set<PosixFilePermission> permissionSet = new HashSet<PosixFilePermission>();
-        permissionSet.add(PosixFilePermission.OWNER_EXECUTE);
-        permissionSet.add(PosixFilePermission.OWNER_WRITE);
-        permissionSet.add(PosixFilePermission.OWNER_READ);
-        permissionSet.add(PosixFilePermission.GROUP_EXECUTE);
-        permissionSet.add(PosixFilePermission.GROUP_WRITE);
-        permissionSet.add(PosixFilePermission.GROUP_READ);
-        return permissionSet;
-    }
+//    @Override
+//    public UserPrincipal owner() {
+//        return new UserPrincipal() {
+//
+//            @Override
+//            public String getName() {
+//                return "SFTP User";
+//            }
+//
+//            @Override
+//            public boolean implies(Subject subject) {
+//                return true;
+//            }
+//        };
+//    }
+//
+//    @Override
+//    public GroupPrincipal group() {
+//        return null;
+//    }
+//
+//    @Override
+//    public Set<PosixFilePermission> permissions() {
+//        Set<PosixFilePermission> permissionSet = new HashSet<PosixFilePermission>();
+//        permissionSet.add(PosixFilePermission.OWNER_EXECUTE);
+//        permissionSet.add(PosixFilePermission.OWNER_WRITE);
+//        permissionSet.add(PosixFilePermission.OWNER_READ);
+//        permissionSet.add(PosixFilePermission.GROUP_EXECUTE);
+//        permissionSet.add(PosixFilePermission.GROUP_WRITE);
+//        permissionSet.add(PosixFilePermission.GROUP_READ);
+//        return permissionSet;
+//    }
 
     @Override
     public String toString() {

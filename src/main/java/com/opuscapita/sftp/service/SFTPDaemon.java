@@ -45,8 +45,6 @@ public class SFTPDaemon extends AbstractLoggingBean {
         this.authProvider = _authProvider;
         this.builder = _builder;
 
-//        testFileSystem();
-
         List<NamedFactory<Command>> subsystemFactories = new ArrayList<>();
         subsystemFactories.add(this.createDefaultSftpSubsystem());
         this.sshd.setSubsystemFactories(subsystemFactories);
@@ -70,6 +68,7 @@ public class SFTPDaemon extends AbstractLoggingBean {
                 .withSftpErrorStatusDataHandler(SftpErrorStatusDataHandler.DEFAULT)
                 .build();
 //        OCSftpSubsystemFactory factory = this.builder.build();
+//        factory.setUnsupportedAttributePolicy(UnsupportedAttributePolicy.ThrowException);
         SFTPEventListener sftpEventListener = new SFTPEventListener();
         factory.addSftpEventListener(sftpEventListener);
 

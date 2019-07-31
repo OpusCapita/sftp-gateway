@@ -57,8 +57,7 @@ public class OCSftpSubsystemFactory extends SftpSubsystemFactory {
         OCSftpSubsystem subsystem =
                 new OCSftpSubsystem(getExecutorService(),
                         getUnsupportedAttributePolicy(), getFileSystemAccessor(),
-                        getErrorStatusDataHandler(),
-                        this.blobService);
+                        getErrorStatusDataHandler());
 
         GenericUtils.forEach(getRegisteredListeners(), subsystem::addSftpEventListener);
         return subsystem;

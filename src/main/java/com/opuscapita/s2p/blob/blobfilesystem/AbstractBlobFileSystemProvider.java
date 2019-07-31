@@ -1,7 +1,9 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobAclFileAttributeView;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFileAttributeView;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFileAttributes;
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobPosixFileAttributeView;
 import org.apache.sshd.common.util.GenericUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,10 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
             }
             fileSystem = new BlobFileSystem(this, env);
             fileSystems.put(schemeSpecificPart, fileSystem);
+
+//            Path f = fileSystem.getPath("/onboarding/test.xml");
+////            Files.createDirectories(f.getParent());
+//            Files.createFile(f);
             return fileSystem;
         }
     }
@@ -93,7 +99,8 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         if (!(path instanceof BlobPath)) {
             throw new ProviderMismatchException();
         }
-        return ((BlobPath) path).getFileSystem().newByteChannel(path, options, attrs);
+        return newFileChannel(path, options, attrs);
+//        return ((BlobPath) path).getFileSystem().newByteChannel(path, options, attrs);
     }
 
     @Override
@@ -156,7 +163,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         }
 
         BlobFileSystem fs = p.getFileSystem();
-        BasicFileAttributes attrs = fs.readAttributes(p, BlobFileAttributes.class);
+        BasicFileAttributes attrs = fs.readAttributes(p, BasicFileAttributes.class);
         if ((attrs == null) && !(p.isAbsolute() && p.getNameCount() == 0)) {
             throw new NoSuchFileException(path.toString());
         }
@@ -169,8 +176,10 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
         if (isSupportedFileAttributeView(path, type)) {
-            if (PosixFileAttributes.class.isAssignableFrom(type)) {
-                return type.cast(new BlobFileAttributeView(this, (BlobPath) path, options));
+            if (AclFileAttributeView.class.isAssignableFrom(type)) {
+                return type.cast(new BlobAclFileAttributeView(this, (BlobPath)path, options));
+            } else if (BasicFileAttributeView.class.isAssignableFrom(type)) {
+                return type.cast(new BlobPosixFileAttributeView(this, (BlobPath)path, options));
             }
         }
 
@@ -179,7 +188,11 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
-        return ((BlobPath) path).getFileSystem().readAttributes((BlobPath) path, type, options);
+        if (type.isAssignableFrom(PosixFileAttributes.class)) {
+            return type.cast(this.getFileAttributeView(path, PosixFileAttributeView.class, options).readAttributes());
+        }
+
+        throw new UnsupportedOperationException("readAttributes(" + path + ")[" + type.getSimpleName() + "] N/A");
     }
 
     @Override

@@ -1,6 +1,6 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
-import org.apache.sshd.common.file.util.BasePath;
+import org.apache.sshd.client.subsystem.sftp.fs.SftpPath;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 
 import java.io.File;
@@ -275,7 +275,8 @@ public class BlobPath extends AbstractLoggingBean implements Path {
 
     @Override
     public URI toUri() {
-        throw new UnsupportedOperationException("BlobPath.toUri is not implemented");
+        return URI.create(this.getFileSystem().getEndpoint() + this.path.toString());
+//        throw new UnsupportedOperationException("BlobPath.toUri is not implemented");
     }
 
     @Override

@@ -2,8 +2,11 @@ package com.opuscapita.sftp.service.commands;
 
 import com.opuscapita.auth.model.AuthResponse;
 import com.opuscapita.blob.BlobService;
+import com.opuscapita.s2p.blob.blobfilesystem.BlobFileSystem;
+import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
 import com.opuscapita.sftp.utils.SFTPHelper;
 import org.apache.sshd.common.AttributeRepository;
+import org.apache.sshd.common.util.SelectorUtils;
 import org.apache.sshd.common.util.buffer.Buffer;
 import org.apache.sshd.common.util.threads.CloseableExecutorService;
 import org.apache.sshd.server.subsystem.sftp.SftpErrorStatusDataHandler;
@@ -13,19 +16,20 @@ import org.apache.sshd.server.subsystem.sftp.UnsupportedAttributePolicy;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 
 public class OCSftpSubsystem extends SftpSubsystem {
-    private BlobService blobService;
+
+    private BlobPath defaultDir = ((BlobFileSystem)fileSystem).getDefaultDir();
 
     public OCSftpSubsystem(
             CloseableExecutorService executorService,
             UnsupportedAttributePolicy policy,
             SftpFileSystemAccessor accessor,
-            SftpErrorStatusDataHandler errorStatusDataHandler,
-            BlobService _blobService
+            SftpErrorStatusDataHandler errorStatusDataHandler
     ) {
         super(executorService, policy, accessor, errorStatusDataHandler);
-        this.blobService = _blobService;
     }
 
     @Override
@@ -33,7 +37,6 @@ public class OCSftpSubsystem extends SftpSubsystem {
         if (!this.getServerSession().isAuthenticated()) {
             throw new IOException();
         }
-        this.blobService.setAuthResponse(this.getAuthResponse());
         super.doRealPath(buffer, id);
     }
 
@@ -41,8 +44,23 @@ public class OCSftpSubsystem extends SftpSubsystem {
     public void setFileSystem(FileSystem fileSystem) {
         if (fileSystem != this.fileSystem) {
             this.fileSystem = fileSystem;
-            this.defaultDir = fileSystem.getPath("").toAbsolutePath().normalize();
         }
+    }
+
+    @Override
+    public BlobPath getDefaultDirectory() {
+        return defaultDir;
+    }
+
+    @Override
+    protected Path resolveFile(String remotePath) throws IOException, InvalidPathException {
+        BlobPath defaultDir = getDefaultDirectory();
+        String path = SelectorUtils.translateToLocalFileSystemPath(remotePath, '/', defaultDir.getFileSystem());
+        Path p = defaultDir.resolve(path);
+        if (log.isTraceEnabled()) {
+            log.trace("resolveFile({}) {} => {}", getServerSession(), remotePath, p);
+        }
+        return p;
     }
 
     private AuthResponse getAuthResponse() {
