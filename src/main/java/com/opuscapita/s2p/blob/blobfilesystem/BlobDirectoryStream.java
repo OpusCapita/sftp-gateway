@@ -25,7 +25,6 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Implements a remote {@link DirectoryStream}
@@ -33,8 +32,7 @@ import java.util.Map;
  * @author <a href="mailto:dev@mina.apache.org">Apache MINA SSHD Project</a>
  */
 public class BlobDirectoryStream implements DirectoryStream<Path> {
-//    private final Iterable<BlobDirEntry> iter;
-    private final Iterator<Map<String, Object>> iter;
+    private final Iterable<BlobDirEntry> it;
     private final BlobPath p;
 
     /**
@@ -44,12 +42,12 @@ public class BlobDirectoryStream implements DirectoryStream<Path> {
     public BlobDirectoryStream(BlobPath path) throws IOException {
         BlobFileSystem fs = path.getFileSystem();
         p = path;
-        iter = ((List<Map<String, Object>>) path.getFileSystem().loadContent(path)).iterator();;
+        it = ((List<BlobDirEntry>) path.getFileSystem().loadContent(path));
     }
 
     @Override
     public Iterator<Path> iterator() {
-        return new BlobPathIterator(p, iter);
+        return new BlobPathIterator(p, it);
     }
 
     @Override

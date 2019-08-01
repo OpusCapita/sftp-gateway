@@ -19,23 +19,13 @@ package com.opuscapita.s2p.blob.blobfilesystem.file;
  * under the License.
  */
 
-import java.io.IOException;
+import com.opuscapita.s2p.blob.blobfilesystem.AbstractBlobFileSystemProvider;
+import org.apache.sshd.common.util.logging.AbstractLoggingBean;
+
 import java.nio.file.LinkOption;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttributeView;
 import java.util.Objects;
-
-import com.opuscapita.s2p.blob.blobfilesystem.AbstractBlobFileSystemProvider;
-import com.opuscapita.s2p.blob.blobfilesystem.BlobFileSystem;
-import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
-import org.apache.sshd.client.subsystem.sftp.SftpClient;
-import org.apache.sshd.client.subsystem.sftp.fs.SftpFileSystem;
-import org.apache.sshd.client.subsystem.sftp.fs.SftpFileSystemProvider;
-import org.apache.sshd.client.subsystem.sftp.fs.SftpPath;
-import org.apache.sshd.common.subsystem.sftp.SftpConstants;
-import org.apache.sshd.common.subsystem.sftp.SftpException;
-import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 
 public abstract class AbstractBlobFileAttributeView extends AbstractLoggingBean implements FileAttributeView {
     protected final AbstractBlobFileSystemProvider provider;

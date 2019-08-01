@@ -1,6 +1,6 @@
 package com.opuscapita.sftp.service;
 
-import com.opuscapita.blob.config.BlobConfiguration;
+import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
 import com.opuscapita.sftp.config.SFTPConfiguration;
 import com.opuscapita.sftp.filesystem.BlobFileSystemFactory;
 import com.opuscapita.sftp.service.auth.AuthProvider;
@@ -9,7 +9,6 @@ import com.opuscapita.sftp.service.commands.OCSftpSubsystemFactory;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
-import org.apache.sshd.common.util.threads.CloseableExecutorService;
 import org.apache.sshd.server.ServerAuthenticationManager;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.command.Command;

@@ -1,4 +1,4 @@
-package com.opuscapita.blob.Exception;
+package com.opuscapita.s2p.blob.blobfilesystem.client.Exception;
 
 public class BlobException extends Throwable {
 

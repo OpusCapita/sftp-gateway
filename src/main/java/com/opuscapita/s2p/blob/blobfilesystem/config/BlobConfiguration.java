@@ -1,4 +1,4 @@
-package com.opuscapita.blob.config;
+package com.opuscapita.s2p.blob.blobfilesystem.config;
 
 import lombok.Getter;
 import lombok.Setter;

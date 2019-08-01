@@ -19,59 +19,59 @@
 
 package com.opuscapita.s2p.blob.blobfilesystem;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
 
 public class BlobPathIterator implements Iterator<Path> {
     private final BlobPath p;
-    private final Iterator<Map<String, Object>>  it;
+    //    private final Iterator<Map<String, Object>>  it;
+    private final Iterator<BlobDirEntry> it;
     private boolean dotIgnored;
     private boolean dotdotIgnored;
-//    private BlobDirEntry curEntry;
+    private BlobDirEntry curEntry;
 
-//    public BlobPathIterator(BlobPath path, Iterable<? extends BlobDirEntry> iter) {
-//        this(path, (iter == null) ? null : iter.iterator());
-//    }
+    public BlobPathIterator(BlobPath path, Iterable<BlobDirEntry> iter) {
+        this(path, (iter == null) ? null : iter.iterator());
+    }
 
-    public BlobPathIterator(BlobPath path, Iterator<Map<String, Object>>  iter) {
+    //    public BlobPathIterator(BlobPath path, Iterator<Map<String, Object>>  iter) {
+    public BlobPathIterator(BlobPath path, Iterator<BlobDirEntry> iter) {
         p = path;
         it = iter;
-//        curEntry = nextEntry();
+        curEntry = nextEntry();
     }
 
     @Override
     public boolean hasNext() {
-        return it.hasNext();
+        return curEntry != null;
     }
 
     @Override
     public Path next() {
-        Map<String, Object> val = it.next();
-        String path = ((String) val.get("path"));
-        return p.resolve(path);
-//        BlobDirEntry entry = curEntry;
-//        curEntry = nextEntry();
-//        return p.resolve(entry.getFilename());
+//        Map<String, Object> val = it.next();
+//        BlobDirEntry val = it.next();
+//        String path = ((String) val.get("path"));
+//        return p.resolve(path);
+        BlobDirEntry entry = curEntry;
+        curEntry = nextEntry();
+        return p.resolve(entry.getName());
     }
 
-//    private BlobDirEntry nextEntry() {
-//        while ((it != null) && it.hasNext()) {
-//            Object entry = it.next();
-//            String name = entry.getFilename();
-//            if (".".equals(name) && (!dotIgnored)) {
-//                dotIgnored = true;
-//            } else if ("..".equals(name) && (!dotdotIgnored)) {
-//                dotdotIgnored = true;
-//            } else {
-//                return entry;
-//            }
-//        }
-//
-//        return null;
-//    }
+    private BlobDirEntry nextEntry() {
+        while ((it != null) && it.hasNext()) {
+            BlobDirEntry entry = it.next();
+            String name = entry.getName();
+            if (".".equals(name) && (!dotIgnored)) {
+                dotIgnored = true;
+            } else if ("..".equals(name) && (!dotdotIgnored)) {
+                dotdotIgnored = true;
+            } else {
+                return entry;
+            }
+        }
+
+        return null;
+    }
 
     @Override
     public void remove() {

@@ -1,6 +1,5 @@
 package com.opuscapita.sftp.service.commands;
 
-import com.opuscapita.blob.BlobService;
 import org.apache.sshd.common.util.GenericUtils;
 import org.apache.sshd.common.util.ObjectBuilder;
 import org.apache.sshd.server.command.Command;
@@ -15,12 +14,10 @@ import org.springframework.stereotype.Service;
 @ComponentScan
 public class OCSftpSubsystemFactory extends SftpSubsystemFactory {
 
-    private BlobService blobService;
 
     @Autowired
-    public OCSftpSubsystemFactory(BlobService _bloBlobService) {
+    public OCSftpSubsystemFactory() {
         super();
-        this.blobService = _bloBlobService;
     }
 
     @Service

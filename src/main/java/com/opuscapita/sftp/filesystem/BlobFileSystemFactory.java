@@ -2,7 +2,7 @@ package com.opuscapita.sftp.filesystem;
 
 import com.opuscapita.auth.model.AuthResponse;
 import com.opuscapita.auth.model.User;
-import com.opuscapita.blob.config.BlobConfiguration;
+import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
 import com.opuscapita.s2p.blob.blobfilesystem.BlobHttpFileSystemProvider;
 import com.opuscapita.sftp.utils.SFTPHelper;
 import org.apache.sshd.common.AttributeRepository;
@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.FileSystem;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 

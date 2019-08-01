@@ -1,7 +1,6 @@
 package com.opuscapita.sftp.service.commands;
 
 import com.opuscapita.auth.model.AuthResponse;
-import com.opuscapita.blob.BlobService;
 import com.opuscapita.s2p.blob.blobfilesystem.BlobFileSystem;
 import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
 import com.opuscapita.sftp.utils.SFTPHelper;
