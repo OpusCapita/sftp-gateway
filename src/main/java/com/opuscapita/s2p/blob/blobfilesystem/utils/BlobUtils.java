@@ -1,5 +1,6 @@
 package com.opuscapita.s2p.blob.blobfilesystem.utils;
 
+import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,17 +69,22 @@ public class BlobUtils {
         connection.setRequestProperty(RANGE_REQUEST_PROPERTY_KEY, request);
     }
 
-    public static Map<String, Object> getDefaultAttributes() {
+    public static Map<String, Object> getDefaultAttributes(BlobPath path) {
         Map<String, Object> attributes = new HashMap<>();
+
         attributes.put("name", "/");
         attributes.put("extension", "");
-        attributes.put("localhost", "/");
+//        attributes.put("localhost", "/");
         attributes.put("path", "/");
         attributes.put("size", 0);
         attributes.put("isFile", false);
         attributes.put("isDirectory", true);
         attributes.put("contentType", null);
         attributes.put("checksum", null);
+        if(path != null) {
+            attributes.put("name", path.toString());
+            attributes.put("path", path.toString());
+        }
         return attributes;
     }
 }

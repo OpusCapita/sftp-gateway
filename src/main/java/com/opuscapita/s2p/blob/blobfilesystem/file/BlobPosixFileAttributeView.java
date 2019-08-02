@@ -19,6 +19,8 @@
 package com.opuscapita.s2p.blob.blobfilesystem.file;
 
 import com.opuscapita.s2p.blob.blobfilesystem.AbstractBlobFileSystemProvider;
+import com.opuscapita.s2p.blob.blobfilesystem.BlobFileSystem;
+import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import org.apache.sshd.client.subsystem.sftp.SftpClient;
 import org.apache.sshd.client.subsystem.sftp.fs.SftpFileSystemProvider;
@@ -28,6 +30,7 @@ import java.io.IOException;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.*;
+import java.util.HashMap;
 import java.util.Set;
 
 public class BlobPosixFileAttributeView extends AbstractBlobFileAttributeView implements PosixFileAttributeView {
@@ -50,7 +53,10 @@ public class BlobPosixFileAttributeView extends AbstractBlobFileAttributeView im
 
     @Override
     public PosixFileAttributes readAttributes() throws IOException {
-        return new BlobPosixFileAttributes(BlobUtils.getDefaultAttributes());
+//        return new BlobPosixFileAttributes(BlobUtils.getDefaultAttributes(null));
+//        return path.getFileSystem().provider().readAttributes(path, BlobPosixFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        PosixFileAttributes attributes = ((BlobFileSystem)path.getFileSystem()).readAttributes((BlobPath)path, PosixFileAttributes.class);
+        return attributes;
     }
 
     @Override

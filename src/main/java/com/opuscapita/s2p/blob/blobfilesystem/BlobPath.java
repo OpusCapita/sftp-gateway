@@ -543,7 +543,11 @@ public class BlobPath extends AbstractLoggingBean implements Path {
         }
         if (m > 1 && to[m - 1] == '/')
             m--;
-        return (m == to.length) ? to : Arrays.copyOf(to, m);
+        byte[] retVal = (m == to.length) ? to : Arrays.copyOf(to, m);
+        if(retVal[retVal.length - 1] == '.') {
+            retVal[retVal.length - 1] = Byte.parseByte(null);
+        }
+        return retVal;
     }
 
     private static boolean equalsNameAt(BlobPath p1, BlobPath p2, int index) {

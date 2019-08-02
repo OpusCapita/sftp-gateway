@@ -1,6 +1,7 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
-import com.opuscapita.s2p.blob.blobfilesystem.file.*;
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobAclFileAttributeView;
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobPosixFileAttributeView;
 import org.apache.sshd.common.util.GenericUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -139,44 +140,44 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 
     @Override
     public void checkAccess(Path path, AccessMode... modes) throws IOException {
-        BlobPath p = toBlobPath(path);
-        boolean w = false;
-        boolean x = false;
-        if (GenericUtils.length(modes) > 0) {
-            for (AccessMode mode : modes) {
-                switch (mode) {
-                    case READ:
-                        break;
-                    case WRITE:
-                        w = true;
-                        break;
-                    case EXECUTE:
-                        x = true;
-                        break;
-                    default:
-                        throw new UnsupportedOperationException("Unsupported mode: " + mode);
-                }
-            }
-        }
-
-        BlobFileSystem fs = p.getFileSystem();
-        BasicFileAttributes attrs = fs.readAttributes(p, BasicFileAttributes.class);
-        if ((attrs == null) && !(p.isAbsolute() && p.getNameCount() == 0)) {
-            throw new NoSuchFileException(path.toString());
-        }
-
-        if (x || (w && fs.isReadOnly())) {
-            throw new AccessDeniedException("Filesystem is read-only: " + path.toString());
-        }
+//        BlobPath p = toBlobPath(path);
+//        boolean w = false;
+//        boolean x = false;
+//        if (GenericUtils.length(modes) > 0) {
+//            for (AccessMode mode : modes) {
+//                switch (mode) {
+//                    case READ:
+//                        break;
+//                    case WRITE:
+//                        w = true;
+//                        break;
+//                    case EXECUTE:
+//                        x = true;
+//                        break;
+//                    default:
+//                        throw new UnsupportedOperationException("Unsupported mode: " + mode);
+//                }
+//            }
+//        }
+//
+//        BlobFileSystem fs = p.getFileSystem();
+//        BasicFileAttributes attrs = fs.readAttributes(p, BasicFileAttributes.class);
+//        if ((attrs == null) && !(p.isAbsolute() && p.getNameCount() == 0)) {
+//            throw new NoSuchFileException(path.toString());
+//        }
+//
+//        if (x || (w && fs.isReadOnly())) {
+//            throw new AccessDeniedException("Filesystem is read-only: " + path.toString());
+//        }
     }
 
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
         if (isSupportedFileAttributeView(path, type)) {
             if (AclFileAttributeView.class.isAssignableFrom(type)) {
-                return type.cast(new BlobAclFileAttributeView(this, (BlobPath)path, options));
+                return type.cast(new BlobAclFileAttributeView(this, path, options));
             } else if (BasicFileAttributeView.class.isAssignableFrom(type)) {
-                return type.cast(new BlobPosixFileAttributeView(this, (BlobPath)path, options));
+                return type.cast(new BlobPosixFileAttributeView(this, path, options));
             }
         }
 
@@ -186,7 +187,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
         if (type.isAssignableFrom(PosixFileAttributes.class)) {
-            return type.cast(this.getFileAttributeView(path, PosixFileAttributeView.class, options).readAttributes());
+            return type.cast(this.getFileAttributeView(path, BlobPosixFileAttributeView.class, options).readAttributes());
         }
 
         throw new UnsupportedOperationException("readAttributes(" + path + ")[" + type.getSimpleName() + "] N/A");

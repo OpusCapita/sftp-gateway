@@ -95,7 +95,7 @@ public class BlobPosixFileAttributes implements PosixFileAttributes {
 
     @Override
     public GroupPrincipal group() {
-        return null;
+        return () -> "SFTP User Group";
     }
 
     @Override

@@ -10,10 +10,7 @@ import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class BlobDirEntry extends AbstractLoggingBean implements Serializable {
 
@@ -48,6 +45,12 @@ public class BlobDirEntry extends AbstractLoggingBean implements Serializable {
             }
         }
     };
+
+    @Getter
+    @Setter
+    private BlobDirEntry parent;
+    @Getter
+    private List<BlobDirEntry> children;
 
     @Setter
     @Getter
@@ -91,10 +94,11 @@ public class BlobDirEntry extends AbstractLoggingBean implements Serializable {
         this.size = 0;
         this.contentType = "application/json";
         this.extension = "";
+        this.children = new ArrayList<>();
     }
 
     public BlobDirEntry() {
-
+        this.children = new ArrayList<>();
     }
 
     public static BlobDirEntry fromJson(String jsonString) {

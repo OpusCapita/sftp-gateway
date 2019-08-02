@@ -2,7 +2,7 @@ package com.opuscapita.s2p.blob.blobfilesystem;
 
 import com.opuscapita.s2p.blob.blobfilesystem.client.BlobFileSystemClient;
 import com.opuscapita.s2p.blob.blobfilesystem.client.Exception.BlobException;
-import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFileAttributes;
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobPosixFileAttributes;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import lombok.Getter;
 import org.apache.sshd.common.util.GenericUtils;
@@ -12,21 +12,18 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
@@ -51,11 +48,11 @@ public class BlobFileSystem extends FileSystem {
 
     private final BlobFileSystemClient delegate;
 
-    private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
-            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "basic", "posix", "owner"));
-
 //    private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
-//            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "posix"));
+//            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "basic", "posix", "owner"));
+
+    private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
+            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "posix"));
 
 
     public BlobFileSystem(AbstractBlobFileSystemProvider fileSystemProvider, Map<String, ?> env) throws IOException {
@@ -76,13 +73,11 @@ public class BlobFileSystem extends FileSystem {
         String endpoint = "http://blob:3012/api/" + tenant_id + "/files" + "/" + this.access; // + "/onboarding/eInvoiceSupplierOnboarding";
         this.defaultDir = new BlobPath(BlobFileSystem.this, endpoint.getBytes());
         this.fileSystemProvider = fileSystemProvider;
-//        this.restTemplate = new RestTemplate();
         this.access_token = access_token;
         this.tenant_id = tenant_id;
         this.id_token = id_token;
         this.refresh_token = refresh_token;
         this.token_type = token_type;
-//        this.endpoint = endpoint;
         this.delegate = new BlobFileSystemClient(new RestTemplateBuilder(), new URL(endpoint));
     }
 
@@ -202,78 +197,62 @@ public class BlobFileSystem extends FileSystem {
         return new BlobDirectoryStream((BlobPath) dir);
     }
 
-    public <A extends BasicFileAttributes> SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>[] attrs) throws IOException {
-        Object content = loadContent(((BlobPath) path).toAbsolutePath());
-        if (content instanceof List) {
-            throw new IOException("Is a directory");
-        }
-        String base64 = ((Map<String, String>) content).get("content");
-        final byte[] data = DatatypeConverter.parseBase64Binary(base64);
-        return new URLSeekableByteChannel(data);
-    }
+//    public <A extends BasicFileAttributes> SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>[] attrs) throws IOException {
+//        Object content = loadContent(((BlobPath) path).toAbsolutePath());
+//        if (content instanceof List) {
+//            throw new IOException("Is a directory");
+//        }
+//        String base64 = ((Map<String, String>) content).get("content");
+//        final byte[] data = DatatypeConverter.parseBase64Binary(base64);
+//        return new URLSeekableByteChannel(data);
+//    }
 
 
     public <A extends BasicFileAttributes> A readAttributes(BlobPath path, Class<A> clazz, LinkOption... options) throws IOException {
         BlobPath absolute = path.toAbsolutePath();
         BlobPath parent = absolute.getParent();
         Object desc = contents.get(absolute.toString());
-//        if (desc == null && parent != null) {
-//            Object parentContent = contents.get(parent.toString());
-//            if (parentContent != null) {
-//                for (Map<String, ?> child : (List<Map<String, ?>>) parentContent) {
-//                    if (child.get("path").equals(absolute.toString().substring(1))) {
-//                        desc = child;
-//                        break;
-//                    }
-//                }
-//            }
-//        }
+        if (desc == null && parent != null) {
+            Object parentContent = contents.get(parent.toString());
+            if (parentContent != null) {
+                for (BlobDirEntry child : (List<BlobDirEntry>) parentContent) {
+                    log.info(absolute.toString().substring(1));
+                    if (absolute.toString().substring(1).endsWith(child.getName())) {
+                        desc = child;
+                        break;
+                    }
+                }
+            }
+        }
         if (desc == null) {
             desc = loadContent(absolute);
         }
 
-        BlobFileAttributes fileAttributes;
+        PosixFileAttributes fileAttributes;
         if (desc instanceof List) {
-            fileAttributes = new BlobFileAttributes(BlobUtils.getDefaultAttributes());
+            fileAttributes = new BlobPosixFileAttributes(BlobUtils.getDefaultAttributes(path));
         } else {
-            fileAttributes = new BlobFileAttributes(((BlobDirEntry) desc).toMap());
+            fileAttributes = new BlobPosixFileAttributes(((BlobDirEntry) desc).toMap());
         }
 
-        return (A) fileAttributes;
+        return clazz.cast(fileAttributes);
     }
 
     public Object loadContent(BlobPath path) throws IOException {
         List<BlobDirEntry> content = contents.get(path.toString());
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.set("X-User-Id-Token", this.id_token);
-//        headers.setContentType(MediaType.APPLICATION_JSON);
-//        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-//        HttpEntity<String> entity = new HttpEntity<>("body", headers);
-//        ResponseEntity<BlobDirEntry[]> responseEntity = null;
         if (content == null) {
-//            URL _url = new URL(endpoint + path.toAbsolutePath());
-//            HttpURLConnection uc = (HttpURLConnection) _url.openConnection();
-//            responseEntity = restTemplate.exchange(_url.toString(), HttpMethod.GET, entity, BlobDirEntry[].class);
-//            if (responseEntity.getStatusCode().isError()) {
-//                _url = new URL(_url.toString() + "/");
-//                responseEntity = restTemplate.exchange(_url.toString(), HttpMethod.GET, entity, BlobDirEntry[].class);
-//            }
             try {
                 content = this.delegate.listFiles(path, this.id_token);
-                contents.putIfAbsent(path.toString(), content);
+                contents.putIfAbsent(path.toAbsolutePath().toString(), content);
             } catch (BlobException e) {
-                log.error("Can't load Directory: " + path.toString());
+                try {
+                    content = contents.getOrDefault(path.toAbsolutePath().toString(), new ArrayList<>());
+                    content.add(this.delegate.listFile(path, this.id_token));
+                    contents.putIfAbsent(path.toAbsolutePath().toString(), content);
+                } catch (BlobException e2) {
+                    log.error("Fehler: " + e2.getMessage());
+                }
             }
-//            try {
-//                uc.setRequestProperty("X-User-Id-Token", this.id_token);
-//                log.info("Get Data from Path: " + _url.getPath());
-//                try (Reader r = new InputStreamReader(wrapStream(uc, uc.getInputStream()), StandardCharsets.UTF_8)) {
-//                    content = JsonReader.read(r);
-//                    contents.putIfAbsent(path.toString(), content);
-//                }
-//            } finally {
-//                uc.disconnect();
-//            }
         }
         return content;
     }

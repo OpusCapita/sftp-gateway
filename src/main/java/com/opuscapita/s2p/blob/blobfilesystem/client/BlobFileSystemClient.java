@@ -1,6 +1,7 @@
 package com.opuscapita.s2p.blob.blobfilesystem.client;
 
 import com.opuscapita.s2p.blob.blobfilesystem.BlobDirEntry;
+import com.opuscapita.s2p.blob.blobfilesystem.BlobFileSystem;
 import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
 import com.opuscapita.s2p.blob.blobfilesystem.client.Exception.BlobException;
 import lombok.Getter;
@@ -10,6 +11,7 @@ import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +31,9 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
     public List<BlobDirEntry> listFiles(BlobPath path, String jwt) throws BlobException {
         log.debug("File list requested from blob service for folder: " + path.toString());
         try {
+            if(!path.endsWith("/")) {
+                path = new BlobPath(path.getFileSystem(), new String(path.toString() + "/").getBytes());
+            }
             ResponseEntity<BlobDirEntry[]> result = get(path, jwt, BlobDirEntry[].class, HttpMethod.GET);
             log.info("File list fetched successfully from blob service for folder: " + path.toString());
             return new ArrayList<>(Arrays.asList(result.getBody()));
@@ -43,7 +48,7 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         try {
             ResponseEntity<String> result = get(path, jwt, String.class, HttpMethod.HEAD);
             log.info("File fetched successfully from blob service: " + path.toString());
-            return BlobDirEntry.fromJson(result.getBody());
+            return BlobDirEntry.fromJson(URLDecoder.decode(result.getHeaders().getFirst("X-File-Info")));
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new BlobException("Error occurred while trying to read the file from blob service.");
@@ -60,6 +65,6 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         HttpEntity<String> entity = new HttpEntity<>("body", headers);
         log.info("Setting http headers content type to application json");
 
-        return restTemplate.exchange(this.rootUrl.toString() + path + "/", httpMethod, entity, type);
+        return restTemplate.exchange(this.rootUrl.toString() + path, httpMethod, entity, type);
     }
 }

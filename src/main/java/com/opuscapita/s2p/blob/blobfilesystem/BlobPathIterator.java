@@ -24,7 +24,6 @@ import java.util.Iterator;
 
 public class BlobPathIterator implements Iterator<Path> {
     private final BlobPath p;
-    //    private final Iterator<Map<String, Object>>  it;
     private final Iterator<BlobDirEntry> it;
     private boolean dotIgnored;
     private boolean dotdotIgnored;
@@ -48,10 +47,6 @@ public class BlobPathIterator implements Iterator<Path> {
 
     @Override
     public Path next() {
-//        Map<String, Object> val = it.next();
-//        BlobDirEntry val = it.next();
-//        String path = ((String) val.get("path"));
-//        return p.resolve(path);
         BlobDirEntry entry = curEntry;
         curEntry = nextEntry();
         return p.resolve(entry.getName());
