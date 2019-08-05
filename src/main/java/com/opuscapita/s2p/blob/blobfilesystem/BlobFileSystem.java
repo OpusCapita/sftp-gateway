@@ -247,8 +247,8 @@ public class BlobFileSystem extends FileSystem {
                     log.error("Fehler: " + e2.getMessage());
                 }
             } catch (FileNotFoundException fileNotFound) {
-                log.error(fileNotFound.getMessage());
-                throw fileNotFound;
+                log.warn(fileNotFound.getMessage());
+                throw new NoSuchFileException(fileNotFound.getMessage());
             }
         }
         return content;

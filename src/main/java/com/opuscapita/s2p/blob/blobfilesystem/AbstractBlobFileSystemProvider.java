@@ -4,6 +4,7 @@ import com.opuscapita.s2p.blob.blobfilesystem.client.Exception.BlobException;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobAclFileAttributeView;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobPosixFileAttributeView;
 import org.apache.sshd.common.util.GenericUtils;
+import org.apache.sshd.server.subsystem.sftp.AbstractSftpSubsystemHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
