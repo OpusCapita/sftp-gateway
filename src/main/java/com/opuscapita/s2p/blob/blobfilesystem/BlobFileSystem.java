@@ -15,7 +15,6 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -32,27 +31,27 @@ import java.util.regex.Pattern;
 public class BlobFileSystem extends FileSystem {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     private final AbstractBlobFileSystemProvider fileSystemProvider;
-    //    @Getter
-//    private final String endpoint;
+
     @Getter
     private final String access;
-    private final ConcurrentMap<String, List<BlobDirEntry>> contents = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Map<String, BlobDirEntry>> contents = new ConcurrentHashMap<>();
     private final String refresh_token;
     private final String token_type;
     private final String access_token;
+    @Getter
     private final String id_token;
     private final String tenant_id;
-    //    private final RestTemplate restTemplate;
     @Getter
     private final BlobPath defaultDir;
 
+    @Getter
     private final BlobFileSystemClient delegate;
 
-//    private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
-//            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "basic", "posix", "owner"));
-
     private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
-            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "posix"));
+            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "basic", "posix", "owner"));
+
+//    private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
+//            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "posix"));
 
 
     public BlobFileSystem(AbstractBlobFileSystemProvider fileSystemProvider, Map<String, ?> env) throws IOException {
@@ -208,62 +207,69 @@ public class BlobFileSystem extends FileSystem {
 //    }
 
 
-    public <A extends BasicFileAttributes> A readAttributes(BlobPath path, Class<A> clazz, LinkOption... options) throws IOException {
+    public <A extends BasicFileAttributes> A readAttributes(BlobPath path, Class<A> type, LinkOption... options) throws IOException {
         BlobPath absolute = path.toAbsolutePath();
-        BlobPath parent = absolute.getParent();
         Object desc = contents.get(absolute.toString());
-        if (desc == null && parent != null) {
-            Object parentContent = contents.get(parent.toString());
-            if (parentContent != null) {
-                for (BlobDirEntry child : (List<BlobDirEntry>) parentContent) {
-                    log.info(absolute.toString().substring(1));
-                    if (absolute.toString().substring(1).endsWith(child.getName())) {
-                        desc = child;
-                        break;
-                    }
-                }
-            }
+        if (desc == null) {
+            desc = getFromParent(path);
         }
         if (desc == null) {
             desc = loadContent(absolute);
         }
 
         PosixFileAttributes fileAttributes;
-        if (desc instanceof List) {
-            fileAttributes = new BlobPosixFileAttributes(BlobUtils.getDefaultAttributes(path));
+        if (desc instanceof Map) {
+            fileAttributes = new BlobPosixFileAttributes(BlobUtils.getDefaultAttributes(absolute));
         } else {
             fileAttributes = new BlobPosixFileAttributes(((BlobDirEntry) desc).toMap());
         }
 
-        return clazz.cast(fileAttributes);
+        return type.cast(fileAttributes);
     }
 
     public Object loadContent(BlobPath path) throws IOException {
-        List<BlobDirEntry> content = contents.get(path.toString());
+        Map<String, BlobDirEntry> content = contents.get(path.toAbsolutePath().toString());
+        BlobPath parent = path.getParent();
         if (content == null) {
             try {
                 content = this.delegate.listFiles(path, this.id_token);
-                contents.putIfAbsent(path.toAbsolutePath().toString(), content);
+                if (content.size() == 0 && getFromParent(path) == null) {
+                    throw new FileNotFoundException("Directory " + path.toString() + " does not exist");
+                }
+                contents.putIfAbsent(path.toString(), content);
             } catch (BlobException e) {
                 try {
-                    content = contents.getOrDefault(path.toAbsolutePath().toString(), new ArrayList<>());
-                    content.add(this.delegate.listFile(path, this.id_token));
-                    contents.putIfAbsent(path.toAbsolutePath().toString(), content);
+                    content = contents.getOrDefault(path.getParent().toString(), new HashMap<>());
+                    BlobDirEntry entry = this.delegate.listFile(path, this.id_token);
+                    content.put(entry.getName(), entry);
+                    contents.putIfAbsent(path.toString(), content);
                 } catch (BlobException e2) {
                     log.error("Fehler: " + e2.getMessage());
                 }
+            } catch (FileNotFoundException fileNotFound) {
+                log.error(fileNotFound.getMessage());
+                throw fileNotFound;
             }
         }
         return content;
     }
 
-    private InputStream wrapStream(HttpURLConnection uc, InputStream in) throws IOException {
-        String encoding = uc.getContentEncoding();
-        if (encoding == null || in == null) {
-            return in;
+    private Object getFromParent(BlobPath path) {
+        BlobPath parent = path.toAbsolutePath().getParent();
+        Map<String, BlobDirEntry> parentContent = contents.get(parent.toString());
+        if (parentContent != null) {
+            return parentContent.getOrDefault(path.getFileName().toString(), null);
         }
-        throw new UnsupportedOperationException("Unexpected Content-Encoding: " + encoding);
+        return null;
     }
+
+//    private InputStream wrapStream(HttpURLConnection uc, InputStream in) throws IOException {
+//        String encoding = uc.getContentEncoding();
+//        if (encoding == null || in == null) {
+//            return in;
+//        }
+//        throw new UnsupportedOperationException("Unexpected Content-Encoding: " + encoding);
+//    }
 
     /**
      * Helper Functions

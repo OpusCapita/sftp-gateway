@@ -1,5 +1,6 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
+import com.opuscapita.s2p.blob.blobfilesystem.client.Exception.BlobException;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobAclFileAttributeView;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobPosixFileAttributeView;
 import org.apache.sshd.common.util.GenericUtils;
@@ -9,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
@@ -102,9 +104,19 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
     }
 
     @Override
+    public FileChannel newFileChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
+        return new BlobFileChannel(path.toString(), ((BlobPath) path).getFileSystem().getDelegate(), true, options, attrs);
+    }
+
+    @Override
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
-        log.info("createDirectory unsupported");
-        throw new ReadOnlyFileSystemException();
+        BlobPath path = toBlobPath(dir);
+        try {
+            path.getFileSystem().getDelegate().createDirectory(path, path.getFileSystem().getId_token(), true);
+        } catch (BlobException e) {
+            log.error(e.getMessage());
+            throw new IOException(e.getMessage());
+        }
     }
 
     @Override

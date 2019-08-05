@@ -76,7 +76,7 @@ public class BlobPath extends AbstractLoggingBean implements Path {
         initOffsets();
         int nbOffsets = this.offsets.length;
         if (nbOffsets == 0) {
-            return null;
+            return getRoot();
         }
         int length = this.offsets[nbOffsets - 1] - 1;
         if (length <= 0) {
