@@ -2,6 +2,7 @@ package com.opuscapita.s2p.blob.blobfilesystem;
 
 import com.opuscapita.s2p.blob.blobfilesystem.client.BlobFileSystemClient;
 import com.opuscapita.s2p.blob.blobfilesystem.client.Exception.BlobException;
+import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobPosixFileAttributes;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import lombok.Getter;
@@ -15,7 +16,6 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -54,7 +54,7 @@ public class BlobFileSystem extends FileSystem {
 //            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "posix"));
 
 
-    public BlobFileSystem(AbstractBlobFileSystemProvider fileSystemProvider, Map<String, ?> env) throws IOException {
+    public BlobFileSystem(AbstractBlobFileSystemProvider fileSystemProvider, BlobConfiguration configuration, Map<String, ?> env) throws IOException {
 
         String refresh_token = "";
         String token_type = "";
@@ -77,7 +77,7 @@ public class BlobFileSystem extends FileSystem {
         this.id_token = id_token;
         this.refresh_token = refresh_token;
         this.token_type = token_type;
-        this.delegate = new BlobFileSystemClient(new RestTemplateBuilder(), new URL(endpoint));
+        this.delegate = new BlobFileSystemClient(new RestTemplateBuilder(), configuration, tenant_id, id_token);
     }
 
     @Override
@@ -232,7 +232,7 @@ public class BlobFileSystem extends FileSystem {
         BlobPath parent = path.getParent();
         if (content == null) {
             try {
-                content = this.delegate.listFiles(path, this.id_token);
+                content = this.delegate.listFiles(path);
                 if (content.size() == 0 && getFromParent(path) == null) {
                     throw new FileNotFoundException("Directory " + path.toString() + " does not exist");
                 }
@@ -240,7 +240,7 @@ public class BlobFileSystem extends FileSystem {
             } catch (BlobException e) {
                 try {
                     content = contents.getOrDefault(path.getParent().toString(), new HashMap<>());
-                    BlobDirEntry entry = this.delegate.listFile(path, this.id_token);
+                    BlobDirEntry entry = this.delegate.listFile(path);
                     content.put(entry.getName(), entry);
                     contents.putIfAbsent(path.toString(), content);
                 } catch (BlobException e2) {

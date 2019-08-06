@@ -1,16 +1,18 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
 import com.opuscapita.s2p.blob.blobfilesystem.client.Exception.BlobException;
+import com.opuscapita.s2p.blob.blobfilesystem.client.Mode;
+import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobAclFileAttributeView;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobPosixFileAttributeView;
 import org.apache.sshd.common.util.GenericUtils;
-import org.apache.sshd.server.subsystem.sftp.AbstractSftpSubsystemHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
@@ -35,12 +37,10 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
             if (fileSystem != null) {
                 throw new FileSystemAlreadyExistsException(schemeSpecificPart);
             }
-            fileSystem = new BlobFileSystem(this, env);
+            BlobConfiguration config = (BlobConfiguration) env.get("config");
+            fileSystem = new BlobFileSystem(this, config, env);
             fileSystems.put(schemeSpecificPart, fileSystem);
 
-//            Path f = fileSystem.getPath("/onboarding/test.xml");
-////            Files.createDirectories(f.getParent());
-//            Files.createFile(f);
             return fileSystem;
         }
     }
@@ -100,24 +100,81 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         if (!(path instanceof BlobPath)) {
             throw new ProviderMismatchException();
         }
-        return newFileChannel(path, options, attrs);
-//        return ((BlobPath) path).getFileSystem().newByteChannel(path, options, attrs);
+        final byte[] data;
+        data = ((BlobPath) path).getFileSystem().getDelegate().fetchFile((BlobPath) path);
+        return new SeekableByteChannel() {
+            long position;
+
+            @Override
+            public int read(ByteBuffer dst) throws IOException {
+                int l = (int) Math.min(dst.remaining(), size() - position);
+                dst.put(data, (int) position, l);
+                position += l;
+                return l;
+            }
+
+            @Override
+            public int write(ByteBuffer src) throws IOException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public long position() throws IOException {
+                return position;
+            }
+
+            @Override
+            public SeekableByteChannel position(long newPosition) throws IOException {
+                position = newPosition;
+                return this;
+            }
+
+            @Override
+            public long size() throws IOException {
+                return data.length;
+            }
+
+            @Override
+            public SeekableByteChannel truncate(long size) throws IOException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean isOpen() {
+                return true;
+            }
+
+            @Override
+            public void close() throws IOException {
+            }
+        };
     }
 
     @Override
     public FileChannel newFileChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
-        return new BlobFileChannel(path.toString(), ((BlobPath) path).getFileSystem().getDelegate(), true, options, attrs);
+        Set<Mode.OpenMode> modes = new HashSet<>();
+        modes.addAll(BlobFileChannel.READ_MODES);
+        modes.addAll(BlobFileChannel.WRITE_MODES);
+        return new BlobFileChannel(
+                (BlobPath) path,
+                ((BlobPath) path).getFileSystem().getDelegate(),
+                true,
+                options,
+                modes,
+                attrs
+        );
     }
 
     @Override
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
         BlobPath path = toBlobPath(dir);
         try {
-            path.getFileSystem().getDelegate().createDirectory(path, path.getFileSystem().getId_token(), true);
+            path.getFileSystem().getDelegate().createDirectory(path, true);
         } catch (BlobException e) {
             log.error(e.getMessage());
             throw new IOException(e.getMessage());
         }
+
     }
 
     @Override

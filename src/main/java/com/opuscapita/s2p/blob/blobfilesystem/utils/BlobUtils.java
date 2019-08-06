@@ -4,12 +4,8 @@ import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,6 +15,11 @@ public class BlobUtils {
     public static final char HTTP_PATH_SEPARATOR_CHAR = '/';
     public static final Charset HTTP_PATH_CHARSET = Charset.forName("UTF-8");
 
+    public static final byte[] EMPTY_BYTE_ARRAY = {};
+    public static final char[] EMPTY_CHAR_ARRAY = {};
+    public static final String[] EMPTY_STRING_ARRAY = {};
+    public static final Object[] EMPTY_OBJECT_ARRAY = {};
+    public static final boolean[] EMPTY_BOOLEAN_ARRAY = {};
 
     private static final String HEAD_REQUEST_METHOD = "HEAD";
     private static final String RANGE_REQUEST_PROPERTY_KEY = "Range";
@@ -31,42 +32,44 @@ public class BlobUtils {
     private BlobUtils() {
     }
 
-    public static void disconnect(URLConnection connection) {
-        Utils.nonNull(connection, () -> "null URL connection");
-        if (connection instanceof HttpURLConnection) {
-            ((HttpURLConnection) connection).disconnect();
-        }
+    public static boolean isEmpty(CharSequence cs) {
+        return length(cs) <= 0;
     }
 
-    public static boolean exists(URL url) throws IOException {
-        Utils.nonNull(url, () -> "null url");
-        final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        try {
-            conn.setRequestMethod(HEAD_REQUEST_METHOD);
-            return conn.getResponseCode() == HttpURLConnection.HTTP_OK;
-        } catch (final UnknownHostException e) {
-            return false;
-        } finally {
-            conn.disconnect();
-        }
+    public static int length(CharSequence cs) {
+        return cs == null ? 0 : cs.length();
     }
 
-    public static void setRangeRequest(final URLConnection connection, final long start,
-                                       final long end) {
-        Utils.nonNull(connection, () -> "Null URLConnection");
-        String request = RANGE_REQUEST_PROPERTY_VALUE_START
-                + start
-                + RANGE_REQUEST_PROPERTY_VALUE_SEPARATOR;
-        if (end != -1) {
-            request += end;
-        }
+    public static int size(Collection<?> c) {
+        return c == null ? 0 : c.size();
+    }
 
-        if (start < 0 || end < -1 || (end != -1 && end < start)) {
-            throw new IllegalArgumentException("Invalid request: " + request);
-        }
+    public static boolean isEmpty(Collection<?> c) {
+        return (c == null) || c.isEmpty();
+    }
 
-        log.debug("Request '{}' {} for {}", RANGE_REQUEST_PROPERTY_KEY, request, connection);
-        connection.setRequestProperty(RANGE_REQUEST_PROPERTY_KEY, request);
+    public static boolean isNotEmpty(Collection<?> c) {
+        return !isEmpty(c);
+    }
+
+    public static int size(Map<?, ?> m) {
+        return m == null ? 0 : m.size();
+    }
+
+    public static boolean isEmpty(Map<?, ?> m) {
+        return (m == null) || m.isEmpty();
+    }
+
+    public static boolean isNotEmpty(Map<?, ?> m) {
+        return !isEmpty(m);
+    }
+
+    public static int length(char[] chars) {
+        return (chars == null) ? 0 : chars.length;
+    }
+
+    public static boolean isEmpty(char[] chars) {
+        return length(chars) <= 0;
     }
 
     public static Map<String, Object> getDefaultAttributes(BlobPath path) {
@@ -74,14 +77,13 @@ public class BlobUtils {
 
         attributes.put("name", "/");
         attributes.put("extension", "");
-//        attributes.put("localhost", "/");
         attributes.put("path", "/");
         attributes.put("size", 0);
         attributes.put("isFile", false);
         attributes.put("isDirectory", true);
         attributes.put("contentType", null);
         attributes.put("checksum", null);
-        if(path != null) {
+        if (path != null) {
             attributes.put("name", path.toString());
             attributes.put("path", path.toString());
         }

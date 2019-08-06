@@ -30,13 +30,14 @@ public class BlobFileSystemFactory extends AbstractLoggingBean implements FileSy
     @Override
     public FileSystem createFileSystem(Session session) throws IOException {
         try {
-            Map<String, String> env = new HashMap<>();
+            Map<String, Object> env = new HashMap<>();
             AuthResponse authResponse = this.authResponse(session);
             env.put("tenant_id", this.computeTenatId(session));
             env.put("refresh_token", authResponse.getRefresh_token());
             env.put("token_type", authResponse.getToken_type());
             env.put("access_token", authResponse.getAccess_token());
             env.put("id_token", authResponse.getId_token());
+            env.put("config", blobConfiguration);
             return new BlobHttpFileSystemProvider().newFileSystem(this.computeRootUri(session), env);
         } catch (Exception e) {
             throw new IOException(e);
