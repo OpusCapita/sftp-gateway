@@ -68,8 +68,8 @@ public class SFTPDaemon extends AbstractLoggingBean {
                 .build();
 //        OCSftpSubsystemFactory factory = this.builder.build();
 //        factory.setUnsupportedAttributePolicy(UnsupportedAttributePolicy.ThrowException);
-        SFTPEventListener sftpEventListener = new SFTPEventListener();
-        factory.addSftpEventListener(sftpEventListener);
+//        SFTPEventListener sftpEventListener = new SFTPEventListener();
+//        factory.addSftpEventListener(sftpEventListener);
 
         return factory;
     }

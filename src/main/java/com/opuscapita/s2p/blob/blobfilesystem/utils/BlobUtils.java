@@ -25,6 +25,7 @@ public class BlobUtils {
     private static final String RANGE_REQUEST_PROPERTY_KEY = "Range";
     private static final String RANGE_REQUEST_PROPERTY_VALUE_START = "bytes=";
     private static final String RANGE_REQUEST_PROPERTY_VALUE_SEPARATOR = "-";
+    public static final int DEFAULT_COPY_SIZE = 8192;
 
 
     private static final Logger log = LoggerFactory.getLogger(BlobUtils.class);

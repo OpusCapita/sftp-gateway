@@ -5,21 +5,27 @@ import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
 import com.opuscapita.s2p.blob.blobfilesystem.client.Exception.BlobException;
 import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
 import lombok.Getter;
+import org.apache.commons.io.IOUtils;
+import org.apache.sshd.common.util.buffer.Buffer;
+import org.apache.sshd.common.util.buffer.ByteArrayBuffer;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
-import org.springframework.http.converter.ByteArrayHttpMessageConverter;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.HttpMessageConverterExtractor;
+import org.springframework.web.client.RequestCallback;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class BlobFileSystemClient extends AbstractLoggingBean {
     @Getter
@@ -138,21 +144,106 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         return restTemplate.exchange(this.rootUrl.toString() + path, httpMethod, entity, type);
     }
 
-    public byte[] fetchFile(BlobPath path) {
-        restTemplate.getMessageConverters().add(
-                new ByteArrayHttpMessageConverter());
-        if (path.endsWith("/")) {
-            path = new BlobPath(path.getFileSystem(), path.toString().substring(0, path.toString().length() - 2).getBytes());
+    public InputStream fetchFile(BlobPath path) throws IOException {
+        URL url = new URL(this.rootUrl.toString() + path + "?download=true");
+        HttpURLConnection uc = (HttpURLConnection) url.openConnection();
+
+        uc.setRequestProperty("X-User-Id-Token", jwt);
+        uc.setRequestProperty("Content-Type", "application/octet-stream");
+        uc.setDoOutput(true);
+        int responseCode = uc.getResponseCode();
+
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            throw new FileNotFoundException();
         }
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-User-Id-Token", jwt);
-        headers.setAccept(Arrays.asList(MediaType.APPLICATION_OCTET_STREAM));
+        return uc.getInputStream();
+    }
 
-        HttpEntity<String> entity = new HttpEntity<String>(headers);
+    public int fetchFile(BlobPath path, byte[] dst, int dstOffset, int len) throws IOException {
+        URL url = new URL(this.rootUrl.toString() + path + "?download=true");
+        HttpURLConnection uc = (HttpURLConnection) url.openConnection();
+        InputStream is = null;
+        try {
+            uc.setRequestProperty("X-User-Id-Token", jwt);
+            uc.setRequestProperty("Content-Type", "application/octet-stream");
+            int responseCode = uc.getResponseCode();
 
-        ResponseEntity<byte[]> response = restTemplate.exchange(
-                this.rootUrl.toString() + path,
-                HttpMethod.GET, entity, byte[].class);
-        return response.getBody();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                throw new FileNotFoundException();
+            }
+            is = uc.getInputStream();
+            is.read(dst, dstOffset, len);
+        } catch (IOException e) {
+            log.error("Failed while reading bytes from {}: {}", url.toExternalForm(), e.getMessage());
+            e.printStackTrace();
+        } finally {
+            if (is != null) {
+                is.close();
+            }
+        }
+        return dst.length - dstOffset;
+    }
+//
+//    public ByteArrayOutputStream fetchFile(BlobPath path) throws IOException {
+//        int bytesRead = -1;
+//        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(0);
+//        InputStream inputStream = null;
+//        if (path.endsWith("/")) {
+//            path = new BlobPath(path.getFileSystem(), path.toString().substring(0, path.toString().length() - 2).getBytes());
+//        }
+//        URL url = new URL(this.rootUrl.toString() + path);
+//        HttpURLConnection uc = (HttpURLConnection) url.openConnection();
+//
+//        try {
+//            uc.setRequestProperty("X-User-Id-Token", jwt);
+//            uc.setRequestProperty("Content-Type", "application/octet-stream");
+//            int responseCode = uc.getResponseCode();
+//
+//            if (responseCode != HttpURLConnection.HTTP_OK) {
+//                throw new FileNotFoundException();
+//            }
+//            inputStream = uc.getInputStream();
+//            byte[] buffer = new byte[4096];
+//            while ((bytesRead = inputStream.read(buffer)) != -1) {
+//                outputStream.write(buffer, 0, bytesRead);
+//            }
+//            return outputStream;
+//        } catch (Exception e) {
+//            throw e;
+//        } finally {
+//            outputStream.close();
+//            inputStream.close();
+//            uc.disconnect();
+//        }
+//    }
+
+    public void putFile(BlobPath path, final InputStream fis) throws FileNotFoundException {
+        final RequestCallback requestCallback = request -> {
+            request.getHeaders().setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            request.getHeaders().set("X-User-Id-Token", jwt);
+            IOUtils.copy(fis, request.getBody());
+        };
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setBufferRequestBody(false);
+        restTemplate.setRequestFactory(requestFactory);
+        final HttpMessageConverterExtractor<String> responseExtractor =
+                new HttpMessageConverterExtractor<String>(String.class, restTemplate.getMessageConverters());
+
+        restTemplate.execute(this.rootUrl.toString() + path, HttpMethod.POST, requestCallback, responseExtractor);
+    }
+
+    public int read(long fileOffset, byte[] dst, int dstOffset, int len, AtomicReference<Boolean> eofSignalled)
+            throws IOException {
+        if (eofSignalled != null) {
+            eofSignalled.set(null);
+        }
+
+        byte[] id = UUID.randomUUID().toString().getBytes();
+        Buffer buffer = new ByteArrayBuffer(id.length + Long.SIZE /* some extra fields */, false);
+        buffer.putBytes(id);
+        buffer.putLong(fileOffset);
+        buffer.putInt(len);
+//        eofSignalled.set(true);
+        return buffer.getInt();
     }
 }

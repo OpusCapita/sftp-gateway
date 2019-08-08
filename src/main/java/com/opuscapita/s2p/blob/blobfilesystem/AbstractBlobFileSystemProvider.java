@@ -9,12 +9,13 @@ import org.apache.sshd.common.util.GenericUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
@@ -95,74 +96,30 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         return ((BlobPath) dir).getFileSystem().newDirectoryStream(dir, filter);
     }
 
+
     @Override
-    public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
+    public FileChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
         if (!(path instanceof BlobPath)) {
             throw new ProviderMismatchException();
         }
-        final byte[] data;
-        data = ((BlobPath) path).getFileSystem().getDelegate().fetchFile((BlobPath) path);
-        return new SeekableByteChannel() {
-            long position;
-
-            @Override
-            public int read(ByteBuffer dst) throws IOException {
-                int l = (int) Math.min(dst.remaining(), size() - position);
-                dst.put(data, (int) position, l);
-                position += l;
-                return l;
-            }
-
-            @Override
-            public int write(ByteBuffer src) throws IOException {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public long position() throws IOException {
-                return position;
-            }
-
-            @Override
-            public SeekableByteChannel position(long newPosition) throws IOException {
-                position = newPosition;
-                return this;
-            }
-
-            @Override
-            public long size() throws IOException {
-                return data.length;
-            }
-
-            @Override
-            public SeekableByteChannel truncate(long size) throws IOException {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isOpen() {
-                return true;
-            }
-
-            @Override
-            public void close() throws IOException {
-            }
-        };
+        return newFileChannel(path, options, attrs);
     }
 
     @Override
     public FileChannel newFileChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
+        BlobPath p = toBlobPath(path);
         Set<Mode.OpenMode> modes = new HashSet<>();
         modes.addAll(BlobFileChannel.READ_MODES);
         modes.addAll(BlobFileChannel.WRITE_MODES);
-        return new BlobFileChannel(
-                (BlobPath) path,
-                ((BlobPath) path).getFileSystem().getDelegate(),
+        FileChannel fc = new BlobFileChannel(
+                p,
+                p.getFileSystem().getDelegate(),
                 true,
                 options,
                 modes,
                 attrs
         );
+        return fc;
     }
 
     @Override
