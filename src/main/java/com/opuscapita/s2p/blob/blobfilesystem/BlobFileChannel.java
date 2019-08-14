@@ -1,12 +1,9 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
-import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.opuscapita.s2p.blob.blobfilesystem.client.BlobFileSystemClient;
 import com.opuscapita.s2p.blob.blobfilesystem.client.Mode;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.ValidateUtils;
-import org.apache.sshd.client.subsystem.sftp.fs.SftpFileSystemChannel;
-import sun.nio.ch.Util;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +39,7 @@ public class BlobFileChannel extends FileChannel {
     private final AtomicLong posTracker = new AtomicLong(0L);
     private final AtomicReference<Thread> blockingThreadHolder = new AtomicReference<>(null);
     private final Object lock = new Object();
-
+    private long size = 0;
 
     public BlobFileChannel(
             BlobPath path,
@@ -61,92 +58,27 @@ public class BlobFileChannel extends FileChannel {
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
-        ReadableByteChannel readableByteChannel = Channels.newChannel(client.fetchFile(path));
-        return (int) transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+        ensureOpen(Collections.emptySet());
+        beginBlocking();
+        InputStream is = client.fetchFileAsInputStream(path);
+        ReadableByteChannel readableByteChannel = Channels.newChannel(is);
 
-
-//        return (int) doRead(Collections.singletonList(dst), -1);
-//        ensureOpen(Collections.emptySet());
-//        beginBlocking();
-//        InputStream is = client.fetchFile(path);
-//        byte[] byteChunk = new byte[4096]; // Or whatever size you want to read in at a time.
-//        int n;
-//        int totalRead = 0;
-//        try {
-//            while ((n = is.read(byteChunk)) > 0) {
-//                dst.put(byteChunk);
-//                position(position() + n);
-//                totalRead += n;
-//            }
-//        } catch (IOException e) {
-//            dst.clear();
-//        } finally {
-//            if (is != null) {
-//                is.close();
-//            }
-//        }
-//        endBlocking(true);
-//        return totalRead;
+        int totalRead = 0;
+        try {
+            int read = 0;
+            while ((read = readableByteChannel.read(dst)) > 0) {
+                totalRead += read;
+            }
+        } finally {
+            endBlocking(true);
+            readableByteChannel.close();
+            return totalRead;
+        }
     }
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
         throw new UnsupportedOperationException();
-    }
-
-    private long doRead(List<ByteBuffer> buffers, long position) throws IOException {
-        ensureOpen(READ_MODES);
-        synchronized (lock) {
-            boolean completed = false;
-            boolean eof = false;
-            long curPos = (position >= 0L) ? position : posTracker.get();
-            InputStream is = client.fetchFile(path);
-            try {
-                long totalRead = 0;
-                beginBlocking();
-                loop:
-                for (ByteBuffer buffer : buffers) {
-                    int n;
-                    while (buffer.remaining() > 0) {
-                        ByteBuffer wrap = buffer;
-                        if (!buffer.hasArray()) {
-                            wrap = ByteBuffer.allocate(Math.min(BlobUtils.DEFAULT_COPY_SIZE, buffer.remaining()));
-                        }
-                        int read = is.read(wrap.array());
-                        if (read > 0) {
-                            if (wrap == buffer) {
-                                wrap.position(wrap.position() + read);
-                            } else {
-                                buffer.put(wrap.array(), wrap.arrayOffset(), read);
-                            }
-                            curPos += read;
-                            totalRead += read;
-                        } else {
-                            eof = read == -1;
-                            break loop;
-                        }
-                    }
-                }
-                completed = true;
-                if (totalRead > 0) {
-                    return totalRead;
-                }
-
-                if (eof) {
-                    return -1;
-                } else {
-                    return 0;
-                }
-            } finally {
-                if (position < 0L) {
-                    posTracker.set(curPos);
-                }
-                if (is != null) {
-                    is.close();
-                }
-                endBlocking(completed);
-            }
-        }
     }
 
 
@@ -169,7 +101,7 @@ public class BlobFileChannel extends FileChannel {
 
     @Override
     public long size() throws IOException {
-        return 0;
+        return size;
     }
 
     @Override
@@ -184,43 +116,50 @@ public class BlobFileChannel extends FileChannel {
 
     @Override
     public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
-
         return 0;
-
-//        if (!target.isOpen())
-//            throw new ClosedChannelException();
-//        if ((position < 0) || (count < 0))
-//            throw new IllegalArgumentException();
-//        long sz = size();
-//        if (position > sz)
-//            return 0;
-//        int icount = (int) Math.min(count, Integer.MAX_VALUE);
-//        if ((sz - position) < icount)
-//            icount = (int) (sz - position);
+//        if ((position < 0) || (count < 0)) {
+//            throw new IllegalArgumentException("transferTo(" + path + ") illegal position (" + position + ") or count (" + count + ")");
+//        }
+//        ensureOpen(READ_MODES);
+//        synchronized (lock) {
+//            boolean completed = false;
+//            boolean eof = false;
+//            long curPos = position;
+//            try {
+//                beginBlocking();
 //
-//        long n;
-//
-//        // Attempt a direct transfer, if the kernel supports it
-//        if ((n = transferToDirectly(position, icount, target)) >= 0)
-//            return n;
-//
-//        // Attempt a mapped transfer, but only to trusted channel types
-//        if ((n = transferToTrustedChannel(position, icount, target)) >= 0)
-//            return n;
-//
-//        // Slow path for untrusted targets
-//        return transferToArbitraryChannel(position, icount, target);
+//                int bufSize = (int) Math.min(count, Short.MAX_VALUE + 1);
+//                byte[] buffer = new byte[bufSize];
+//                long totalRead = 0L;
+//                while (totalRead < count) {
+//                    int read = sftp.read(handle, curPos, buffer, 0, buffer.length);
+//                    if (read > 0) {
+//                        ByteBuffer wrap = ByteBuffer.wrap(buffer);
+//                        while (wrap.remaining() > 0) {
+//                            target.write(wrap);
+//                        }
+//                        curPos += read;
+//                        totalRead += read;
+//                    } else {
+//                        eof = read == -1;
+//                    }
+//                }
+//                completed = true;
+//                return totalRead > 0 ? totalRead : eof ? -1 : 0;
+//            } finally {
+//                endBlocking(completed);
+//            }
+//        }
     }
 
     @Override
     public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
-
         if ((position < 0) || (count < 0)) {
             throw new IllegalArgumentException("transferFrom(" + path + ") illegal position (" + position + ") or count (" + count + ")");
         }
         ensureOpen(WRITE_MODES);
 
-        int copySize = 4096;
+        int copySize = 8192;
         boolean completed = false;
         long curPos = (position >= 0L) ? position : posTracker.get();
         long totalRead = 0L;
@@ -247,109 +186,32 @@ public class BlobFileChannel extends FileChannel {
                 endBlocking(completed);
             }
         }
-
-
-//        ensureOpen(Collections.emptySet());
-//        if (!src.isOpen())
-//            throw new ClosedChannelException();
-//        if ((position < 0) || (count < 0))
-//            throw new IllegalArgumentException();
-//        if (position > size())
-//            return 0;
-//        if (src instanceof FileChannel)
-//            return transferFromFileChannel((FileChannel) src,
-//                    position, count);
-//
-//        return transferFromArbitraryChannel(src, position, count);
-//        return 0;
-    }
-
-    private long transferFromFileChannel(FileChannel src,
-                                         long position, long count)
-            throws IOException {
-        if (!src.isOpen())
-            throw new NonReadableChannelException();
-        synchronized (src.lock()) {
-            long pos = src.position();
-            long max = Math.min(count, src.size() - pos);
-
-            long remaining = max;
-            long p = pos;
-            while (remaining > 0L) {
-                long size = Math.min(remaining, 8192);
-                // ## Bug: Closing this channel will not terminate the write
-                MappedByteBuffer bb = src.map(MapMode.READ_ONLY, p, size);
-                try {
-                    long n = write(bb, position);
-                    assert n > 0;
-                    p += n;
-                    position += n;
-                    remaining -= n;
-                } catch (IOException ioe) {
-                    // Only throw exception if no bytes have been written
-                    if (remaining == max)
-                        throw ioe;
-                    break;
-                } finally {
-                }
-            }
-            long nwritten = max - remaining;
-            src.position(pos + nwritten);
-            return nwritten;
-        }
-    }
-
-    private long transferFromArbitraryChannel(ReadableByteChannel src,
-                                              long position, long count)
-            throws IOException {
-        // Untrusted target: Use a newly-erased buffer
-        int c = (int) Math.min(count, 8192);
-        ByteBuffer bb = Util.getTemporaryDirectBuffer(c);
-        long tw = 0;                    // Total bytes written
-        long pos = position;
-        try {
-//            Util.erase(bb);
-            while (tw < count) {
-                bb.limit((int) Math.min((count - tw), (long) 8192));
-                // ## Bug: Will block reading src if this channel
-                // ##      is asynchronously closed
-                int nr = src.read(bb);
-                if (nr <= 0)
-                    break;
-                bb.flip();
-                int nw = write(bb, pos);
-                tw += nw;
-                if (nw != nr)
-                    break;
-                pos += nw;
-                bb.clear();
-            }
-            return tw;
-        } catch (IOException x) {
-            if (tw > 0)
-                return tw;
-            throw x;
-        } finally {
-            Util.releaseTemporaryDirectBuffer(bb);
-        }
     }
 
 
     @Override
     public int read(ByteBuffer dst, long position) throws IOException {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public int write(ByteBuffer src, long position) throws IOException {
-        client.putFile(path, new ByteBufferBackedInputStream(src));
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        client.putFile(path, new ByteBufferBackedInputStream(src));
-        return 0;
+        ensureOpen(Collections.emptySet());
+        beginBlocking();
+        try {
+            size = client.putFile(path, src);
+            return (int) size();
+        } catch (Exception e) {
+            throw new IOException(e);
+        } finally {
+            src.flip();
+            endBlocking(true);
+        }
     }
 
     @Override
@@ -357,60 +219,24 @@ public class BlobFileChannel extends FileChannel {
         throw new UnsupportedOperationException();
     }
 
-    protected long doWrite(List<ByteBuffer> buffers, long position) throws IOException {
-        ensureOpen(WRITE_MODES);
-        synchronized (lock) {
-            boolean completed = false;
-            long curPos = (position >= 0L) ? position : posTracker.get();
-            try {
-                long totalWritten = 0L;
-                beginBlocking();
-                for (ByteBuffer buffer : buffers) {
-                    while (buffer.remaining() > 0) {
-                        ByteBuffer wrap = buffer;
-                        if (!buffer.hasArray()) {
-                            wrap = ByteBuffer.allocate(Math.min(BlobUtils.DEFAULT_COPY_SIZE, buffer.remaining()));
-                            buffer.get(wrap.array(), wrap.arrayOffset(), wrap.remaining());
-                        }
-                        int written = wrap.remaining();
-//                        client.putFile();
-//                        sftp.write(handle, curPos, wrap.array(), wrap.arrayOffset() + wrap.position(), written);
-                        if (wrap == buffer) {
-                            wrap.position(wrap.position() + written);
-                        }
-                        curPos += written;
-                        totalWritten += written;
-                    }
-                }
-                completed = true;
-                return totalWritten;
-            } finally {
-                if (position < 0L) {
-                    posTracker.set(curPos);
-                }
-                endBlocking(completed);
-            }
-        }
-    }
-
     @Override
     public MappedByteBuffer map(MapMode mode, long position, long size) throws IOException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public FileLock lock(long position, long size, boolean shared) throws IOException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public FileLock tryLock(long position, long size, boolean shared) throws IOException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     protected void implCloseChannel() throws IOException {
-
+        this.client.closeHttpUrlConnection();
     }
 
     private void ensureOpen(Collection<Mode.OpenMode> reqModes) throws IOException {

@@ -5,27 +5,25 @@ import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
 import com.opuscapita.s2p.blob.blobfilesystem.client.Exception.BlobException;
 import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
 import lombok.Getter;
-import org.apache.commons.io.IOUtils;
-import org.apache.sshd.common.util.buffer.Buffer;
-import org.apache.sshd.common.util.buffer.ByteArrayBuffer;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.web.client.HttpMessageConverterExtractor;
-import org.springframework.web.client.RequestCallback;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BlobFileSystemClient extends AbstractLoggingBean {
     @Getter
@@ -34,6 +32,8 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
     private final URL rootUrl;
     private final BlobConfiguration configuration;
     private final String jwt;
+    private HttpURLConnection connection = null;
+    private long sizeInByte;
 
     public BlobFileSystemClient(
             RestTemplateBuilder _restTemplateBuilder,
@@ -144,13 +144,22 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         return restTemplate.exchange(this.rootUrl.toString() + path, httpMethod, entity, type);
     }
 
-    public InputStream fetchFile(BlobPath path) throws IOException {
+    public OutputStream fetchFileAsOutputStream(BlobPath path) throws IOException {
         URL url = new URL(this.rootUrl.toString() + path + "?download=true");
-        HttpURLConnection uc = (HttpURLConnection) url.openConnection();
+        HttpURLConnection uc = openHttpUrlConnection(url, "GET");
 
-        uc.setRequestProperty("X-User-Id-Token", jwt);
-        uc.setRequestProperty("Content-Type", "application/octet-stream");
-        uc.setDoOutput(true);
+        int responseCode = uc.getResponseCode();
+
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            throw new FileNotFoundException();
+        }
+        return uc.getOutputStream();
+    }
+
+    public InputStream fetchFileAsInputStream(BlobPath path) throws IOException {
+        URL url = new URL(this.rootUrl.toString() + path + "?download=true");
+        HttpURLConnection uc = openHttpUrlConnection(url, "GET");
+
         int responseCode = uc.getResponseCode();
 
         if (responseCode != HttpURLConnection.HTTP_OK) {
@@ -159,7 +168,7 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         return uc.getInputStream();
     }
 
-    public int fetchFile(BlobPath path, byte[] dst, int dstOffset, int len) throws IOException {
+    public int fetchFileAsOutputStream(BlobPath path, byte[] dst, int dstOffset, int len) throws IOException {
         URL url = new URL(this.rootUrl.toString() + path + "?download=true");
         HttpURLConnection uc = (HttpURLConnection) url.openConnection();
         InputStream is = null;
@@ -183,67 +192,57 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         }
         return dst.length - dstOffset;
     }
-//
-//    public ByteArrayOutputStream fetchFile(BlobPath path) throws IOException {
-//        int bytesRead = -1;
-//        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(0);
-//        InputStream inputStream = null;
-//        if (path.endsWith("/")) {
-//            path = new BlobPath(path.getFileSystem(), path.toString().substring(0, path.toString().length() - 2).getBytes());
-//        }
-//        URL url = new URL(this.rootUrl.toString() + path);
-//        HttpURLConnection uc = (HttpURLConnection) url.openConnection();
-//
-//        try {
-//            uc.setRequestProperty("X-User-Id-Token", jwt);
-//            uc.setRequestProperty("Content-Type", "application/octet-stream");
-//            int responseCode = uc.getResponseCode();
-//
-//            if (responseCode != HttpURLConnection.HTTP_OK) {
-//                throw new FileNotFoundException();
-//            }
-//            inputStream = uc.getInputStream();
-//            byte[] buffer = new byte[4096];
-//            while ((bytesRead = inputStream.read(buffer)) != -1) {
-//                outputStream.write(buffer, 0, bytesRead);
-//            }
-//            return outputStream;
-//        } catch (Exception e) {
-//            throw e;
-//        } finally {
-//            outputStream.close();
-//            inputStream.close();
-//            uc.disconnect();
-//        }
-//    }
 
-    public void putFile(BlobPath path, final InputStream fis) throws FileNotFoundException {
-        final RequestCallback requestCallback = request -> {
-            request.getHeaders().setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            request.getHeaders().set("X-User-Id-Token", jwt);
-            IOUtils.copy(fis, request.getBody());
-        };
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setBufferRequestBody(false);
-        restTemplate.setRequestFactory(requestFactory);
-        final HttpMessageConverterExtractor<String> responseExtractor =
-                new HttpMessageConverterExtractor<String>(String.class, restTemplate.getMessageConverters());
+    public int putFile(BlobPath path, ByteBuffer src) throws BlobException, IOException {
+        URL url = new URL(this.rootUrl.toString() + path + "?createMissing=true");
+        this.openHttpUrlConnection(url, "PUT");
+        this.connection.getOutputStream().write(src.array());
 
-        restTemplate.execute(this.rootUrl.toString() + path, HttpMethod.POST, requestCallback, responseExtractor);
+        return (int) (this.sizeInByte += src.array().length);
     }
 
-    public int read(long fileOffset, byte[] dst, int dstOffset, int len, AtomicReference<Boolean> eofSignalled)
-            throws IOException {
-        if (eofSignalled != null) {
-            eofSignalled.set(null);
-        }
+    public void delete(BlobPath path) throws BlobException, IOException {
+        URL url = new URL(this.rootUrl.toString() + path + "?recursive=true");
+        HttpURLConnection uc = openHttpUrlConnection(url, "DELETE");
+        int responseCode = uc.getResponseCode();
 
-        byte[] id = UUID.randomUUID().toString().getBytes();
-        Buffer buffer = new ByteArrayBuffer(id.length + Long.SIZE /* some extra fields */, false);
-        buffer.putBytes(id);
-        buffer.putLong(fileOffset);
-        buffer.putInt(len);
-//        eofSignalled.set(true);
-        return buffer.getInt();
+        if (responseCode != HttpURLConnection.HTTP_ACCEPTED) {
+            throw new BlobException(uc.getResponseMessage());
+        }
+    }
+
+    private HttpURLConnection openHttpUrlConnection(URL url, String requestMode) throws IOException {
+        if (this.connection != null) {
+            if (this.connection.getURL().equals(url) && this.connection.getRequestMethod().equals(requestMode)) {
+                return this.connection;
+            } else {
+                this.closeHttpUrlConnection();
+            }
+        }
+        this.sizeInByte = 0;
+        this.connection = (HttpURLConnection) url.openConnection();
+        this.connection.setRequestMethod(requestMode);
+        this.connection.setRequestProperty("X-User-Id-Token", jwt);
+        this.connection.setRequestProperty("Content-Type", "application/octet-stream");
+        this.connection.setDoInput(true);
+        this.connection.setDoOutput(true);
+        this.connection.setChunkedStreamingMode(-1);
+        this.connection.setUseCaches(true);
+        this.connection.connect();
+        return this.connection;
+    }
+
+    public void closeHttpUrlConnection() throws IOException {
+        if (this.connection != null) {
+            int responseCode = this.connection.getResponseCode();
+
+            if (responseCode != HttpURLConnection.HTTP_ACCEPTED) {
+                log.error("Not OK");
+            }
+
+            this.connection.disconnect();
+            this.connection = null;
+        }
+        this.sizeInByte = 0;
     }
 }

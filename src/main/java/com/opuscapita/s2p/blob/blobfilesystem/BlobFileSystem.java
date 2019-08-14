@@ -12,10 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 
 import javax.xml.bind.DatatypeConverter;
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -35,12 +32,8 @@ public class BlobFileSystem extends FileSystem {
     @Getter
     private final String access;
     private final ConcurrentMap<String, Map<String, BlobDirEntry>> contents = new ConcurrentHashMap<>();
-    private final String refresh_token;
-    private final String token_type;
-    private final String access_token;
     @Getter
     private final String id_token;
-    private final String tenant_id;
     @Getter
     private final BlobPath defaultDir;
 
@@ -50,21 +43,13 @@ public class BlobFileSystem extends FileSystem {
     private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
             GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "basic", "posix", "owner"));
 
-//    private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
-//            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "posix"));
-
 
     public BlobFileSystem(AbstractBlobFileSystemProvider fileSystemProvider, BlobConfiguration configuration, Map<String, ?> env) throws IOException {
 
-        String refresh_token = "";
-        String token_type = "";
-        String access_token = "";
+
         String id_token = "";
         String tenant_id = "";
         if (env != null) {
-            refresh_token = (String) env.get("refresh_token");
-            token_type = (String) env.get("token_type");
-            access_token = (String) env.get("access_token");
             id_token = (String) env.get("id_token");
             tenant_id = (String) env.get("tenant_id");
         }
@@ -72,11 +57,7 @@ public class BlobFileSystem extends FileSystem {
         String endpoint = "http://blob:3012/api/" + tenant_id + "/files" + "/" + this.access; // + "/onboarding/eInvoiceSupplierOnboarding";
         this.defaultDir = new BlobPath(BlobFileSystem.this, endpoint.getBytes());
         this.fileSystemProvider = fileSystemProvider;
-        this.access_token = access_token;
-        this.tenant_id = tenant_id;
         this.id_token = id_token;
-        this.refresh_token = refresh_token;
-        this.token_type = token_type;
         this.delegate = new BlobFileSystemClient(new RestTemplateBuilder(), configuration, tenant_id, id_token);
     }
 
@@ -196,17 +177,6 @@ public class BlobFileSystem extends FileSystem {
         return new BlobDirectoryStream((BlobPath) dir);
     }
 
-//    public <A extends BasicFileAttributes> SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>[] attrs) throws IOException {
-//        Object content = loadContent(((BlobPath) path).toAbsolutePath());
-//        if (content instanceof List) {
-//            throw new IOException("Is a directory");
-//        }
-//        String base64 = ((Map<String, String>) content).get("content");
-//        final byte[] data = DatatypeConverter.parseBase64Binary(base64);
-//        return new URLSeekableByteChannel(data);
-//    }
-
-
     public <A extends BasicFileAttributes> A readAttributes(BlobPath path, Class<A> type, LinkOption... options) throws IOException {
         BlobPath absolute = path.toAbsolutePath();
         Object desc = contents.get(absolute.toString());
@@ -262,14 +232,6 @@ public class BlobFileSystem extends FileSystem {
         }
         return null;
     }
-
-//    private InputStream wrapStream(HttpURLConnection uc, InputStream in) throws IOException {
-//        String encoding = uc.getContentEncoding();
-//        if (encoding == null || in == null) {
-//            return in;
-//        }
-//        throw new UnsupportedOperationException("Unexpected Content-Encoding: " + encoding);
-//    }
 
     /**
      * Helper Functions

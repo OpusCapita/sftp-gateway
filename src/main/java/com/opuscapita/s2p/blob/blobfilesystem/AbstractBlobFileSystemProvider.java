@@ -9,13 +9,10 @@ import org.apache.sshd.common.util.GenericUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
@@ -41,7 +38,6 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
             BlobConfiguration config = (BlobConfiguration) env.get("config");
             fileSystem = new BlobFileSystem(this, config, env);
             fileSystems.put(schemeSpecificPart, fileSystem);
-
             return fileSystem;
         }
     }
@@ -136,7 +132,11 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 
     @Override
     public void delete(Path path) throws IOException {
-        throw new ReadOnlyFileSystemException();
+        try {
+            toBlobPath(path).getFileSystem().getDelegate().delete(toBlobPath(path));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
     }
 
     @Override
