@@ -60,19 +60,10 @@ public class BlobFileChannel extends FileChannel {
     public int read(ByteBuffer dst) throws IOException {
         ensureOpen(Collections.emptySet());
         beginBlocking();
-        InputStream is = client.fetchFileAsInputStream(path);
-        ReadableByteChannel readableByteChannel = Channels.newChannel(is);
-
-        int totalRead = 0;
         try {
-            int read = 0;
-            while ((read = readableByteChannel.read(dst)) > 0) {
-                totalRead += read;
-            }
+            return client.fetchFile(path, dst);
         } finally {
             endBlocking(true);
-            readableByteChannel.close();
-            return totalRead;
         }
     }
 
@@ -117,75 +108,11 @@ public class BlobFileChannel extends FileChannel {
     @Override
     public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
         return 0;
-//        if ((position < 0) || (count < 0)) {
-//            throw new IllegalArgumentException("transferTo(" + path + ") illegal position (" + position + ") or count (" + count + ")");
-//        }
-//        ensureOpen(READ_MODES);
-//        synchronized (lock) {
-//            boolean completed = false;
-//            boolean eof = false;
-//            long curPos = position;
-//            try {
-//                beginBlocking();
-//
-//                int bufSize = (int) Math.min(count, Short.MAX_VALUE + 1);
-//                byte[] buffer = new byte[bufSize];
-//                long totalRead = 0L;
-//                while (totalRead < count) {
-//                    int read = sftp.read(handle, curPos, buffer, 0, buffer.length);
-//                    if (read > 0) {
-//                        ByteBuffer wrap = ByteBuffer.wrap(buffer);
-//                        while (wrap.remaining() > 0) {
-//                            target.write(wrap);
-//                        }
-//                        curPos += read;
-//                        totalRead += read;
-//                    } else {
-//                        eof = read == -1;
-//                    }
-//                }
-//                completed = true;
-//                return totalRead > 0 ? totalRead : eof ? -1 : 0;
-//            } finally {
-//                endBlocking(completed);
-//            }
-//        }
     }
 
     @Override
     public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
-        if ((position < 0) || (count < 0)) {
-            throw new IllegalArgumentException("transferFrom(" + path + ") illegal position (" + position + ") or count (" + count + ")");
-        }
-        ensureOpen(WRITE_MODES);
-
-        int copySize = 8192;
-        boolean completed = false;
-        long curPos = (position >= 0L) ? position : posTracker.get();
-        long totalRead = 0L;
-        byte[] buffer = new byte[(int) Math.min(copySize, count)];
-
-        synchronized (lock) {
-            try {
-                beginBlocking();
-
-                while (totalRead < count) {
-                    ByteBuffer wrap = ByteBuffer.wrap(buffer, 0, (int) Math.min(buffer.length, count - totalRead));
-                    int read = src.read(wrap);
-                    if (read > 0) {
-//                        sftp.write(handle, curPos, buffer, 0, read);
-                        curPos += read;
-                        totalRead += read;
-                    } else {
-                        break;
-                    }
-                }
-                completed = true;
-                return totalRead;
-            } finally {
-                endBlocking(completed);
-            }
-        }
+        return 0;
     }
 
 

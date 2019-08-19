@@ -4,21 +4,22 @@ import com.opuscapita.s2p.blob.blobfilesystem.BlobDirEntry;
 import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
 import com.opuscapita.s2p.blob.blobfilesystem.client.Exception.BlobException;
 import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
+import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import lombok.Getter;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -129,7 +130,6 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
      * @return
      * @throws Exception
      */
-
     private <T> ResponseEntity<T> get(BlobPath path, Class<T> type, HttpMethod httpMethod) throws Exception {
         log.info("Reading file from endpoint: " + path);
 
@@ -144,55 +144,50 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         return restTemplate.exchange(this.rootUrl.toString() + path, httpMethod, entity, type);
     }
 
-    public OutputStream fetchFileAsOutputStream(BlobPath path) throws IOException {
-        URL url = new URL(this.rootUrl.toString() + path + "?download=true");
-        HttpURLConnection uc = openHttpUrlConnection(url, "GET");
-
-        int responseCode = uc.getResponseCode();
-
-        if (responseCode != HttpURLConnection.HTTP_OK) {
-            throw new FileNotFoundException();
-        }
-        return uc.getOutputStream();
-    }
-
+    /**
+     * @param path
+     * @return
+     * @throws IOException
+     */
     public InputStream fetchFileAsInputStream(BlobPath path) throws IOException {
         URL url = new URL(this.rootUrl.toString() + path + "?download=true");
         HttpURLConnection uc = openHttpUrlConnection(url, "GET");
-
-        int responseCode = uc.getResponseCode();
-
-        if (responseCode != HttpURLConnection.HTTP_OK) {
-            throw new FileNotFoundException();
-        }
         return uc.getInputStream();
     }
 
-    public int fetchFileAsOutputStream(BlobPath path, byte[] dst, int dstOffset, int len) throws IOException {
+    /**
+     * @param path
+     * @param dst
+     * @return
+     * @throws IOException
+     */
+    public int fetchFile(BlobPath path, ByteBuffer dst) throws IOException {
         URL url = new URL(this.rootUrl.toString() + path + "?download=true");
-        HttpURLConnection uc = (HttpURLConnection) url.openConnection();
-        InputStream is = null;
-        try {
-            uc.setRequestProperty("X-User-Id-Token", jwt);
-            uc.setRequestProperty("Content-Type", "application/octet-stream");
-            int responseCode = uc.getResponseCode();
+        HttpURLConnection uc = this.openHttpUrlConnection(url, "GET");
+        ReadableByteChannel readableByteChannel = Channels.newChannel(uc.getInputStream());
 
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                throw new FileNotFoundException();
+        int totalRead = 0;
+        try {
+            int read;
+            while ((read = readableByteChannel.read(dst)) > 0) {
+                totalRead += read;
             }
-            is = uc.getInputStream();
-            is.read(dst, dstOffset, len);
-        } catch (IOException e) {
-            log.error("Failed while reading bytes from {}: {}", url.toExternalForm(), e.getMessage());
-            e.printStackTrace();
+            this.sizeInByte = totalRead;
+//            this.sizeInByte = uc.getInputStream().read(dst.array(), dst.arrayOffset(), dst.array().length);
+        } catch (Exception e) {
+            log.error(e.getMessage());
         } finally {
-            if (is != null) {
-                is.close();
-            }
+            return (int) this.sizeInByte;
         }
-        return dst.length - dstOffset;
     }
 
+    /**
+     * @param path
+     * @param src
+     * @return
+     * @throws BlobException
+     * @throws IOException
+     */
     public int putFile(BlobPath path, ByteBuffer src) throws BlobException, IOException {
         URL url = new URL(this.rootUrl.toString() + path + "?createMissing=true");
         this.openHttpUrlConnection(url, "PUT");
@@ -221,23 +216,29 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         }
         this.sizeInByte = 0;
         this.connection = (HttpURLConnection) url.openConnection();
-        this.connection.setRequestMethod(requestMode);
+        if (requestMode != null && requestMode != "GET") {
+            this.connection.setRequestMethod(requestMode);
+            this.connection.setChunkedStreamingMode(BlobUtils.DEFAULT_COPY_SIZE);
+        }
         this.connection.setRequestProperty("X-User-Id-Token", jwt);
         this.connection.setRequestProperty("Content-Type", "application/octet-stream");
         this.connection.setDoInput(true);
         this.connection.setDoOutput(true);
-        this.connection.setChunkedStreamingMode(-1);
         this.connection.setUseCaches(true);
         this.connection.connect();
         return this.connection;
     }
 
+    /**
+     * @throws IOException
+     */
     public void closeHttpUrlConnection() throws IOException {
         if (this.connection != null) {
             int responseCode = this.connection.getResponseCode();
-
-            if (responseCode != HttpURLConnection.HTTP_ACCEPTED) {
-                log.error("Not OK");
+            if (responseCode != HttpURLConnection.HTTP_ACCEPTED
+                    || responseCode != HttpURLConnection.HTTP_OK
+                    || responseCode != HttpURLConnection.HTTP_CREATED) {
+                log.warn("Not OK");
             }
 
             this.connection.disconnect();

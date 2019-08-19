@@ -47,12 +47,6 @@ public interface Mode {
                     modes.add(Create);
                     modes.add(Exclusive);
                 } else if (option == StandardOpenOption.SPARSE) {
-                    /*
-                     * As per the Javadoc:
-                     *
-                     *      The option is ignored when the file system does not
-                     *  support the creation of sparse files
-                     */
                     continue;
                 } else {
                     throw new IllegalArgumentException("Unsupported open option: " + option);
@@ -61,10 +55,5 @@ public interface Mode {
 
             return modes;
         }
-    }
-
-    enum CopyMode {
-        Atomic,
-        Overwrite
     }
 }
