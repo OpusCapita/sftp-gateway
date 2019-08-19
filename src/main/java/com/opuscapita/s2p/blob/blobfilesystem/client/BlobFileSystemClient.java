@@ -196,13 +196,18 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         return (int) (this.sizeInByte += src.array().length);
     }
 
-    public void delete(BlobPath path) throws BlobException, IOException {
-        URL url = new URL(this.rootUrl.toString() + path + "?recursive=true");
-        HttpURLConnection uc = openHttpUrlConnection(url, "DELETE");
-        int responseCode = uc.getResponseCode();
+    public void delete(BlobPath path) throws BlobException {
+        try {
+            URL url = new URL(this.rootUrl.toString() + path + "?recursive=true");
+            HttpURLConnection uc = openHttpUrlConnection(url, "DELETE");
+            int responseCode = uc.getResponseCode();
 
-        if (responseCode != HttpURLConnection.HTTP_ACCEPTED) {
-            throw new BlobException(uc.getResponseMessage());
+            if (responseCode != HttpURLConnection.HTTP_ACCEPTED) {
+                throw new BlobException(uc.getResponseMessage());
+            }
+        } catch (IOException e) {
+            log.error(e.getMessage());
+            throw new BlobException(e.getMessage());
         }
     }
 

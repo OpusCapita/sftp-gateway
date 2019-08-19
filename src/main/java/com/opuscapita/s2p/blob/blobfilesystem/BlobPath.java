@@ -1,6 +1,6 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
-import org.apache.sshd.client.subsystem.sftp.fs.SftpPath;
+import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 
 import java.io.File;
@@ -154,29 +154,33 @@ public class BlobPath extends AbstractLoggingBean implements Path {
 
     @Override
     public boolean endsWith(Path other) {
-        BlobPath p1 = this;
-        BlobPath p2 = checkPath(other);
-        int i1 = p1.path.length - 1;
-        if (i1 > 0 && p1.path[i1] == '/') {
-            i1--;
-        }
-        int i2 = p2.path.length - 1;
-        if (i2 > 0 && p2.path[i2] == '/') {
-            i2--;
-        }
-        if (i2 == -1) {
-            return i1 == -1;
-        }
-        if ((p2.isAbsolute() && (!isAbsolute() || i2 != i1)) || (i1 < i2)) {
-            return false;
-        }
-        for (; i2 >= 0; i1--) {
-            if (p2.path[i2] != p1.path[i1]) {
-                return false;
-            }
-            i2--;
-        }
-        return (p2.path[i2 + 1] == '/') || (i1 == -1) || (p1.path[i1] == '/');
+        return this.toString().endsWith(other.toString());
+//        if (this.toString().length() < other.toString().length()) {
+//            return false;
+//        }
+//        BlobPath p1 = this;
+//        BlobPath p2 = checkPath(other);
+//        int i1 = p1.path.length - 1;
+//        if (i1 > 0 && p1.path[i1] == '/') {
+//            i1--;
+//        }
+//        int i2 = p2.path.length - 1;
+//        if (i2 > 0 && p2.path[i2] == '/') {
+//            i2--;
+//        }
+//        if (i2 == -1) {
+//            return i1 == -1;
+//        }
+//        if ((p2.isAbsolute() && (!isAbsolute() || i2 != i1)) || (i1 < i2)) {
+//            return false;
+//        }
+//        for (; i2 >= 0; i1--) {
+//            if (p2.path[i2] != p1.path[i1]) {
+//                return false;
+//            }
+//            i2--;
+//        }
+//        return (p2.path[i2 + 1] == '/') || (i1 == -1) || (p1.path[i1] == '/');
     }
 
     @Override
@@ -195,6 +199,9 @@ public class BlobPath extends AbstractLoggingBean implements Path {
 
     @Override
     public BlobPath resolve(Path other) {
+        if (other.toString().endsWith("/.")) {
+            other = new BlobPath(this.getFileSystem(), BlobUtils.removeLastChar(other.toString()).getBytes());
+        }
         BlobPath p1 = this;
         BlobPath p2 = checkPath(other);
         if (p2.isAbsolute()) {
@@ -216,7 +223,7 @@ public class BlobPath extends AbstractLoggingBean implements Path {
 
     @Override
     public BlobPath resolve(String other) {
-        return resolve(getFileSystem().getPath(other));
+        return this.resolve(getFileSystem().getPath(other));
     }
 
     @Override
@@ -544,7 +551,7 @@ public class BlobPath extends AbstractLoggingBean implements Path {
         if (m > 1 && to[m - 1] == '/')
             m--;
         byte[] retVal = (m == to.length) ? to : Arrays.copyOf(to, m);
-        if(retVal[retVal.length - 1] == '.') {
+        if (retVal[retVal.length - 1] == '.') {
             retVal[retVal.length - 1] = Byte.parseByte(null);
         }
         return retVal;

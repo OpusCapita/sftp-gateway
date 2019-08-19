@@ -122,21 +122,26 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
         BlobPath path = toBlobPath(dir);
         try {
-            path.getFileSystem().getDelegate().createDirectory(path, true);
+            path.getFileSystem().createDirectory(path, true);
         } catch (BlobException e) {
-            log.error(e.getMessage());
             throw new IOException(e.getMessage());
         }
 
     }
 
     @Override
-    public void delete(Path path) throws IOException {
+    public boolean deleteIfExists(Path path) throws IOException {
         try {
-            toBlobPath(path).getFileSystem().getDelegate().delete(toBlobPath(path));
-        } catch (Exception e) {
-            log.error(e.getMessage());
+            this.delete(path);
+        } catch (IOException e) {
+            return false;
         }
+        return true;
+    }
+
+    @Override
+    public void delete(Path path) throws IOException {
+        toBlobPath(path).getFileSystem().delete(toBlobPath(path));
     }
 
     @Override

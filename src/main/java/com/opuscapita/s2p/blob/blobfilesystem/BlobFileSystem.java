@@ -12,7 +12,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 
 import javax.xml.bind.DatatypeConverter;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -88,7 +91,6 @@ public class BlobFileSystem extends FileSystem {
     @Override
     public Iterable<Path> getRootDirectories() {
         return Collections.singleton(new BlobPath(this, new byte[]{'/'}));
-//        return Collections.singleton(new BlobPath(BlobFileSystem.this, "/", Collections.emptyList()));
     }
 
     @Override
@@ -198,8 +200,15 @@ public class BlobFileSystem extends FileSystem {
     }
 
     public Object loadContent(BlobPath path) throws IOException {
-        Map<String, BlobDirEntry> content = contents.get(path.toAbsolutePath().toString());
-        BlobPath parent = path.getParent();
+        return this.loadContent(path, true);
+    }
+
+    public Object loadContent(BlobPath path, boolean force) throws IOException {
+        Map<String, BlobDirEntry> content = null;
+        if (!force) {
+            content = contents.get(path.toAbsolutePath().toString());
+        }
+
         if (content == null) {
             try {
                 content = this.delegate.listFiles(path);
@@ -224,6 +233,10 @@ public class BlobFileSystem extends FileSystem {
         return content;
     }
 
+    /**
+     * Helper Functions
+     */
+
     private Object getFromParent(BlobPath path) {
         BlobPath parent = path.toAbsolutePath().getParent();
         Map<String, BlobDirEntry> parentContent = contents.get(parent.toString());
@@ -232,10 +245,6 @@ public class BlobFileSystem extends FileSystem {
         }
         return null;
     }
-
-    /**
-     * Helper Functions
-     */
 
     private String globToRegex(String pattern) {
         StringBuilder sb = new StringBuilder(pattern.length());
@@ -324,5 +333,30 @@ public class BlobFileSystem extends FileSystem {
             }
         }
         return sb.toString();
+    }
+
+    public void delete(BlobPath path) {
+        try {
+            BlobDirEntry entry = (BlobDirEntry) getFromParent(path);
+            if (entry.getIsDirectory()) {
+                path = new BlobPath(path.getFileSystem(), new String(path.toString() + "/").getBytes());
+            }
+            this.delegate.delete(path);
+            this.loadContent(path.getParent(), true);
+        } catch (BlobException | IOException e) {
+            log.warn(e.getMessage());
+        }
+    }
+
+    public BlobDirEntry createDirectory(BlobPath path, boolean createMissing) throws BlobException {
+        BlobDirEntry entry;
+        try {
+            entry = this.delegate.createDirectory(path, createMissing);
+            this.loadContent(path.getParent(), true);
+            return entry;
+        } catch (BlobException | IOException e) {
+            log.error(e.getMessage());
+            throw new BlobException(e.getMessage());
+        }
     }
 }

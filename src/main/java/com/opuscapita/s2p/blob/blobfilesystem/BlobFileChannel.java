@@ -6,7 +6,6 @@ import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.ValidateUtils;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.*;
@@ -163,6 +162,7 @@ public class BlobFileChannel extends FileChannel {
 
     @Override
     protected void implCloseChannel() throws IOException {
+        path.getFileSystem().loadContent(path, true);
         this.client.closeHttpUrlConnection();
     }
 
