@@ -222,10 +222,12 @@ public class BlobFileSystem extends FileSystem {
         if (c == null || c.getChildren().isEmpty()) {
             try {
                 content = this.delegate.listFiles(path);
+                if (content.isEmpty() && !force) {
+                    throw new FileNotFoundException();
+                }
                 for (BlobDirEntry entry : content.values()) {
                     this.addBlobDirEntry(path, entry);
                 }
-
             } catch (BlobException e) {
                 try {
                     BlobDirEntry entry = this.delegate.listFile(path);
@@ -369,13 +371,11 @@ public class BlobFileSystem extends FileSystem {
 
     public void delete(BlobPath path) {
         try {
-            BlobDirEntry entry = (BlobDirEntry) getFromParent(path);
-            if (entry.getIsDirectory()) {
-                path = new BlobPath(path.getFileSystem(), new String(path.toString() + "/").getBytes());
-            }
-            this.delegate.delete(path);
-            this.loadContent(path, true);
-        } catch (BlobException | IOException e) {
+            BlobDirEntry entry = getBlobDirEntry(path, false);
+            this.delegate.delete(path, entry.getIsDirectory());
+            getBlobDirEntry(path.getParent(), false).getChildren().remove(entry);
+//            this.loadContent(path, true);
+        } catch (BlobException e) {
             log.warn(e.getMessage());
         }
     }
@@ -384,9 +384,9 @@ public class BlobFileSystem extends FileSystem {
         BlobDirEntry entry;
         try {
             entry = this.delegate.createDirectory(path, createMissing);
-//            this.loadContent(path, true);
+            this.addBlobDirEntry(path.getParent(), entry);
             return entry;
-        } catch (BlobException e) {
+        } catch (BlobException | IOException e) {
             log.error(e.getMessage());
             throw new BlobException(e.getMessage());
         }

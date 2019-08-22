@@ -118,9 +118,9 @@ public class BlobDirEntry extends AbstractLoggingBean implements Serializable {
 
     @Override
     public String toString() {
-//        if (this.getIsDirectory() && !this.getName().equals("/")) {
-//            return this.getName() + "/";
-//        }
+        if (this.getIsDirectory() && !this.getName().equals("/")) {
+            return this.getName() + "/";
+        }
         return getName();
     }
 

@@ -45,7 +45,7 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         this.restTemplate = _restTemplateBuilder.build();
         this.configuration = configuration;
         this.jwt = jwt;
-        this.rootUrl = new URL("http://"+ configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/files" + "/" + configuration.getAccess()); // + "/onboarding/eInvoiceSupplierOnboarding";
+        this.rootUrl = new URL("http://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/files" + "/" + configuration.getAccess()); // + "/onboarding/eInvoiceSupplierOnboarding";
 
     }
 
@@ -196,9 +196,12 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         return (int) (this.sizeInByte += src.array().length);
     }
 
-    public void delete(BlobPath path) throws BlobException {
+    public void delete(BlobPath path, boolean dir) throws BlobException {
         try {
             URL url = new URL(this.rootUrl.toString() + path + "?recursive=true");
+            if (dir && !path.toString().endsWith(BlobUtils.HTTP_PATH_SEPARATOR_STRING)) {
+                url = new URL(this.rootUrl.toString() + path + BlobUtils.HTTP_PATH_SEPARATOR_STRING + "?recursive=true");
+            }
             HttpURLConnection uc = openHttpUrlConnection(url, "DELETE");
             int responseCode = uc.getResponseCode();
 
