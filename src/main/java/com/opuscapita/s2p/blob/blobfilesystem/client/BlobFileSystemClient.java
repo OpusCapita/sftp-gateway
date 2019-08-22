@@ -45,7 +45,7 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         this.restTemplate = _restTemplateBuilder.build();
         this.configuration = configuration;
         this.jwt = jwt;
-        this.rootUrl = new URL("http://blob:3012/api/" + tenant_id + "/files" + "/" + configuration.getAccess()); // + "/onboarding/eInvoiceSupplierOnboarding";
+        this.rootUrl = new URL("http://"+ configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/files" + "/" + configuration.getAccess()); // + "/onboarding/eInvoiceSupplierOnboarding";
 
     }
 
@@ -63,13 +63,13 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
                 path = path.getParent().getParent();
             }
             if (!path.endsWith("/")) {
-                path = new BlobPath(path.getFileSystem(), new String(path.toString() + "/").getBytes());
+                path = new BlobPath(path.getFileSystem(), (path.toString() + "/").getBytes());
             }
             ResponseEntity<BlobDirEntry[]> result = get(path, BlobDirEntry[].class, HttpMethod.GET);
             log.info("File list fetched successfully from blob service for folder: " + path.toString());
             Map<String, BlobDirEntry> listMap = new HashMap<>();
             for (BlobDirEntry entry : Arrays.asList(result.getBody())) {
-                listMap.put(entry.getName(), entry);
+                listMap.put(entry.toString(), entry);
             }
             return listMap;
         } catch (Exception e) {

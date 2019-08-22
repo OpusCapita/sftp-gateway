@@ -85,6 +85,20 @@ public class BlobPath extends AbstractLoggingBean implements Path {
         byte[] path = new byte[length];
         System.arraycopy(this.path, 0, path, 0, length);
         return new BlobPath(this.fileSystem, path);
+
+//        String path = this.toString();
+//        List<String> parent = new LinkedList<>(Arrays.asList(path.split(BlobUtils.HTTP_PATH_SEPARATOR_STRING)));
+//
+//        if(parent.size() <= 1) {
+//            return new BlobPath(this.fileSystem, ("/").getBytes());
+//        }
+//        parent.remove(parent.size() - 1);
+//        String _parent = BlobUtils.HTTP_PATH_SEPARATOR_STRING;
+//        parent.remove("");
+//        for (String p : parent) {
+//            _parent = _parent + p + "/";
+//        }
+//        return new BlobPath(this.fileSystem, _parent.getBytes());
     }
 
     @Override

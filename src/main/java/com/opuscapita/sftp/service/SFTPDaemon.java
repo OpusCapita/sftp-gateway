@@ -63,7 +63,7 @@ public class SFTPDaemon extends AbstractLoggingBean {
         SftpSubsystemFactory factory = new SftpSubsystemFactory
                 .Builder()
                 .withFileSystemAccessor(new OCRestFileSystemAccessor())
-                .withUnsupportedAttributePolicy(UnsupportedAttributePolicy.Warn)
+                .withUnsupportedAttributePolicy(UnsupportedAttributePolicy.ThrowException)
                 .withSftpErrorStatusDataHandler(SftpErrorStatusDataHandler.DEFAULT)
                 .build();
 //        OCSftpSubsystemFactory factory = this.builder.build();

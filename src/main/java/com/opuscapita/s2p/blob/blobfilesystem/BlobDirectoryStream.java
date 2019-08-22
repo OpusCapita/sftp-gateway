@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
 import java.util.Iterator;
-import java.util.Map;
 
 /**
  * Implements a remote {@link DirectoryStream}
@@ -42,7 +41,7 @@ public class BlobDirectoryStream implements DirectoryStream<Path> {
     public BlobDirectoryStream(BlobPath path) throws IOException {
         BlobFileSystem fs = path.getFileSystem();
         p = path;
-        it = ((Map<String, BlobDirEntry>) path.getFileSystem().loadContent(path)).values();
+        it = ((BlobDirEntry) path.getFileSystem().loadContent(path)).getChildren();
     }
 
     @Override

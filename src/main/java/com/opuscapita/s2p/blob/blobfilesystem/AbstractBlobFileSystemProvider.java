@@ -238,7 +238,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
             attrs = attributes.substring(i);
         }
 
-        return readAttributes(path, view, attrs, options);
+        return readBlobAttributes(path, view, attrs, options);
     }
 
     @Override
@@ -249,7 +249,6 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
     /**
      * Helper Functions
      */
-
     public BlobPath toBlobPath(Path path) {
         Objects.requireNonNull(path, "No path provided");
         if (!(path instanceof BlobPath)) {
@@ -279,7 +278,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         }
     }
 
-    public Map<String, Object> readAttributes(Path path, String view, String attrs, LinkOption... options) throws IOException {
+    public Map<String, Object> readBlobAttributes(Path path, String view, String attrs, LinkOption... options) throws IOException {
         BlobPath p = toBlobPath(path);
         BlobFileSystem fs = p.getFileSystem();
         Collection<String> views = fs.supportedFileAttributeViews();

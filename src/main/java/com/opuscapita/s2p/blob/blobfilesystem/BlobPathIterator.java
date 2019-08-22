@@ -33,7 +33,6 @@ public class BlobPathIterator implements Iterator<Path> {
         this(path, (iter == null) ? null : iter.iterator());
     }
 
-    //    public BlobPathIterator(BlobPath path, Iterator<Map<String, Object>>  iter) {
     public BlobPathIterator(BlobPath path, Iterator<BlobDirEntry> iter) {
         p = path;
         it = iter;

@@ -46,9 +46,9 @@ public class BlobDirEntry extends AbstractLoggingBean implements Serializable {
         }
     };
 
-    @Getter
-    @Setter
-    private BlobDirEntry parent;
+//    @Getter
+//    @Setter
+//    private BlobDirEntry parent;
     @Getter
     private List<BlobDirEntry> children;
 
@@ -99,6 +99,16 @@ public class BlobDirEntry extends AbstractLoggingBean implements Serializable {
 
     public BlobDirEntry() {
         this.children = new ArrayList<>();
+        this.name = BlobUtils.HTTP_PATH_SEPARATOR_STRING;
+        this.longFilename = BlobUtils.HTTP_PATH_SEPARATOR_STRING;
+        this.isDirectory = true;
+        this.isFile = false;
+        this.lastModified = Date.from(Instant.now());
+        this.location = BlobUtils.HTTP_PATH_SEPARATOR_STRING;
+        this.path = BlobUtils.HTTP_PATH_SEPARATOR_STRING;
+        this.size = 0;
+        this.contentType = "application/json";
+        this.extension = "";
     }
 
     public static BlobDirEntry fromJson(String jsonString) {
@@ -108,7 +118,19 @@ public class BlobDirEntry extends AbstractLoggingBean implements Serializable {
 
     @Override
     public String toString() {
+//        if (this.getIsDirectory() && !this.getName().equals("/")) {
+//            return this.getName() + "/";
+//        }
         return getName();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        BlobDirEntry other = (BlobDirEntry) obj;
+        return (this.getName().equals(other.getName())
+                && this.getLocation().equals(other.getLocation())
+                && this.getIsDirectory().equals(other.getIsDirectory())
+                && this.getIsFile().equals(other.isFile));
     }
 
     public Map<String, Object> toMap() {
@@ -125,5 +147,29 @@ public class BlobDirEntry extends AbstractLoggingBean implements Serializable {
         map.put("extension", getExtension());
 
         return map;
+    }
+
+    public BlobDirEntry getChildByName(String name) {
+        return this.getChildByName(name, false);
+    }
+
+    public BlobDirEntry getChildByName(String name, boolean createIfNotExists) {
+        BlobDirEntry namedEntry = null;
+        for (BlobDirEntry entry : this.getChildren()) {
+            if (entry.getName().equals(name)) {
+                namedEntry = entry;
+                break;
+            }
+        }
+        if (namedEntry == null && createIfNotExists) {
+            namedEntry = new BlobDirEntry(name, name);
+            namedEntry.setPath(this.getPath() + BlobUtils.HTTP_PATH_SEPARATOR_STRING + name);
+//            namedEntry.setLocation(getParent() != null ? getParent().getPath() : BlobUtils.HTTP_PATH_SEPARATOR_STRING);
+        }
+        return namedEntry;
+    }
+
+    public boolean hasChild(BlobDirEntry entry) {
+        return this.getChildren().contains(entry);
     }
 }
