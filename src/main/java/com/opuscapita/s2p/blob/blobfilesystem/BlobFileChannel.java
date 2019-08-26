@@ -162,8 +162,8 @@ public class BlobFileChannel extends FileChannel {
 
     @Override
     protected void implCloseChannel() throws IOException {
-        path.getFileSystem().loadContent(path, true);
         this.client.closeHttpUrlConnection();
+        path.getFileSystem().loadContent(path.getParent(), true);
     }
 
     private void ensureOpen(Collection<Mode.OpenMode> reqModes) throws IOException {

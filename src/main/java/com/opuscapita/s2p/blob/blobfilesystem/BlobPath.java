@@ -1,7 +1,8 @@
 package com.opuscapita.s2p.blob.blobfilesystem;
 
 import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
-import org.apache.sshd.common.util.logging.AbstractLoggingBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,8 +14,9 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
-public class BlobPath extends AbstractLoggingBean implements Path {
+public class BlobPath implements Path {
 
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
     private final BlobFileSystem fileSystem;
 
     private final byte[] path;
@@ -85,20 +87,6 @@ public class BlobPath extends AbstractLoggingBean implements Path {
         byte[] path = new byte[length];
         System.arraycopy(this.path, 0, path, 0, length);
         return new BlobPath(this.fileSystem, path);
-
-//        String path = this.toString();
-//        List<String> parent = new LinkedList<>(Arrays.asList(path.split(BlobUtils.HTTP_PATH_SEPARATOR_STRING)));
-//
-//        if(parent.size() <= 1) {
-//            return new BlobPath(this.fileSystem, ("/").getBytes());
-//        }
-//        parent.remove(parent.size() - 1);
-//        String _parent = BlobUtils.HTTP_PATH_SEPARATOR_STRING;
-//        parent.remove("");
-//        for (String p : parent) {
-//            _parent = _parent + p + "/";
-//        }
-//        return new BlobPath(this.fileSystem, _parent.getBytes());
     }
 
     @Override
@@ -296,7 +284,6 @@ public class BlobPath extends AbstractLoggingBean implements Path {
 
     @Override
     public URI toUri() {
-//        return URI.create(this.getFileSystem().getEndpoint() + this.path.toString());
         throw new UnsupportedOperationException("BlobPath.toUri is not implemented");
     }
 

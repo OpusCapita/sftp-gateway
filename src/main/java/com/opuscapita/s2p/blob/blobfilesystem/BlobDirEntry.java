@@ -7,13 +7,16 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.sshd.common.util.GenericUtils;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.*;
 
-public class BlobDirEntry extends AbstractLoggingBean implements Serializable {
+public class BlobDirEntry implements Serializable {
 
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
     private static final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
 
     public static final Comparator<BlobDirEntry> BY_CASE_SENSITIVE_FILENAME = new Comparator<BlobDirEntry>() {

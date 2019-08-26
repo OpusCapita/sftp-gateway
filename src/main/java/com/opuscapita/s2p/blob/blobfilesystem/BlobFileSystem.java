@@ -215,7 +215,6 @@ public class BlobFileSystem extends FileSystem {
         Map<String, BlobDirEntry> content;
         BlobDirEntry c = null;
         if (!force) {
-//            content = contents.get(path.toAbsolutePath().toString());
             c = this.getBlobDirEntry(path, false);
         }
 
@@ -233,7 +232,7 @@ public class BlobFileSystem extends FileSystem {
                     BlobDirEntry entry = this.delegate.listFile(path);
                     this.addBlobDirEntry(path, entry);
                 } catch (BlobException e2) {
-                    log.warn("Fehler: " + e2.getMessage());
+                    log.warn("Error: " + e2.getMessage());
                     throw new FileNotFoundException(e2.getMessage());
                 }
             } catch (FileNotFoundException fileNotFound) {
@@ -242,45 +241,12 @@ public class BlobFileSystem extends FileSystem {
             }
         }
 
-//        if (content == null) {
-//            try {
-//                content = this.delegate.listFiles(path);
-//                for (BlobDirEntry entry : content.values()) {
-//                    this.addBlobDirEntry(path, entry);
-//                }
-//                if (content.size() == 0 && getFromParent(path) == null) {
-//                    throw new FileNotFoundException("Directory " + path.toString() + " does not exist");
-//                }
-//            } catch (BlobException e) {
-//                try {
-//                    content = contents.getOrDefault(path.getParent().toString(), new HashMap<>());
-//                    BlobDirEntry entry = this.delegate.listFile(path);
-//                    content.put(entry.toString(), entry);
-//                    contents.put(path.toString(), content);
-//                } catch (BlobException e2) {
-//                    log.error("Fehler: " + e2.getMessage());
-//                }
-//            } catch (FileNotFoundException fileNotFound) {
-//                log.warn(fileNotFound.getMessage());
-//                throw new NoSuchFileException(fileNotFound.getMessage());
-//            }
-//        }
-//        return content;
         return c;
     }
 
     /**
      * Helper Functions
      */
-
-    private Object getFromParent(BlobPath path) {
-        BlobPath parent = new BlobPath(path.getFileSystem(), (path.getParent().toString()).getBytes());
-        Map<String, BlobDirEntry> parentContent = contents.get(parent.toString());
-        if (parentContent != null) {
-            return parentContent.getOrDefault(path.getFileName().toString(), null);
-        }
-        return null;
-    }
 
     private String globToRegex(String pattern) {
         StringBuilder sb = new StringBuilder(pattern.length());
@@ -374,7 +340,6 @@ public class BlobFileSystem extends FileSystem {
             BlobDirEntry entry = getBlobDirEntry(path, false);
             this.delegate.delete(path, entry.getIsDirectory());
             getBlobDirEntry(path.getParent(), false).getChildren().remove(entry);
-//            this.loadContent(path, true);
         } catch (BlobException e) {
             log.warn(e.getMessage());
         }
@@ -414,5 +379,34 @@ public class BlobFileSystem extends FileSystem {
             parentEntry.getChildren().remove(entry);
         }
         return parentEntry.getChildren().add(entry);
+    }
+
+    public void move(BlobPath src, BlobPath dst) {
+        try {
+            if (this.delegate.move(src, dst)) {
+                BlobDirEntry entry = this.getBlobDirEntry(src, false);
+                if (entry != null) {
+                    entry.setPath(dst.toString());
+                    entry.setName(dst.getFileName().toString());
+                }
+            }
+        } catch (BlobException e) {
+            log.warn("Moving the File {} to {} went wrong", src.toString(), dst.toString());
+        }
+    }
+
+    public void copy(BlobPath src, BlobPath dst) {
+        try {
+            if (this.delegate.copy(src, dst)) {
+                BlobDirEntry srcEntry = this.getBlobDirEntry(src, false);
+                BlobDirEntry dstEntry = this.getBlobDirEntry(dst, true);
+                if (srcEntry != null) {
+                    dstEntry.setPath(dst.toString());
+                    dstEntry.setName(dst.getFileName().toString());
+                }
+            }
+        } catch (BlobException e) {
+            log.warn("Moving the File {} to {} went wrong", src.toString(), dst.toString());
+        }
     }
 }

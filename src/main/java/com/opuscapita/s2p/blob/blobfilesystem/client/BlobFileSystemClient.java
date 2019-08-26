@@ -6,13 +6,15 @@ import com.opuscapita.s2p.blob.blobfilesystem.client.Exception.BlobException;
 import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import lombok.Getter;
-import org.apache.sshd.common.util.logging.AbstractLoggingBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -26,11 +28,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BlobFileSystemClient extends AbstractLoggingBean {
+public class BlobFileSystemClient {
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
     @Getter
     private RestTemplate restTemplate;
     @Getter
     private final URL rootUrl;
+    private final URL moveUrl;
+    private final URL cpyUrl;
+    private final URL tierUrl;
+    private final URL metadataUrl;
     private final BlobConfiguration configuration;
     private final String jwt;
     private HttpURLConnection connection = null;
@@ -46,7 +54,10 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         this.configuration = configuration;
         this.jwt = jwt;
         this.rootUrl = new URL("http://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/files" + "/" + configuration.getAccess()); // + "/onboarding/eInvoiceSupplierOnboarding";
-
+        this.moveUrl = new URL("http://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/files" + "/move/" + configuration.getAccess()); // + "/onboarding/eInvoiceSupplierOnboarding";
+        this.cpyUrl = new URL("http://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/files" + "/copy/" + configuration.getAccess()); // + "/onboarding/eInvoiceSupplierOnboarding";
+        this.tierUrl = new URL("http://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/files" + "/tier/" + configuration.getAccess()); // + "/onboarding/eInvoiceSupplierOnboarding";
+        this.metadataUrl = new URL("http://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/files" + "/metadata/" + configuration.getAccess()); // + "/onboarding/eInvoiceSupplierOnboarding";
     }
 
     /**
@@ -182,6 +193,8 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
     }
 
     /**
+     * Upload
+     *
      * @param path
      * @param src
      * @return
@@ -196,6 +209,13 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
         return (int) (this.sizeInByte += src.array().length);
     }
 
+    /**
+     * Delete file or directory
+     *
+     * @param path
+     * @param dir
+     * @throws BlobException
+     */
     public void delete(BlobPath path, boolean dir) throws BlobException {
         try {
             URL url = new URL(this.rootUrl.toString() + path + "?recursive=true");
@@ -208,6 +228,60 @@ public class BlobFileSystemClient extends AbstractLoggingBean {
             if (responseCode != HttpURLConnection.HTTP_ACCEPTED) {
                 throw new BlobException(uc.getResponseMessage());
             }
+        } catch (IOException e) {
+            log.error(e.getMessage());
+            throw new BlobException(e.getMessage());
+        }
+    }
+
+    public boolean copy(BlobPath src, BlobPath dst) throws BlobException {
+        try {
+            URL url = new URL(this.cpyUrl.toString() + src);
+            String payload = "{\"dstPath\": \"" + "/" + this.configuration.getAccess() + dst.toString() + "\"}";
+
+            HttpURLConnection uc = (HttpURLConnection) url.openConnection();
+            uc.setRequestMethod("PUT");
+            uc.setRequestProperty("X-User-Id-Token", jwt);
+            uc.setRequestProperty("Content-Type", "application/json");
+            uc.setDoOutput(true);
+            OutputStreamWriter osw = new OutputStreamWriter(uc.getOutputStream());
+            osw.write(payload);
+            osw.flush();
+            osw.close();
+
+            int responseCode = uc.getResponseCode();
+
+            if (responseCode != HttpURLConnection.HTTP_ACCEPTED) {
+                throw new BlobException(uc.getResponseMessage());
+            }
+            return true;
+        } catch (IOException | BlobException e) {
+            log.error(e.getMessage());
+            throw new BlobException(e.getMessage());
+        }
+    }
+
+    public boolean move(BlobPath src, BlobPath dst) throws BlobException {
+        try {
+            URL url = new URL(this.moveUrl.toString() + src);
+            String payload = "{\"dstPath\": \"" + "/" + this.configuration.getAccess() + dst.toString() + "\"}";
+
+            HttpURLConnection uc = (HttpURLConnection) url.openConnection();
+            uc.setRequestMethod("PUT");
+            uc.setRequestProperty("X-User-Id-Token", jwt);
+            uc.setRequestProperty("Content-Type", "application/json");
+            uc.setDoOutput(true);
+            OutputStreamWriter osw = new OutputStreamWriter(uc.getOutputStream());
+            osw.write(payload);
+            osw.flush();
+            osw.close();
+
+            int responseCode = uc.getResponseCode();
+
+            if (responseCode != HttpURLConnection.HTTP_ACCEPTED) {
+                throw new BlobException(uc.getResponseMessage());
+            }
+            return true;
         } catch (IOException e) {
             log.error(e.getMessage());
             throw new BlobException(e.getMessage());

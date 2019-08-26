@@ -23,6 +23,8 @@ import com.opuscapita.s2p.blob.blobfilesystem.BlobFileSystem;
 import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
 import org.apache.sshd.client.subsystem.sftp.SftpClient;
 import org.apache.sshd.common.util.GenericUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.LinkOption;
@@ -32,6 +34,7 @@ import java.util.Set;
 
 public class BlobPosixFileAttributeView extends AbstractBlobFileAttributeView implements PosixFileAttributeView {
 
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
     private final Path path;
     private final AbstractBlobFileSystemProvider provider;
     private final LinkOption[] options;

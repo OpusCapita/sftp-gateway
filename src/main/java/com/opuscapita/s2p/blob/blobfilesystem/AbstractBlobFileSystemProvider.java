@@ -146,12 +146,18 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 
     @Override
     public void copy(Path source, Path target, CopyOption... options) throws IOException {
-        throw new ReadOnlyFileSystemException();
+        log.info("Copy " + source.toString() + " to " + target.toString());
+        BlobPath src = toBlobPath(source);
+        BlobPath dst = toBlobPath(target);
+        src.getFileSystem().copy(src, dst);
     }
 
     @Override
     public void move(Path source, Path target, CopyOption... options) throws IOException {
-        throw new ReadOnlyFileSystemException();
+        log.info(source.toString() + " to " + target.toString());
+        BlobPath src = toBlobPath(source);
+        BlobPath dst = toBlobPath(target);
+        src.getFileSystem().move(src, dst);
     }
 
     @Override
@@ -243,7 +249,6 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 
     @Override
     public void setAttribute(Path path, String attribute, Object value, LinkOption... options) throws IOException {
-        throw new ReadOnlyFileSystemException();
     }
 
     /**
@@ -350,5 +355,4 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         }
         return map;
     }
-
 }
