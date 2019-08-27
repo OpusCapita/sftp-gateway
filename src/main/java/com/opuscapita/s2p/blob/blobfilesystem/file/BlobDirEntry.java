@@ -1,4 +1,4 @@
-package com.opuscapita.s2p.blob.blobfilesystem;
+package com.opuscapita.s2p.blob.blobfilesystem.file;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -6,7 +6,6 @@ import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.sshd.common.util.GenericUtils;
-import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,9 +48,6 @@ public class BlobDirEntry implements Serializable {
         }
     };
 
-//    @Getter
-//    @Setter
-//    private BlobDirEntry parent;
     @Getter
     private List<BlobDirEntry> children;
 

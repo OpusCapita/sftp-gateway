@@ -35,14 +35,12 @@ public class SFTPDaemon extends AbstractLoggingBean {
     private final BlobConfiguration blobConfiguration;
     private SshServer sshd = SshServer.setUpDefaultServer();
     private AuthProvider authProvider;
-    private OCSftpSubsystemFactory.Builder builder;
 
     @Autowired
-    public SFTPDaemon(SFTPConfiguration _configuration, BlobConfiguration _blobConfiguration, AuthProvider _authProvider, OCSftpSubsystemFactory.Builder _builder) {
+    public SFTPDaemon(SFTPConfiguration _configuration, BlobConfiguration _blobConfiguration, AuthProvider _authProvider) {
         this.configuration = _configuration;
         this.blobConfiguration = _blobConfiguration;
         this.authProvider = _authProvider;
-        this.builder = _builder;
 
         List<NamedFactory<Command>> subsystemFactories = new ArrayList<>();
         subsystemFactories.add(this.createDefaultSftpSubsystem());
@@ -66,10 +64,6 @@ public class SFTPDaemon extends AbstractLoggingBean {
                 .withUnsupportedAttributePolicy(UnsupportedAttributePolicy.ThrowException)
                 .withSftpErrorStatusDataHandler(SftpErrorStatusDataHandler.DEFAULT)
                 .build();
-//        OCSftpSubsystemFactory factory = this.builder.build();
-//        factory.setUnsupportedAttributePolicy(UnsupportedAttributePolicy.ThrowException);
-//        SFTPEventListener sftpEventListener = new SFTPEventListener();
-//        factory.addSftpEventListener(sftpEventListener);
 
         return factory;
     }

@@ -3,6 +3,8 @@ package com.opuscapita.s2p.blob.blobfilesystem;
 import com.opuscapita.s2p.blob.blobfilesystem.client.BlobFileSystemClient;
 import com.opuscapita.s2p.blob.blobfilesystem.client.Exception.BlobException;
 import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobDirEntry;
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobDirectoryStream;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobPosixFileAttributes;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import lombok.Getter;
@@ -187,26 +189,6 @@ public class BlobFileSystem extends FileSystem {
         return (A) new BlobPosixFileAttributes(desc.toMap());
     }
 
-//    public <A extends BasicFileAttributes> A readAttributes(BlobPath path, Class<A> type, LinkOption... options) throws IOException {
-//        BlobPath absolute = path.toAbsolutePath();
-//        Object desc = contents.get(absolute.toString());
-//        if (desc == null) {
-//            desc = getFromParent(path);
-//        }
-//        if (desc == null) {
-//            desc = loadContent(absolute);
-//        }
-//
-//        PosixFileAttributes fileAttributes;
-//        if (desc instanceof Map) {
-//            fileAttributes = new BlobPosixFileAttributes(BlobUtils.getDefaultAttributes(absolute));
-//        } else {
-//            fileAttributes = new BlobPosixFileAttributes(((BlobDirEntry) desc).toMap());
-//        }
-//
-//        return type.cast(fileAttributes);
-//    }
-
     public Object loadContent(BlobPath path) throws IOException {
         return this.loadContent(path, false);
     }
@@ -221,7 +203,7 @@ public class BlobFileSystem extends FileSystem {
         if (c == null || c.getChildren().isEmpty()) {
             try {
                 content = this.delegate.listFiles(path);
-                if (content.isEmpty() && !force) {
+                if (content.isEmpty() && !force && getBlobDirEntry(path.getParent(), false).getChildByName(path.getFileName().toString()) == null) {
                     throw new FileNotFoundException();
                 }
                 for (BlobDirEntry entry : content.values()) {
@@ -357,29 +339,6 @@ public class BlobFileSystem extends FileSystem {
         }
     }
 
-    /**
-     * ContentTree Helper Functions
-     */
-    private BlobDirEntry getBlobDirEntry(BlobPath path, boolean createIfNotExist) {
-        BlobDirEntry currentEntry = this.contentTree;
-        int level = 0;
-        List<String> pathPart = Arrays.asList(path.toString().split(BlobUtils.HTTP_PATH_SEPARATOR_STRING));
-        if (level == 0 && pathPart.size() > 0 && pathPart.get(0).isEmpty()) {
-            level = 1;
-        }
-        while (level < pathPart.size() && (currentEntry = currentEntry.getChildByName(pathPart.get(level), createIfNotExist)) != null) {
-            level++;
-        }
-        return currentEntry;
-    }
-
-    private boolean addBlobDirEntry(BlobPath path, BlobDirEntry entry) throws IOException {
-        BlobDirEntry parentEntry = getBlobDirEntry(path, true);
-        if (parentEntry.hasChild(entry)) {
-            parentEntry.getChildren().remove(entry);
-        }
-        return parentEntry.getChildren().add(entry);
-    }
 
     public void move(BlobPath src, BlobPath dst) {
         try {
@@ -408,5 +367,29 @@ public class BlobFileSystem extends FileSystem {
         } catch (BlobException e) {
             log.warn("Moving the File {} to {} went wrong", src.toString(), dst.toString());
         }
+    }
+
+    /**
+     * ContentTree Helper Functions
+     */
+    private BlobDirEntry getBlobDirEntry(BlobPath path, boolean createIfNotExist) {
+        BlobDirEntry currentEntry = this.contentTree;
+        int level = 0;
+        List<String> pathPart = Arrays.asList(path.toString().split(BlobUtils.HTTP_PATH_SEPARATOR_STRING));
+        if (level == 0 && pathPart.size() > 0 && pathPart.get(0).isEmpty()) {
+            level = 1;
+        }
+        while (level < pathPart.size() && (currentEntry = currentEntry.getChildByName(pathPart.get(level), createIfNotExist)) != null) {
+            level++;
+        }
+        return currentEntry;
+    }
+
+    private boolean addBlobDirEntry(BlobPath path, BlobDirEntry entry) throws IOException {
+        BlobDirEntry parentEntry = getBlobDirEntry(path, true);
+        if (parentEntry.hasChild(entry)) {
+            parentEntry.getChildren().remove(entry);
+        }
+        return parentEntry.getChildren().add(entry);
     }
 }

@@ -1,5 +1,6 @@
-package com.opuscapita.s2p.blob.blobfilesystem;
+package com.opuscapita.s2p.blob.blobfilesystem.file;
 
+import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
 import com.opuscapita.s2p.blob.blobfilesystem.client.BlobFileSystemClient;
 import com.opuscapita.s2p.blob.blobfilesystem.client.Mode;
 import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;

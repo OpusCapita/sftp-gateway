@@ -16,8 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.opuscapita.s2p.blob.blobfilesystem;
+package com.opuscapita.s2p.blob.blobfilesystem.file;
 
+import com.opuscapita.s2p.blob.blobfilesystem.BlobFileSystem;
+import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
 import org.apache.sshd.client.subsystem.sftp.fs.SftpPath;
 
 import java.io.IOException;

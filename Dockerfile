@@ -3,6 +3,7 @@ FROM openjdk:8-alpine
 # Install maven
 RUN apk update
 RUN apk add maven
+RUN apk add htop
 
 ENV WRKDIR=/code
 ENV TRGTDIR=$WRKDIR/target

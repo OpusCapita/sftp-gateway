@@ -1,6 +1,6 @@
 package com.opuscapita.s2p.blob.blobfilesystem.client;
 
-import com.opuscapita.s2p.blob.blobfilesystem.BlobDirEntry;
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobDirEntry;
 import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
 import com.opuscapita.s2p.blob.blobfilesystem.client.Exception.BlobException;
 import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;

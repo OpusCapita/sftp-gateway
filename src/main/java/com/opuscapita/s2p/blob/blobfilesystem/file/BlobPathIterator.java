@@ -17,7 +17,10 @@
  * under the License.
  */
 
-package com.opuscapita.s2p.blob.blobfilesystem;
+package com.opuscapita.s2p.blob.blobfilesystem.file;
+
+import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
+import com.opuscapita.s2p.blob.blobfilesystem.file.BlobDirEntry;
 
 import java.nio.file.Path;
 import java.util.Iterator;

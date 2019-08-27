@@ -14,9 +14,10 @@ services:
       - auth
       - blob
       - acl
+      - tnt
     labels:
       SERVICE_NAME: sftp-gateway
-      SERVICE_TAGS: kong
+      SERVICE_TAGS: gateway
     environment:
       PORT: 2222
       SERVICE_NAME: ${SERVICE_NAME}
@@ -25,6 +26,67 @@ services:
       RABBITMQ_PASS: ${RABBITMQ_PASS}
     ports:
       - 2222:2222
+
+  tnt:
+    image: opuscapita/tnt:dev
+    labels:
+      SERVICE_NAME: tnt
+      SERVICE_TAGS: external
+    environment:
+      REDIS_AUTH: ${REDIS_AUTH}
+      MYSQL_DATABASE: $MYSQL_DATABASE
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+      SIRIUS_B2B_USER: ${SIRIUS_B2B_USER}
+      SIRIUS_B2B_PASS: ${SIRIUS_B2B_PASS}
+      RET_PERIOD: ${RET_PERIOD}
+      REP_NAME: ${REP_NAME}
+      REP_CONTAINER: ${REP_CONTAINER}
+      SERVICE_3027_CHECK_HTTP: /api/health/check
+      SERVICE_3027_CHECK_INTERVAL: 15s
+      SERVICE_3027_CHECK_TIMEOUT: 3s
+      SERVICE_3027_NAME: tnt
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      - mysql
+      - consul
+      - registrator
+      - redis
+      - kong
+      - rabbitmq
+      - business-partner
+      - acl
+      - auth
+      - api-registry
+      - elasticsearch
+    ports:
+      - 3027:3027
+
+  business-partner:
+    image: opuscapita/business-partner:dev
+    depends_on:
+      - mysql
+      - consul
+      - registrator
+      - redis
+      - auth
+    labels:
+      SERVICE_NAME: business-partner
+      SERVICE_TAGS: kong
+    ports:
+      - 3046:3046
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      NODE_ENV: ${NODE_ENV}
+      REDIS_AUTH: ${REDIS_AUTH}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+      SERVICE_3046_CHECK_HTTP: /api/health/check
+      SERVICE_3046_CHECK_INTERVAL: 15s
+      SERVICE_3046_CHECK_TIMEOUT: 3s
+    command: 'npm run dev'
 
   auth:
     image: opuscapita/auth:dev
@@ -142,6 +204,7 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     depends_on:
       - registrator
+
   rabbitmq:
     image: rabbitmq:3-management
     ports:
@@ -221,6 +284,24 @@ services:
     depends_on:
       - registrator
 
+  elasticsearch:
+    image: opuscapita/elasticsearch:dev
+    environment:
+      # This helps ES out with memory usage
+      - "ES_JAVA_OPTS=-Xmx512m -Xms512m"
+      - SERVICE_9200_NAME=elasticsearch
+      - SERVICE_9300_NAME=elasticsearch-TCP
+      - SERVICE_9200_CHECK_HTTP=/
+      - SERVICE_9200_CHECK_INTERVAL=15s
+      - SERVICE_9200_CHECK_TIMEOUT=3s
+      - ES_NO_CLUSTER=${ES_NO_CLUSTER}
+    depends_on:
+      - registrator
+      - elastichq
+    ports:
+      - 9200:9200
+      - 9300:9300
+
   registrator:
     image: gliderlabs/registrator
     command: consul://consul:8500
@@ -244,3 +325,8 @@ services:
       - -ui
       - -bootstrap
       - -client=0.0.0.0
+
+  elastichq:
+    image: elastichq/elasticsearch-hq
+    ports:
+      - 5000:5000
