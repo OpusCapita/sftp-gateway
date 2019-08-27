@@ -1,4 +1,4 @@
-version: '3'
+version: '3.4'
 services:
   main:
     build: .
@@ -34,7 +34,7 @@ services:
       SERVICE_TAGS: external
     environment:
       REDIS_AUTH: ${REDIS_AUTH}
-      MYSQL_DATABASE: $MYSQL_DATABASE
+      MYSQL_DATABASE: $MYSQL_DATABASE_TNT
       MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASS: ${RABBITMQ_PASS}
@@ -78,7 +78,7 @@ services:
       - 3046:3046
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_TNT}
       NODE_ENV: ${NODE_ENV}
       REDIS_AUTH: ${REDIS_AUTH}
       RABBITMQ_USER: ${RABBITMQ_USER}
@@ -284,6 +284,11 @@ services:
     depends_on:
       - registrator
 
+  elastichq:
+    image: elastichq/elasticsearch-hq
+    ports:
+      - 5000:5000
+
   elasticsearch:
     image: opuscapita/elasticsearch:dev
     environment:
@@ -325,8 +330,3 @@ services:
       - -ui
       - -bootstrap
       - -client=0.0.0.0
-
-  elastichq:
-    image: elastichq/elasticsearch-hq
-    ports:
-      - 5000:5000
