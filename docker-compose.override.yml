@@ -1,4 +1,4 @@
-version: '3'
+version: '3.4'
 services:
     main:
         build: .
@@ -6,3 +6,20 @@ services:
             - ./src:/usr/app/src
             - ./mvn:/usr/app/mvn
         command: 'mvn spring-boot:run'
+
+#    tnt:
+#        volumes:
+#            - ./src:/home/node/tnt/src
+#            - ./local:/home/node/tnt/local
+#            - ./rest-doc:/home/node/tnt/rest-doc
+#            - ./wiki:/home/node/tnt/wiki
+#            - ./test:/home/node/tnt/test
+#            - ./coverage:/home/node/tnt/coverage
+#        command: 'npm run dev'
+#        ports:
+#            - 9229:9229
+#            - $PORT:$PORT
+#
+#    blob:
+#        env_file:
+#            - .env.local

@@ -5,7 +5,8 @@ import com.opuscapita.sftp.config.SFTPConfiguration;
 import com.opuscapita.sftp.filesystem.BlobFileSystemFactory;
 import com.opuscapita.sftp.service.auth.AuthProvider;
 import com.opuscapita.sftp.service.commands.OCRestFileSystemAccessor;
-import com.opuscapita.sftp.service.commands.OCSftpSubsystemFactory;
+import com.opuscapita.tnt.model.Tx;
+import com.opuscapita.tnt.model.TxSchemaV1;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
@@ -61,10 +62,16 @@ public class SFTPDaemon extends AbstractLoggingBean {
         SftpSubsystemFactory factory = new SftpSubsystemFactory
                 .Builder()
                 .withFileSystemAccessor(new OCRestFileSystemAccessor())
-                .withUnsupportedAttributePolicy(UnsupportedAttributePolicy.ThrowException)
+                .withUnsupportedAttributePolicy(UnsupportedAttributePolicy.Warn)
                 .withSftpErrorStatusDataHandler(SftpErrorStatusDataHandler.DEFAULT)
                 .build();
+        SFTPEventListener eventListener = new SFTPEventListener(this);
+        eventListener.addFileUploadCompleteListener(file -> {
+            Tx transaction = new TxSchemaV1();
+            log.info("Transaction created: " + transaction.asJson());
+        });
 
+        factory.addSftpEventListener(eventListener);
         return factory;
     }
 

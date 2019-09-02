@@ -14,6 +14,8 @@ import org.apache.sshd.server.subsystem.sftp.Handle;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
@@ -21,8 +23,27 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
     private AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey;
     @Getter
     private AuthResponse authResponse;
-    public SFTPEventListener() {
+
+    private final SFTPDaemon service;
+
+    public SFTPEventListener(SFTPDaemon _service) {
         super();
+        this.service = _service;
+    }
+
+    public interface FileUploadCompleteListener {
+        void onPathReady(Path file);
+    }
+
+
+    private List<FileUploadCompleteListener> fileReadyListeners = new ArrayList<>();
+
+    public void addFileUploadCompleteListener(FileUploadCompleteListener listener) {
+        fileReadyListeners.add(listener);
+    }
+
+    public void removeFileUploadCompleteListener(FileUploadCompleteListener listener) {
+        fileReadyListeners.remove(listener);
     }
 
     @Override
@@ -35,6 +56,20 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
         AuthResponse authResponse = session.getAttribute(authResponseAttributeKey);
         this.authResponse = authResponse;
         log.info("initialized with AccessToken: " + authResponse.getAccess_token());
+    }
+
+    @Override
+    public void closed(ServerSession session, String remoteHandle, Handle localHandle, Throwable thrown) throws IOException {
+        Path file = localHandle.getFile();
+
+        log.info(String.format("User %s closed file: \"%s\"", session.getUsername(), localHandle.getFile().toAbsolutePath()));
+        if(!(localHandle instanceof DirectoryHandle)) {
+            for (FileUploadCompleteListener fileReadyListener : fileReadyListeners) {
+                fileReadyListener.onPathReady(file);
+            }
+        }
+        localHandle.close();
+//        super.closed(session, remoteHandle, localHandle, thrown);
     }
 
     @Override

@@ -34,8 +34,8 @@ services:
       SERVICE_TAGS: external
     environment:
       REDIS_AUTH: ${REDIS_AUTH}
-      MYSQL_DATABASE: $MYSQL_DATABASE_TNT
-      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+      MYSQL_DATABASE: ${MYSQL_DATABASE_TNT}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASS: ${RABBITMQ_PASS}
       SIRIUS_B2B_USER: ${SIRIUS_B2B_USER}
@@ -86,6 +86,90 @@ services:
       SERVICE_3046_CHECK_HTTP: /api/health/check
       SERVICE_3046_CHECK_INTERVAL: 15s
       SERVICE_3046_CHECK_TIMEOUT: 3s
+    command: 'npm run dev'
+
+  business-link:
+    image: opuscapita/business-link:dev
+    depends_on:
+      - mysql
+      - consul
+      - registrator
+      - redis
+    labels:
+      SERVICE_NAME: 'business-link'
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+      REDIS_AUTH: ${REDIS_AUTH}
+      REP_FTP_USER: ${REP_FTP_USER}
+      REP_FTP_HOST: ${REP_FTP_HOST}
+      REP_FTP_PASSWORD: ${REP_FTP_PASSWORD}
+      REP_FTP_PORT: ${REP_FTP_PORT}
+      REP_FTP_FOLDER: ${REP_FTP_FOLDER}
+      REP_FTP_ENV: ${REP_FTP_ENV}
+      REP_PROV_URL: ${REP_PROV_URL}
+      SERVICE_3026_NAME: business-link
+      SERVICE_3026_CHECK_HTTP: /api/health/check
+      SERVICE_3026_CHECK_INTERVAL: 15s
+      SERVICE_3026_CHECK_TIMEOUT: 3s
+    ports:
+      - '3026:3026'
+    command: 'npm run dev'
+
+  supplier:
+    image: opuscapita/supplier:dev
+    depends_on:  # as of version 1.9.0 Dockerfile's HEALTHCHECK is not supported yet.
+      - mysql
+      - consul
+      - registrator
+      - redis
+    labels:
+      SERVICE_NAME: 'supplier'  # Service name used by Registrator for adding to Consul's service discovery registry.
+      SERVICE_TAGS: 'external'
+    ports:
+      - "3001:3001"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+      NODE_ENV: ${NODE_ENV}
+      REDIS_AUTH: $REDIS_AUTH
+      USER_NAME: 'svc_supplier'
+      PASSWORD: 'test'
+      CLIENT_KEY: $CLIENT_KEY
+      CLIENT_SECRET: $CLIENT_SECRET
+      SCOPE: $SCOPE
+      SERVICE_3001_CHECK_HTTP: /api/health/check
+      SERVICE_3001_CHECK_INTERVAL: 15s
+      SERVICE_3001_CHECK_TIMEOUT: 3s
+    command: 'npm run dev'
+
+  customer:
+    image: opuscapita/customer:dev
+    depends_on:
+      - mysql
+      - consul
+      - registrator
+      - redis
+    labels:
+      SERVICE_NAME: 'customer'
+    environment:
+      USER_NAME: 'svc_customer'
+      PASSWORD: 'test'
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+      SERVICE_3009_CHECK_HTTP: /api/health/check
+      SERVICE_3009_CHECK_INTERVAL: 15s
+      SERVICE_3009_CHECK_TIMEOUT: 3s
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      REDIS_AUTH: ${REDIS_AUTH}
+    ports:
+      - '3009:3009'
     command: 'npm run dev'
 
   auth:
@@ -242,9 +326,9 @@ services:
       POSTGRES_USER: $POSTGRES_USER
       POSTGRES_DB: $POSTGRES_DB
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-      REDIS_HOST: $HOST_IP # TODO: remove after api-gw is using config
-      REDIS_PORT: 6379 # TODO: remove after api-gw is using config
-      REDIS_AUTH: $REDIS_AUTH # TODO: remove after api-gw is using config
+      REDIS_HOST: $HOST_IP # TODO : remove after api-gw is using config
+      REDIS_PORT: 6379 # TODO : remove after api-gw is using config
+      REDIS_AUTH: $REDIS_AUTH # TODO : remove after api-gw is using config
       SERVICE_8001_NAME: kong
       SERVICE_8080_NAME: kong-http
     ports:
