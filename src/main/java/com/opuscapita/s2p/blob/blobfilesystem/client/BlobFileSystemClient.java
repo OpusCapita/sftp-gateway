@@ -184,7 +184,6 @@ public class BlobFileSystemClient {
                 totalRead += read;
             }
             this.sizeInByte = totalRead;
-//            this.sizeInByte = uc.getInputStream().read(dst.array(), dst.arrayOffset(), dst.array().length);
         } catch (Exception e) {
             log.error(e.getMessage());
         } finally {
@@ -204,9 +203,11 @@ public class BlobFileSystemClient {
     public int putFile(BlobPath path, ByteBuffer src) throws BlobException, IOException {
         URL url = new URL(this.rootUrl.toString() + path + "?createMissing=true");
         this.openHttpUrlConnection(url, "PUT");
-        this.connection.getOutputStream().write(src.array());
-
-        return (int) (this.sizeInByte += src.array().length);
+//        this.connection.getOutputStream().write(src.array(), src.position(), src.array().length-src.position());
+        this.connection.getOutputStream().write(src.array(), src.position(), src.limit()-src.position());
+//        this.connection.getOutputStream().write(src.array());
+        this.sizeInByte += src.array().length;
+        return (int) (this.sizeInByte);
     }
 
     /**
