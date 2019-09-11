@@ -1,0 +1,84 @@
+{
+  "properties": [
+    {
+      "name": "kafka.bootstrapAddress",
+      "type": "java.lang.String",
+      "description": "Description for kafka.bootstrapAddress."
+    },
+    {
+      "name": "kafka.topicName",
+      "type": "java.lang.String",
+      "description": "Description for kafka.topicName."
+    },
+    {
+      "name": "kafka.replicationFactor",
+      "type": "java.lang.Integer",
+      "description": "Description for kafka.replicationFactor."
+    },
+    {
+      "name": "kafka.numberOfPartitions",
+      "type": "java.lang.Integer",
+      "description": "Description for kafka.numberOfPartitions."
+    },
+    {
+      "name": "sftp.server.port",
+      "type": "java.lang.String",
+      "description": "Description for sftp.server.port."
+    },
+    {
+      "name": "sftp.server.welcome",
+      "type": "java.lang.String",
+      "description": "Description for sftp.server.welcome."
+    },
+    {
+      "name": "sftp.server.hostKey",
+      "type": "java.lang.String",
+      "description": "Description for sftp.server.hostKey."
+    },
+    {
+      "name": "blob.server.method",
+      "type": "java.lang.String",
+      "description": "Description for blob.server.method."
+    },
+    {
+      "name": "blob.server.url",
+      "type": "java.lang.String",
+      "description": "Description for blob.server.url."
+    },
+    {
+      "name": "blob.server.port",
+      "type": "java.lang.String",
+      "description": "Description for blob.server.port."
+    },
+    {
+      "name": "blob.server.access",
+      "type": "java.lang.String",
+      "description": "Description for blob.server.access."
+    },
+    {
+      "name": "blob.server.type",
+      "type": "java.lang.String",
+      "description": "Description for blob.server.type."
+    },
+    {
+      "name": "auth.server.url",
+      "type": "java.lang.String",
+      "description": "Description for auth.server.url."
+    },
+    {
+      "name": "auth.server.endpoint",
+      "type": "java.lang.String",
+      "description": "Description for auth.server.endpoint."
+    },
+    {
+      "name": "auth.server.clientKey",
+      "type": "java.lang.String",
+      "description": "Description for auth.server.clientKey."
+    },
+    {
+      "name": "auth.server.clientSecret",
+      "type": "java.lang.String",
+      "description": "Description for auth.server.clientSecret."
+    }
+  ]
+}

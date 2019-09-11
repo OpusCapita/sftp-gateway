@@ -2,7 +2,7 @@ version: '3.4'
 services:
    main:
       image: opuscapita/sftp-gateway:dev
-      command: mvn spring-boot:run
+      command: /bin/sh ./setup-consul.sh && mvn spring-boot:run
 
    tnt:
       image: opuscapita/tnt:dev

@@ -1,4 +1,4 @@
-package com.opuscapita.tnt.model.config;
+package com.opuscapita.transaction.config;
 
 import lombok.Getter;
 import lombok.Setter;

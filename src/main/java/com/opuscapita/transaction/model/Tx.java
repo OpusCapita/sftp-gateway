@@ -1,4 +1,4 @@
-package com.opuscapita.tnt.model;
+package com.opuscapita.transaction.model;
 
 public interface Tx {
 

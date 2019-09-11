@@ -4,6 +4,7 @@ FROM openjdk:8-alpine
 RUN apk update
 RUN apk add maven
 RUN apk add htop
+RUN apk add mysql-client
 
 ENV WRKDIR=/code
 ENV TRGTDIR=$WRKDIR/target

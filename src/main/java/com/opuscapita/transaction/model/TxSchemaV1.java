@@ -1,6 +1,6 @@
-package com.opuscapita.tnt.model;
+package com.opuscapita.transaction.model;
 
-import com.opuscapita.tnt.model.properties.*;
+import com.opuscapita.transaction.model.properties.*;
 import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Data
 public class TxSchemaV1 implements Tx {
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(Tx.class);
 
     /**
      * Required
@@ -19,8 +19,8 @@ public class TxSchemaV1 implements Tx {
     private final String version = "1.0";
     private final UUID transactionId = UUID.randomUUID();
     private final Date timestamp = Date.from(Instant.now());
-    private LogAccess logAccess;
-    private Severity severity;
+    private LogAccess logAccess = LogAccess.NONE;
+    private Severity severity = Severity.DEBUG;
 
     /**
      * Not Required
@@ -42,13 +42,16 @@ public class TxSchemaV1 implements Tx {
         builder.append("{\"event\":{");
 
         builder.append(attributeAsJson("version", this.version));
+        builder.append(",");
         builder.append(attributeAsJson("transactionId", this.transactionId));
+        builder.append(",");
         builder.append(attributeAsJson("timestamp", this.timestamp));
+        builder.append(",");
         builder.append(attributeAsJson("logAccess", this.logAccess));
+        builder.append(",");
         builder.append(attributeAsJson("severity", this.severity));
 
         builder.append("}}");
-
         return builder.toString();
     }
 
@@ -59,11 +62,11 @@ public class TxSchemaV1 implements Tx {
         builder.append(field);
         builder.append(escaped);
         builder.append(":");
-        if (value.getClass() == String.class) {
+        if (value.getClass() != Integer.class || value.getClass() != Boolean.class) {
             builder.append(escaped);
         }
         builder.append(value);
-        if (value.getClass() == String.class) {
+        if (value.getClass() != Integer.class || value.getClass() != Boolean.class) {
             builder.append(escaped);
         }
         return builder.toString();

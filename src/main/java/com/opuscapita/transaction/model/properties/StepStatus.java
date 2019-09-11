@@ -1,4 +1,4 @@
-package com.opuscapita.tnt.model.properties;
+package com.opuscapita.transaction.model.properties;
 
 public enum StepStatus {
 

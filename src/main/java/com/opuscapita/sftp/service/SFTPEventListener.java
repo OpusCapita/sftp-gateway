@@ -68,7 +68,7 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
                 fileReadyListener.onPathReady(file);
             }
         }
-        localHandle.close();
+
 //        super.closed(session, remoteHandle, localHandle, thrown);
     }
 
@@ -97,14 +97,14 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
     public void writing(
             ServerSession session, String remoteHandle, FileHandle localHandle,
             long offset, byte[] data, int dataOffset, int dataLen) {
-        log.info("write(" + session + ")[" + localHandle.getFile() + "] offset=" + offset + ", requested=" + dataLen);
+//        log.info("write(" + session + ")[" + localHandle.getFile() + "] offset=" + offset + ", requested=" + dataLen);
     }
 
     @Override
     public void written(
             ServerSession session, String remoteHandle, FileHandle localHandle,
             long offset, byte[] data, int dataOffset, int dataLen, Throwable thrown) {
-        log.info("written(" + session + ")[" + localHandle.getFile() + "] offset=" + offset + ", requested=" + dataLen);
+//        log.info("written(" + session + ")[" + localHandle.getFile() + "] offset=" + offset + ", requested=" + dataLen);
     }
 
     @Override
