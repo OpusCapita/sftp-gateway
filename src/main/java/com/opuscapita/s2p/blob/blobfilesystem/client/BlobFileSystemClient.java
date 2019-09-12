@@ -116,7 +116,7 @@ public class BlobFileSystemClient {
         log.info("Creating new Directory: " + path);
 
         if (!path.endsWith("/")) {
-            path = new BlobPath(path.getFileSystem(), new String(path.toString() + "/").getBytes());
+            path = new BlobPath(path.getFileSystem(), (path.toString() + "/").getBytes());
         }
 
         try {
@@ -157,17 +157,6 @@ public class BlobFileSystemClient {
 
     /**
      * @param path
-     * @return
-     * @throws IOException
-     */
-    public InputStream fetchFileAsInputStream(BlobPath path) throws IOException {
-        URL url = new URL(this.rootUrl.toString() + path + "?download=true");
-        HttpURLConnection uc = openHttpUrlConnection(url, "GET");
-        return uc.getInputStream();
-    }
-
-    /**
-     * @param path
      * @param dst
      * @return
      * @throws IOException
@@ -187,6 +176,9 @@ public class BlobFileSystemClient {
         } catch (Exception e) {
             log.error(e.getMessage());
         } finally {
+            if(totalRead == 0) {
+                return -1;
+            }
             return (int) this.sizeInByte;
         }
     }
@@ -203,9 +195,7 @@ public class BlobFileSystemClient {
     public int putFile(BlobPath path, ByteBuffer src) throws BlobException, IOException {
         URL url = new URL(this.rootUrl.toString() + path + "?createMissing=true");
         this.openHttpUrlConnection(url, "PUT");
-//        this.connection.getOutputStream().write(src.array(), src.position(), src.array().length-src.position());
         this.connection.getOutputStream().write(src.array(), src.position(), src.limit()-src.position());
-//        this.connection.getOutputStream().write(src.array());
         this.sizeInByte += src.array().length;
         return (int) (this.sizeInByte);
     }
