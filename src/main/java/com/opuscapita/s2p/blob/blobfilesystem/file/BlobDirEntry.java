@@ -155,7 +155,7 @@ public class BlobDirEntry implements Serializable {
     public BlobDirEntry getChildByName(String name, boolean createIfNotExists) {
         BlobDirEntry namedEntry = null;
         for (BlobDirEntry entry : this.getChildren()) {
-            if (entry.getName().equals(name)) {
+            if (name.startsWith(entry.getName())) {
                 namedEntry = entry;
                 break;
             }
@@ -163,7 +163,6 @@ public class BlobDirEntry implements Serializable {
         if (namedEntry == null && createIfNotExists) {
             namedEntry = new BlobDirEntry(name, name);
             namedEntry.setPath(this.getPath() + BlobUtils.HTTP_PATH_SEPARATOR_STRING + name);
-//            namedEntry.setLocation(getParent() != null ? getParent().getPath() : BlobUtils.HTTP_PATH_SEPARATOR_STRING);
         }
         return namedEntry;
     }
