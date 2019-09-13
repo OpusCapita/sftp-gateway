@@ -215,9 +215,9 @@ public class BlobFileSystem extends FileSystem {
                     this.addBlobDirEntry(path, entry);
                 } catch (BlobException e2) {
                     log.warn("Error: " + e2.getMessage());
-                    throw new FileNotFoundException(e2.getMessage());
+                    throw new NoSuchFileException(e2.getMessage());
                 }
-            } catch (FileNotFoundException fileNotFound) {
+            } catch (NoSuchFileException fileNotFound) {
                 log.warn(fileNotFound.getMessage());
                 throw new NoSuchFileException(fileNotFound.getMessage());
             }

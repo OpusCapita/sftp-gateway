@@ -2,6 +2,7 @@ package com.opuscapita.sftp.service;
 
 import com.opuscapita.auth.model.AuthResponse;
 import com.opuscapita.sftp.utils.SFTPHelper;
+import com.opuscapita.transaction.service.TxService;
 import lombok.Getter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -63,13 +64,11 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
         Path file = localHandle.getFile();
 
         log.info(String.format("User %s closed file: \"%s\"", session.getUsername(), localHandle.getFile().toAbsolutePath()));
-        if(!(localHandle instanceof DirectoryHandle)) {
+        if (!(localHandle instanceof DirectoryHandle)) {
             for (FileUploadCompleteListener fileReadyListener : fileReadyListeners) {
                 fileReadyListener.onPathReady(file);
             }
         }
-
-//        super.closed(session, remoteHandle, localHandle, thrown);
     }
 
     @Override
@@ -86,6 +85,8 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
     @Override
     public void open(ServerSession session, String remoteHandle, Handle localHandle) {
         log.info("open");
+        AttributeRepository.AttributeKey<TxService> txServiceAttributeKey = new AttributeRepository.AttributeKey();
+        session.setAttribute(txServiceAttributeKey, new TxService(this.service.getKafkaTemplate()));
     }
 
     @Override

@@ -20,4 +20,6 @@ public class SftpRuleEntity {
     @Getter
     private UUID id;
 
+    private String path;
+
 }

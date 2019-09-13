@@ -108,7 +108,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         Set<Mode.OpenMode> modes = new HashSet<>();
         modes.addAll(BlobFileChannel.READ_MODES);
         modes.addAll(BlobFileChannel.WRITE_MODES);
-        FileChannel fc = new BlobFileChannel(
+        return new BlobFileChannel(
                 p,
                 p.getFileSystem().getDelegate(),
                 true,
@@ -116,7 +116,6 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
                 modes,
                 attrs
         );
-        return fc;
     }
 
     @Override
@@ -274,7 +273,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         } else if (PosixFileAttributeView.class.isAssignableFrom(type)) {
             return views.contains("posix");
         } else if (AclFileAttributeView.class.isAssignableFrom(type)) {
-            return views.contains("acl");   // must come before owner view
+            return views.contains("acl"); // must come before owner view
         } else if (FileOwnerAttributeView.class.isAssignableFrom(type)) {
             return views.contains("owner");
         } else if (BasicFileAttributeView.class.isAssignableFrom(type)) {

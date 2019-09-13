@@ -72,10 +72,10 @@ public class SFTPDaemon extends AbstractLoggingBean {
                 .withSftpErrorStatusDataHandler(SftpErrorStatusDataHandler.DEFAULT)
                 .build();
         SFTPEventListener eventListener = new SFTPEventListener(this);
-        eventListener.addFileUploadCompleteListener(file -> {
-            TxService tx = new TxService(this.kafkaTemplate);
-            tx.sendTx();
-        });
+//        eventListener.addFileUploadCompleteListener(file -> {
+//            TxService tx = new TxService(this.kafkaTemplate);
+//            tx.sendTx();
+//        });
 
         factory.addSftpEventListener(eventListener);
         return factory;
@@ -99,5 +99,9 @@ public class SFTPDaemon extends AbstractLoggingBean {
         } finally {
             this.sshd = null;
         }
+    }
+
+    public KafkaTemplate<String, String> getKafkaTemplate() {
+        return this.kafkaTemplate;
     }
 }
