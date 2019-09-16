@@ -45,9 +45,6 @@ public class BlobFileSystem extends FileSystem {
     @Getter
     private final BlobFileSystemClient delegate;
 
-//    private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
-//            GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "posix"));
-
     private final Set<String> supportedViews = Collections.unmodifiableNavigableSet(
             GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "basic", "posix", "owner"));
 
@@ -62,7 +59,6 @@ public class BlobFileSystem extends FileSystem {
             tenant_id = (String) env.get("tenant_id");
         }
         this.access = "public";
-//        String endpoint = "http://blob:3012/api/" + tenant_id + "/files" + "/" + this.access; // + "/onboarding/eInvoiceSupplierOnboarding";
         this.defaultDir = new BlobPath(BlobFileSystem.this, "/".getBytes());
         this.fileSystemProvider = fileSystemProvider;
         this.id_token = id_token;
@@ -128,7 +124,6 @@ public class BlobFileSystem extends FileSystem {
             path = sb.toString();
         }
         return new BlobPath(this, path.getBytes(StandardCharsets.UTF_8));
-//        return new BlobPath(BlobFileSystem.this, "/", Collections.emptyList()).create(first, more);
     }
 
     @Override
@@ -200,10 +195,10 @@ public class BlobFileSystem extends FileSystem {
             c = this.getBlobDirEntry(path, false);
         }
 
-        if (c == null || c.getChildren().isEmpty()) {
+        if (c == null || c.getChildren().isEmpty() || c.getIsDirectory()) {
             try {
                 content = this.delegate.listFiles(path);
-                if (content.isEmpty() && !force && getBlobDirEntry(path.getParent(), false).getChildByName(path.getFileName().toString()) == null) {
+                if (content.isEmpty() && !force && Objects.requireNonNull(getBlobDirEntry(path.getParent(), false)).getChildByName(path.getFileName().toString()) == null) {
                     throw new FileNotFoundException();
                 }
                 for (BlobDirEntry entry : content.values()) {
@@ -214,11 +209,9 @@ public class BlobFileSystem extends FileSystem {
                     BlobDirEntry entry = this.delegate.listFile(path);
                     this.addBlobDirEntry(path, entry);
                 } catch (BlobException e2) {
-                    log.warn("Error: " + e2.getMessage());
                     throw new NoSuchFileException(e2.getMessage());
                 }
             } catch (NoSuchFileException fileNotFound) {
-                log.warn(fileNotFound.getMessage());
                 throw new NoSuchFileException(fileNotFound.getMessage());
             }
         }
@@ -317,14 +310,11 @@ public class BlobFileSystem extends FileSystem {
         return sb.toString();
     }
 
-    public void delete(BlobPath path) {
-        try {
-            BlobDirEntry entry = getBlobDirEntry(path, false);
-            this.delegate.delete(path, entry.getIsDirectory());
-            getBlobDirEntry(path.getParent(), false).getChildren().remove(entry);
-        } catch (BlobException e) {
-            log.warn(e.getMessage());
-        }
+    public void delete(BlobPath path) throws IOException, BlobException {
+        BlobDirEntry entry = getBlobDirEntry(path, false);
+        this.delegate.delete(path, Objects.requireNonNull(entry.getIsDirectory()));
+        Objects.requireNonNull(getBlobDirEntry(path.getParent(), false)).getChildren().remove(entry);
+        this.loadContent(path.getParent(), true);
     }
 
     public BlobDirEntry createDirectory(BlobPath path, boolean createMissing) throws BlobException {
@@ -334,7 +324,6 @@ public class BlobFileSystem extends FileSystem {
             this.addBlobDirEntry(path.getParent(), entry);
             return entry;
         } catch (BlobException | IOException e) {
-            log.error(e.getMessage());
             throw new BlobException(e.getMessage());
         }
     }

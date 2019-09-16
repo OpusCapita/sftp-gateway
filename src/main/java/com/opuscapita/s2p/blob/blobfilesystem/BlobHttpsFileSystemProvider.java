@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class BlobHttpsFileSystemProvider extends AbstractBlobFileSystemProvider {
-    public static final String SCHEME = "https";
+    private static final String SCHEME = "https";
 
     @Override
     public final String getScheme() {

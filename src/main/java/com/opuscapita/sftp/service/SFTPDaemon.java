@@ -5,7 +5,6 @@ import com.opuscapita.sftp.config.SFTPConfiguration;
 import com.opuscapita.sftp.filesystem.BlobFileSystemFactory;
 import com.opuscapita.sftp.service.auth.AuthProvider;
 import com.opuscapita.sftp.service.commands.OCRestFileSystemAccessor;
-import com.opuscapita.transaction.service.TxService;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
@@ -68,7 +67,7 @@ public class SFTPDaemon extends AbstractLoggingBean {
         SftpSubsystemFactory factory = new SftpSubsystemFactory
                 .Builder()
                 .withFileSystemAccessor(new OCRestFileSystemAccessor())
-                .withUnsupportedAttributePolicy(UnsupportedAttributePolicy.Warn)
+                .withUnsupportedAttributePolicy(UnsupportedAttributePolicy.ThrowException)
                 .withSftpErrorStatusDataHandler(SftpErrorStatusDataHandler.DEFAULT)
                 .build();
         SFTPEventListener eventListener = new SFTPEventListener(this);
@@ -86,7 +85,7 @@ public class SFTPDaemon extends AbstractLoggingBean {
         if (!this.sshd.isStarted()) {
             this.sshd.start();
         }
-        log.info("SFTP server is running on port " + this.configuration.getPort());
+        log.info("SFTP server is running on port {}", this.configuration.getPort());
     }
 
     @PreDestroy

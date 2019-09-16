@@ -7,8 +7,6 @@ import com.opuscapita.s2p.blob.blobfilesystem.file.BlobAclFileAttributeView;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFileChannel;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobPosixFileAttributeView;
 import org.apache.sshd.common.util.GenericUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider {
 
     private final Map<String, BlobFileSystem> fileSystems = new ConcurrentHashMap<>();
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Override
     public abstract String getScheme();
@@ -48,7 +45,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         return getFileSystem(uri, false);
     }
 
-    public BlobFileSystem getFileSystem(URI uri, boolean create) {
+    private BlobFileSystem getFileSystem(URI uri, boolean create) {
         synchronized (fileSystems) {
             String schemeSpecificPart = uri.toString();
             BlobFileSystem fileSystem = fileSystems.get(schemeSpecificPart);
@@ -132,8 +129,8 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
     @Override
     public boolean deleteIfExists(Path path) throws IOException {
         try {
-            this.delete(path);
-        } catch (IOException e) {
+            toBlobPath(path).getFileSystem().delete(toBlobPath(path));
+        } catch (IOException | BlobException e) {
             return false;
         }
         return true;
@@ -141,12 +138,11 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 
     @Override
     public void delete(Path path) throws IOException {
-        toBlobPath(path).getFileSystem().delete(toBlobPath(path));
+        this.deleteIfExists(path);
     }
 
     @Override
     public void copy(Path source, Path target, CopyOption... options) throws IOException {
-        log.info("Copy " + source.toString() + " to " + target.toString());
         BlobPath src = toBlobPath(source);
         BlobPath dst = toBlobPath(target);
         src.getFileSystem().copy(src, dst);
@@ -154,7 +150,6 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 
     @Override
     public void move(Path source, Path target, CopyOption... options) throws IOException {
-        log.info(source.toString() + " to " + target.toString());
         BlobPath src = toBlobPath(source);
         BlobPath dst = toBlobPath(target);
         src.getFileSystem().move(src, dst);
@@ -172,7 +167,6 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 
     @Override
     public FileStore getFileStore(Path path) throws IOException {
-        System.out.println("getFileStore");
         return null;
     }
 
@@ -254,7 +248,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
     /**
      * Helper Functions
      */
-    public BlobPath toBlobPath(Path path) {
+    private BlobPath toBlobPath(Path path) {
         Objects.requireNonNull(path, "No path provided");
         if (!(path instanceof BlobPath)) {
             throw new ProviderMismatchException("Path is not HTTP / HTTPS: " + path);
@@ -262,11 +256,11 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         return (BlobPath) path;
     }
 
-    public boolean isSupportedFileAttributeView(Path path, Class<? extends FileAttributeView> type) {
+    private boolean isSupportedFileAttributeView(Path path, Class<? extends FileAttributeView> type) {
         return isSupportedFileAttributeView(toBlobPath(path).getFileSystem(), type);
     }
 
-    public boolean isSupportedFileAttributeView(BlobFileSystem fs, Class<? extends FileAttributeView> type) {
+    private boolean isSupportedFileAttributeView(BlobFileSystem fs, Class<? extends FileAttributeView> type) {
         Collection<String> views = fs.supportedFileAttributeViews();
         if ((type == null) || GenericUtils.isEmpty(views)) {
             return false;
@@ -283,7 +277,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         }
     }
 
-    public Map<String, Object> readBlobAttributes(Path path, String view, String attrs, LinkOption... options) throws IOException {
+    private Map<String, Object> readBlobAttributes(Path path, String view, String attrs, LinkOption... options) throws IOException {
         BlobPath p = toBlobPath(path);
         BlobFileSystem fs = p.getFileSystem();
         Collection<String> views = fs.supportedFileAttributeViews();
@@ -298,11 +292,11 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         }
     }
 
-    protected Map<String, Object> readCustomViewAttributes(BlobPath path, String view, String attrs, LinkOption... options) throws IOException {
+    private Map<String, Object> readCustomViewAttributes(BlobPath path, String view, String attrs, LinkOption... options) throws IOException {
         throw new UnsupportedOperationException("readCustomViewAttributes(" + path + ")[" + view + ":" + attrs + "] view not supported");
     }
 
-    protected NavigableMap<String, Object> readPosixViewAttributes(
+    private NavigableMap<String, Object> readPosixViewAttributes(
             BlobPath path, String view, String attrs, LinkOption... options)
             throws IOException {
         PosixFileAttributes v = readAttributes(path, PosixFileAttributes.class, options);

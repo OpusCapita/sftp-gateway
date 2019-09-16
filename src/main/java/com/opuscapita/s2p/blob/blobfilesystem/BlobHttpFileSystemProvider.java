@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class BlobHttpFileSystemProvider extends AbstractBlobFileSystemProvider {
 
-    public static final String SCHEME = "http";
+    private static final String SCHEME = "http";
 
     @Override
     public final String getScheme() {
