@@ -27,6 +27,23 @@ public class BlobUtils {
     private static final String RANGE_REQUEST_PROPERTY_VALUE_SEPARATOR = "-";
     public static final int DEFAULT_COPY_SIZE = 8192;
 
+    public enum URLUtils {
+
+        DOT("."),
+        DOTDOT(".."),
+        SEPARATOR("/"),
+        COLON_SEP_SEP("://"),
+        COLON(":"),
+        XUSERIDTOKEN("X-User-Id-Token"),
+        CONTENTTYPE("Content-Type");
+
+        public final String utils;
+
+        private URLUtils(String _utils) {
+            this.utils = _utils;
+        }
+    }
+
 
     private static final Logger log = LoggerFactory.getLogger(BlobUtils.class);
 
@@ -76,9 +93,9 @@ public class BlobUtils {
     public static Map<String, Object> getDefaultAttributes(BlobPath path) {
         Map<String, Object> attributes = new HashMap<>();
 
-        attributes.put("name", "/");
+        attributes.put("name", HTTP_PATH_SEPARATOR_STRING);
         attributes.put("extension", "");
-        attributes.put("path", "/");
+        attributes.put("path", HTTP_PATH_SEPARATOR_STRING);
         attributes.put("size", 0);
         attributes.put("isFile", false);
         attributes.put("isDirectory", true);

@@ -195,7 +195,7 @@ public class BlobFileSystem extends FileSystem {
             c = this.getBlobDirEntry(path, false);
         }
 
-        if (c == null || c.getChildren().isEmpty() || c.getIsDirectory()) {
+        if (c == null || c.getChildren().isEmpty() || c.isDirectory()) {
             try {
                 content = this.delegate.listFiles(path);
                 if (content.isEmpty() && !force && Objects.requireNonNull(getBlobDirEntry(path.getParent(), false)).getChildByName(path.getFileName().toString()) == null) {
@@ -312,17 +312,16 @@ public class BlobFileSystem extends FileSystem {
 
     void delete(BlobPath path) throws IOException, BlobException {
         BlobDirEntry entry = getBlobDirEntry(path, false);
-        this.delegate.delete(path, Objects.requireNonNull(entry.getIsDirectory()));
+        this.delegate.delete(path, Objects.requireNonNull(entry).isDirectory());
         Objects.requireNonNull(getBlobDirEntry(path.getParent(), false)).getChildren().remove(entry);
         this.loadContent(path.getParent(), true);
     }
 
-    BlobDirEntry createDirectory(BlobPath path, boolean createMissing) throws BlobException {
+    void createDirectory(BlobPath path, boolean createMissing) throws BlobException {
         BlobDirEntry entry;
         try {
             entry = this.delegate.createDirectory(path, createMissing);
             this.addBlobDirEntry(path.getParent(), entry);
-            return entry;
         } catch (BlobException | IOException e) {
             throw new BlobException(e.getMessage());
         }
@@ -339,7 +338,7 @@ public class BlobFileSystem extends FileSystem {
                 }
             }
         } catch (BlobException e) {
-            log.warn("Moving the File {} to {} went wrong", src.toString(), dst.toString());
+            log.warn("Moving the File {} to {} went wrong", src, dst);
         }
     }
 
@@ -354,7 +353,7 @@ public class BlobFileSystem extends FileSystem {
                 }
             }
         } catch (BlobException e) {
-            log.warn("Moving the File {} to {} went wrong", src.toString(), dst.toString());
+            log.warn("Moving the File {} to {} went wrong", src, dst);
         }
     }
 
@@ -365,7 +364,7 @@ public class BlobFileSystem extends FileSystem {
         BlobDirEntry currentEntry = this.contentTree;
         int level = 0;
         List<String> pathPart = Arrays.asList(path.toString().split(BlobUtils.HTTP_PATH_SEPARATOR_STRING));
-        if (level == 0 && pathPart.size() > 0 && pathPart.get(0).isEmpty()) {
+        if (!pathPart.isEmpty() && pathPart.get(0).isEmpty()) {
             level = 1;
         }
         while (level < pathPart.size() && (currentEntry = currentEntry.getChildByName(pathPart.get(level), createIfNotExist)) != null) {
@@ -374,11 +373,11 @@ public class BlobFileSystem extends FileSystem {
         return currentEntry;
     }
 
-    private boolean addBlobDirEntry(BlobPath path, BlobDirEntry entry) throws IOException {
+    private void addBlobDirEntry(BlobPath path, BlobDirEntry entry) throws IOException {
         BlobDirEntry parentEntry = getBlobDirEntry(path, true);
         if (parentEntry.hasChild(entry)) {
             parentEntry.getChildren().remove(entry);
         }
-        return parentEntry.getChildren().add(entry);
+        parentEntry.getChildren().add(entry);
     }
 }

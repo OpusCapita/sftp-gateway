@@ -52,11 +52,11 @@ public class BlobFileSystemClient {
         this.restTemplate = _restTemplateBuilder.build();
         this.configuration = configuration;
         this.jwt = jwt;
-        this.rootUrl = new URL("http://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/files" + "/" + configuration.getAccess());
-        this.moveUrl = new URL("http://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/files" + "/move/" + configuration.getAccess());
-        this.cpyUrl = new URL("http://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/files" + "/copy/" + configuration.getAccess());
-        this.tierUrl = new URL("http://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/files" + "/tier/" + configuration.getAccess());
-        this.metadataUrl = new URL("http://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/files" + "/metadata/" + configuration.getAccess());
+        this.rootUrl = new URL(configuration.getMethod() + "://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/" + configuration.getType() + "/" + configuration.getAccess());
+        this.moveUrl = new URL(configuration.getMethod() + "://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/" + configuration.getType() + "/move/" + configuration.getAccess());
+        this.cpyUrl = new URL(configuration.getMethod() + "://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/" + configuration.getType() + "/copy/" + configuration.getAccess());
+        this.tierUrl = new URL(configuration.getMethod() + "://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/" + configuration.getType() + "/tier/" + configuration.getAccess());
+        this.metadataUrl = new URL(configuration.getMethod() + "://" + configuration.getUrl() + ":" + configuration.getPort() + "/api/" + tenant_id + "/" + configuration.getType() + "/metadata/" + configuration.getAccess());
     }
 
     /**
@@ -119,7 +119,6 @@ public class BlobFileSystemClient {
             ResponseEntity<String> result = restTemplate.exchange(this.rootUrl.toString() + path + "?createMissing=" + createMissing, HttpMethod.PUT, entity, String.class);
             return BlobDirEntry.fromJson(URLDecoder.decode(Objects.requireNonNull(result.getHeaders().getFirst("X-File-Info")), StandardCharsets.UTF_8.name()));
         } catch (Exception e) {
-            log.error(e.getMessage());
             throw new BlobException("Error occurred while trying to create the Directory.");
         }
     }
@@ -163,6 +162,8 @@ public class BlobFileSystemClient {
             this.sizeInByte = totalRead;
         } catch (Exception e) {
             log.error(e.getMessage());
+        } finally {
+            readableByteChannel.close();
         }
         if (totalRead == 0) {
             return -1;

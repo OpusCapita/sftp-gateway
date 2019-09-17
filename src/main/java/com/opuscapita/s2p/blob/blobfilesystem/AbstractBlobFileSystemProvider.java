@@ -6,6 +6,7 @@ import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobAclFileAttributeView;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobFileChannel;
 import com.opuscapita.s2p.blob.blobfilesystem.file.BlobPosixFileAttributeView;
+import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import org.apache.sshd.common.util.GenericUtils;
 
 import java.io.IOException;
@@ -67,7 +68,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
     @Override
     public Path getPath(URI uri) {
         String str = uri.getSchemeSpecificPart();
-        int i = str.indexOf("/");
+        int i = str.indexOf(BlobUtils.HTTP_PATH_SEPARATOR_STRING);
         if (i == -1) {
             throw new IllegalArgumentException("URI: " + uri + " does not contain path info");
         }
@@ -170,8 +171,8 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         return null;
     }
 
-//    @Override
-//    public void checkAccess(Path path, AccessMode... modes) throws IOException {
+    @Override
+    public void checkAccess(Path path, AccessMode... modes) throws IOException {
 //        BlobPath p = toBlobPath(path);
 //        boolean w = false;
 //        boolean x = false;
@@ -201,7 +202,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 //        if (x || (w && fs.isReadOnly())) {
 //            throw new AccessDeniedException("Filesystem is read-only: " + path.toString());
 //        }
-//    }
+    }
 
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
