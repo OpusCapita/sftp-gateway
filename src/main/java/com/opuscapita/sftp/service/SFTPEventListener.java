@@ -69,6 +69,12 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
     }
 
     @Override
+    public void removing(ServerSession session, Path path, boolean isDirectory) throws IOException {
+        super.removing(session, path, isDirectory);
+        log.info("{} removing", path);
+    }
+
+    @Override
     public void opening(ServerSession session, String remoteHandle, Handle localHandle) {
         log.info("opening");
     }

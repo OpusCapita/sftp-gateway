@@ -59,10 +59,10 @@ public class BlobDirEntry implements Serializable {
     private Integer size;
     @Setter
     @Getter
-    private boolean isFile;
+    private Boolean isFile;
     @Setter
     @Getter
-    private boolean isDirectory;
+    private Boolean isDirectory;
     @Setter
     @Getter
     private Date lastModified;
@@ -137,6 +137,14 @@ public class BlobDirEntry implements Serializable {
         map.put("extension", getExtension());
 
         return map;
+    }
+
+    public boolean isDirectory() {
+        return this.isDirectory.booleanValue();
+    }
+
+    public boolean isFile() {
+        return this.isFile.booleanValue();
     }
 
     public BlobDirEntry getChildByName(String name) {
