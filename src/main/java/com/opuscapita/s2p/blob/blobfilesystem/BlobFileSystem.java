@@ -310,14 +310,14 @@ public class BlobFileSystem extends FileSystem {
         return sb.toString();
     }
 
-    public void delete(BlobPath path) throws IOException, BlobException {
+    void delete(BlobPath path) throws IOException, BlobException {
         BlobDirEntry entry = getBlobDirEntry(path, false);
         this.delegate.delete(path, Objects.requireNonNull(entry.getIsDirectory()));
         Objects.requireNonNull(getBlobDirEntry(path.getParent(), false)).getChildren().remove(entry);
         this.loadContent(path.getParent(), true);
     }
 
-    public BlobDirEntry createDirectory(BlobPath path, boolean createMissing) throws BlobException {
+    BlobDirEntry createDirectory(BlobPath path, boolean createMissing) throws BlobException {
         BlobDirEntry entry;
         try {
             entry = this.delegate.createDirectory(path, createMissing);
@@ -329,7 +329,7 @@ public class BlobFileSystem extends FileSystem {
     }
 
 
-    public void move(BlobPath src, BlobPath dst) {
+    void move(BlobPath src, BlobPath dst) {
         try {
             if (this.delegate.move(src, dst)) {
                 BlobDirEntry entry = this.getBlobDirEntry(src, false);

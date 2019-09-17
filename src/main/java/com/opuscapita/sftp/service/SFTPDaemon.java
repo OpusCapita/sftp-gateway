@@ -32,9 +32,7 @@ import java.util.List;
 public class SFTPDaemon extends AbstractLoggingBean {
 
     private final SFTPConfiguration configuration;
-    private final BlobConfiguration blobConfiguration;
     private SshServer sshd = SshServer.setUpDefaultServer();
-    private AuthProvider authProvider;
     private KafkaTemplate<String, String> kafkaTemplate;
 
     @Autowired
@@ -45,8 +43,6 @@ public class SFTPDaemon extends AbstractLoggingBean {
             KafkaTemplate<String, String> _kafkaTemplate
     ) {
         this.configuration = _configuration;
-        this.blobConfiguration = _blobConfiguration;
-        this.authProvider = _authProvider;
         this.kafkaTemplate = _kafkaTemplate;
         List<NamedFactory<Command>> subsystemFactories = new ArrayList<>();
         subsystemFactories.add(this.createDefaultSftpSubsystem());
@@ -56,10 +52,10 @@ public class SFTPDaemon extends AbstractLoggingBean {
         this.sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("host.ser").toPath()));
         PropertyResolverUtils.updateProperty(this.sshd, ServerAuthenticationManager.WELCOME_BANNER,
                 this.configuration.getWelcome());
-        this.sshd.setPublickeyAuthenticator(this.authProvider);
-        this.sshd.setPasswordAuthenticator(this.authProvider);
+        this.sshd.setPublickeyAuthenticator(_authProvider);
+        this.sshd.setPasswordAuthenticator(_authProvider);
 
-        BlobFileSystemFactory fs = new BlobFileSystemFactory(this.blobConfiguration);
+        BlobFileSystemFactory fs = new BlobFileSystemFactory(_blobConfiguration);
         this.sshd.setFileSystemFactory(fs);
     }
 
@@ -71,10 +67,6 @@ public class SFTPDaemon extends AbstractLoggingBean {
                 .withSftpErrorStatusDataHandler(SftpErrorStatusDataHandler.DEFAULT)
                 .build();
         SFTPEventListener eventListener = new SFTPEventListener(this);
-//        eventListener.addFileUploadCompleteListener(file -> {
-//            TxService tx = new TxService(this.kafkaTemplate);
-//            tx.sendTx();
-//        });
 
         factory.addSftpEventListener(eventListener);
         return factory;
@@ -100,7 +92,7 @@ public class SFTPDaemon extends AbstractLoggingBean {
         }
     }
 
-    public KafkaTemplate<String, String> getKafkaTemplate() {
+    KafkaTemplate<String, String> getKafkaTemplate() {
         return this.kafkaTemplate;
     }
 }

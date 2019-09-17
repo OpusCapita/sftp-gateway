@@ -6,8 +6,6 @@ import com.opuscapita.s2p.blob.blobfilesystem.utils.BlobUtils;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.sshd.common.util.GenericUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -15,36 +13,29 @@ import java.util.*;
 
 public class BlobDirEntry implements Serializable {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
     private static final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
 
-    public static final Comparator<BlobDirEntry> BY_CASE_SENSITIVE_FILENAME = new Comparator<BlobDirEntry>() {
-        @Override
-        public int compare(BlobDirEntry o1, BlobDirEntry o2) {
-            if (o1 == o2) {
-                return 0;
-            } else if (o1 == null) {
-                return 1;
-            } else if (o2 == null) {
-                return -1;
-            } else {
-                return GenericUtils.safeCompare(o1.getName(), o2.getName(), true);
-            }
+    public static final Comparator<BlobDirEntry> BY_CASE_SENSITIVE_FILENAME = (o1, o2) -> {
+        if (o1 == o2) {
+            return 0;
+        } else if (o1 == null) {
+            return 1;
+        } else if (o2 == null) {
+            return -1;
+        } else {
+            return GenericUtils.safeCompare(o1.getName(), o2.getName(), true);
         }
     };
 
-    public static final Comparator<BlobDirEntry> BY_CASE_INSENSITIVE_FILENAME = new Comparator<BlobDirEntry>() {
-        @Override
-        public int compare(BlobDirEntry o1, BlobDirEntry o2) {
-            if (o1 == o2) {
-                return 0;
-            } else if (o1 == null) {
-                return 1;
-            } else if (o2 == null) {
-                return -1;
-            } else {
-                return GenericUtils.safeCompare(o1.getName(), o2.getName(), false);
-            }
+    public static final Comparator<BlobDirEntry> BY_CASE_INSENSITIVE_FILENAME = (o1, o2) -> {
+        if (o1 == o2) {
+            return 0;
+        } else if (o1 == null) {
+            return 1;
+        } else if (o2 == null) {
+            return -1;
+        } else {
+            return GenericUtils.safeCompare(o1.getName(), o2.getName(), false);
         }
     };
 
@@ -68,10 +59,10 @@ public class BlobDirEntry implements Serializable {
     private Integer size;
     @Setter
     @Getter
-    private Boolean isFile;
+    private boolean isFile;
     @Setter
     @Getter
-    private Boolean isDirectory;
+    private boolean isDirectory;
     @Setter
     @Getter
     private Date lastModified;
@@ -82,7 +73,7 @@ public class BlobDirEntry implements Serializable {
     @Getter
     private String extension;
 
-    public BlobDirEntry(String filename, String longFilename) {
+    private BlobDirEntry(String filename, String longFilename) {
         this.name = filename;
         this.longFilename = longFilename;
         this.isDirectory = false;
@@ -117,7 +108,7 @@ public class BlobDirEntry implements Serializable {
 
     @Override
     public String toString() {
-        if (this.getIsDirectory() && !this.getName().equals("/")) {
+        if (this.isDirectory() && !this.getName().equals("/")) {
             return this.getName() + "/";
         }
         return getName();
@@ -125,11 +116,11 @@ public class BlobDirEntry implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        BlobDirEntry other = (BlobDirEntry) obj;
+        BlobDirEntry other = (BlobDirEntry) Objects.requireNonNull(obj);
         return (this.getName().equals(other.getName())
                 && this.getLocation().equals(other.getLocation())
-                && this.getIsDirectory().equals(other.getIsDirectory())
-                && this.getIsFile().equals(other.isFile));
+                && this.isDirectory() == other.isDirectory()
+                && this.isFile() == other.isFile());
     }
 
     public Map<String, Object> toMap() {
@@ -137,8 +128,8 @@ public class BlobDirEntry implements Serializable {
 
         map.put("filename", getName());
         map.put("longFilename", getLongFilename());
-        map.put("isDirectory", getIsDirectory());
-        map.put("isFile", getIsFile());
+        map.put("isDirectory", isDirectory());
+        map.put("isFile", isFile());
         map.put("lastModified", getLastModified());
         map.put("path", getPath());
         map.put("size", getSize());

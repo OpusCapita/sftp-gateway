@@ -170,8 +170,8 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
         return null;
     }
 
-    @Override
-    public void checkAccess(Path path, AccessMode... modes) throws IOException {
+//    @Override
+//    public void checkAccess(Path path, AccessMode... modes) throws IOException {
 //        BlobPath p = toBlobPath(path);
 //        boolean w = false;
 //        boolean x = false;
@@ -201,7 +201,7 @@ public abstract class AbstractBlobFileSystemProvider extends FileSystemProvider 
 //        if (x || (w && fs.isReadOnly())) {
 //            throw new AccessDeniedException("Filesystem is read-only: " + path.toString());
 //        }
-    }
+//    }
 
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
