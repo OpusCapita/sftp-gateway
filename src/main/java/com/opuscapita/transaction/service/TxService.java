@@ -1,6 +1,8 @@
 package com.opuscapita.transaction.service;
 
-import com.opuscapita.transaction.model.TxSchemaV1;
+import com.opuscapita.transaction.model.Tx;
+import com.opuscapita.transaction.model.properties.Version;
+import com.opuscapita.transaction.utils.TxUtils;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +24,12 @@ public class TxService {
 //    private final String tenantId;
 
     @Getter
-    private final TxSchemaV1 transaction = new TxSchemaV1();
+    private final Tx transaction = TxUtils.createEventTx(
+            Version.V_1_5,
+            "actionId",
+            "businessPartner",
+            "senderBusinessparner",
+            "gatewayId");
 //    private final String url;
 
 //    private String response;
@@ -47,20 +54,20 @@ public class TxService {
     }
 
     public void sendTx() {
-        ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send(TOPICNAME, this.transaction.asJson());
+        ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send(TOPICNAME, this.transaction.toString());
 
         future.addCallback(new ListenableFutureCallback<SendResult<String, String>>() {
 
             @Override
             public void onSuccess(SendResult<String, String> result) {
-                log.info("Sent message=[" + getTransaction().asJson() +
+                log.info("Sent message=[" + getTransaction().toString() +
                         "] with offset=[" + result.getRecordMetadata().offset() + "]");
             }
 
             @Override
             public void onFailure(Throwable ex) {
                 log.error("Unable to send message=["
-                        + getTransaction().asJson() + "] due to : " + ex.getMessage());
+                        + getTransaction().toString() + "] due to : " + ex.getMessage());
             }
         });
 

@@ -2,6 +2,7 @@ package com.opuscapita.sftp.model;
 
 import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.Entity;
@@ -19,7 +20,13 @@ public class SftpRuleEntity {
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
     @Getter
     private UUID id;
-
+    @Getter
+    @Setter
+    private String name;
+    @Getter
+    @Setter
+    private String description;
+    @Getter
+    @Setter
     private String path;
-
 }

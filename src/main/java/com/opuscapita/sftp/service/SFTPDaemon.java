@@ -63,11 +63,10 @@ public class SFTPDaemon extends AbstractLoggingBean {
         SftpSubsystemFactory factory = new SftpSubsystemFactory
                 .Builder()
                 .withFileSystemAccessor(new OCRestFileSystemAccessor())
-                .withUnsupportedAttributePolicy(UnsupportedAttributePolicy.ThrowException)
+                .withUnsupportedAttributePolicy(UnsupportedAttributePolicy.Warn)
                 .withSftpErrorStatusDataHandler(SftpErrorStatusDataHandler.DEFAULT)
                 .build();
         SFTPEventListener eventListener = new SFTPEventListener(this);
-
         factory.addSftpEventListener(eventListener);
         return factory;
     }

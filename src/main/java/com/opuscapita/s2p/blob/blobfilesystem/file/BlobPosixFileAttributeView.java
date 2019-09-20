@@ -21,8 +21,6 @@ package com.opuscapita.s2p.blob.blobfilesystem.file;
 import com.opuscapita.s2p.blob.blobfilesystem.AbstractBlobFileSystemProvider;
 import com.opuscapita.s2p.blob.blobfilesystem.BlobFileSystem;
 import com.opuscapita.s2p.blob.blobfilesystem.BlobPath;
-import org.apache.sshd.client.subsystem.sftp.SftpClient;
-import org.apache.sshd.common.util.GenericUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,30 +51,21 @@ public class BlobPosixFileAttributeView extends AbstractBlobFileAttributeView im
 
     @Override
     public PosixFileAttributes readAttributes() throws IOException {
-//        return new BlobPosixFileAttributes(BlobUtils.getDefaultAttributes(null));
-//        return path.getFileSystem().provider().readAttributes(path, PosixFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-        PosixFileAttributes attributes = ((BlobFileSystem)path.getFileSystem()).readAttributes((BlobPath) path, BlobPosixFileAttributes.class);
-        return attributes;
+        return ((BlobFileSystem) path.getFileSystem()).readAttributes((BlobPath) path, BlobPosixFileAttributes.class);
     }
 
     @Override
     public void setTimes(FileTime lastModifiedTime, FileTime lastAccessTime, FileTime createTime) throws IOException {
-        SftpClient.Attributes attrs = new SftpClient.Attributes();
-        if (lastModifiedTime != null) {
-            attrs.modifyTime(lastModifiedTime);
-        }
-        if (lastAccessTime != null) {
-            attrs.accessTime(lastAccessTime);
-        }
-        if (createTime != null) {
-            attrs.createTime(createTime);
-        }
-
-        if (GenericUtils.isEmpty(attrs.getFlags())) {
-            if (log.isDebugEnabled()) {
-                log.debug("setTimes({}) no changes", path);
-            }
-        }
+//        SftpClient.Attributes attrs = new SftpClient.Attributes();
+//        if (lastModifiedTime != null) {
+//            attrs.modifyTime(lastModifiedTime);
+//        }
+//        if (lastAccessTime != null) {
+//            attrs.accessTime(lastAccessTime);
+//        }
+//        if (createTime != null) {
+//            attrs.createTime(createTime);
+//        }
     }
 
     @Override

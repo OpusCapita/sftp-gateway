@@ -199,7 +199,7 @@ public class BlobFileSystem extends FileSystem {
             try {
                 content = this.delegate.listFiles(path);
                 if (content.isEmpty() && !force && Objects.requireNonNull(getBlobDirEntry(path.getParent(), false)).getChildByName(path.getFileName().toString()) == null) {
-                    throw new FileNotFoundException();
+                    throw new NoSuchFileException("Directory doesn't exists");
                 }
                 for (BlobDirEntry entry : content.values()) {
                     this.addBlobDirEntry(path, entry);

@@ -1,6 +1,7 @@
 package com.opuscapita.sftp.service;
 
 import com.opuscapita.auth.model.AuthResponse;
+import com.opuscapita.sftp.service.uploadlistener.FileUploadCompleteListener;
 import com.opuscapita.sftp.utils.SFTPHelper;
 import com.opuscapita.transaction.service.TxService;
 import lombok.Getter;
@@ -26,11 +27,6 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
         this.service = _service;
     }
 
-    public interface FileUploadCompleteListener {
-        void onPathReady(Path file);
-    }
-
-
     private List<FileUploadCompleteListener> fileReadyListeners = new ArrayList<>();
 
     public void addFileUploadCompleteListener(FileUploadCompleteListener listener) {
@@ -47,25 +43,28 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
         Loading the backend filesystem from Azure Blob container
          */
         super.initialized(session, version);
+
         AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey = SFTPHelper.findAttributeKey(session, AuthResponse.class);
         this.authResponse = session.getAttribute(authResponseAttributeKey);
     }
 
     @Override
     public void closed(ServerSession session, String remoteHandle, Handle localHandle, Throwable thrown) throws IOException {
-        Path file = localHandle.getFile();
+        Path path = localHandle.getFile();
 
         log.info(String.format("User %s closed file: \"%s\"", session.getUsername(), localHandle.getFile().toAbsolutePath()));
         if (!(localHandle instanceof DirectoryHandle)) {
             for (FileUploadCompleteListener fileReadyListener : fileReadyListeners) {
-                fileReadyListener.onPathReady(file);
+                fileReadyListener.onPathReady(path, session);
             }
         }
     }
 
     @Override
     public void destroying(ServerSession session) {
-        log.info("destroying");
+        for (FileUploadCompleteListener fileReadyListener : fileReadyListeners) {
+            this.removeFileUploadCompleteListener(fileReadyListener);
+        }
     }
 
     @Override
