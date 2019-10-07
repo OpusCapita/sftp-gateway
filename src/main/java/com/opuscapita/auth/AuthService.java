@@ -27,17 +27,14 @@ public class AuthService {
     }
 
     public AuthResponse authenticateWithPassword(String _username, String _password) {
-        log.info("Authentication with Password");
         RestTemplate rest = new RestTemplate();
         AuthRequest request = AuthRequest.createPasswordRequest(_username, _password);
         HttpEntity<String> entity = new HttpEntity<>(request.getMultiFormDataAsString(), request.getHttpHeader(this.configuration.getClientKey(), this.configuration.getClientSecret()));
         ResponseEntity<String> response = rest.exchange(this.configuration.getUrl() + this.configuration.getEndpoint(), HttpMethod.POST, entity, String.class);
-        log.info(entity.getHeaders().toString());
         return new AuthResponse(response.getStatusCode(), response.getBody());
     }
 
     public AuthResponse authenticateWithPublicKey(String _username, String _publicKey) {
         return null;
     }
-
 }

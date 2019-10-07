@@ -107,6 +107,7 @@ public class AuthResponse {
         return this;
     }
 
+    @Deprecated
     public String getTenantId() {
         return (!this.getUser().getCustomerId().isEmpty() && this.getUser().getCustomerId() != null ? "c_" + this.getUser().getCustomerId() : "s_" + this.getUser().getSupplierId());
     }

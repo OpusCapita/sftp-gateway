@@ -28,7 +28,6 @@ public class EventOrigin implements Tx {
         StringBuilder builder = new StringBuilder();
         builder.append("\"" + title + "\":{");
         builder.append(TxUtils.attributeAsJson("systemNode", Objects.requireNonNull(this.getSystemNode(), "--- no value ---")));
-        builder.append(TxUtils.COMMA);
         builder.append(TxUtils.attributeAsJson("systemType", Objects.requireNonNull(this.getSystemType(), "--- no value ---"), false));
         builder.append("}");
         return builder.toString();

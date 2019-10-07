@@ -10,6 +10,7 @@ import org.springframework.web.context.annotation.ApplicationScope;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 
 @ApplicationScope
 @Getter
@@ -81,5 +82,31 @@ public class User {
         } catch (Throwable e) {
             log.error("Can not parse the JSON Response: " + jsonUser);
         }
+    }
+
+    public boolean hasRole(String _role) {
+        if (Objects.isNull(_role))
+            return false;
+        return this.getRoles().contains(_role);
+    }
+
+    public boolean hasRole(List<String> _roles) {
+        if (Objects.isNull(_roles))
+            return false;
+        String[] _rolesArray = null;
+        _roles.toArray(_rolesArray);
+        return this.hasRole(_rolesArray);
+    }
+
+    public boolean hasRole(String[] _roles) {
+        if (Objects.isNull(_roles))
+            return false;
+        boolean hasRole = false;
+        for (String role : roles) {
+            if (!hasRole) {
+                hasRole = hasRole(role);
+            }
+        }
+        return hasRole;
     }
 }

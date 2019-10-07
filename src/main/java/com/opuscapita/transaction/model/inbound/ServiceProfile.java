@@ -54,13 +54,9 @@ public class ServiceProfile implements Tx {
         StringBuilder builder = new StringBuilder();
         builder.append("{\"" + title + "\":{");
         builder.append(TxUtils.attributeAsJson("id", Objects.requireNonNull(this.getId(), "--- no value ---")));
-        builder.append(TxUtils.COMMA);
         builder.append(TxUtils.attributeAsJson("businessPartnerId", Objects.requireNonNull(this.getBusinessPartnerId(), "--- no value ---")));
-        builder.append(TxUtils.COMMA);
         builder.append(TxUtils.attributeAsJson("senderBusinessPartnerId", Objects.requireNonNull(this.getSenderBusinessPartnerId(), "--- no value ---")));
-        builder.append(TxUtils.COMMA);
         builder.append(TxUtils.attributeAsJson("gatewayId", Objects.requireNonNull(this.getGatewayId(), "--- no value ---")));
-        builder.append(TxUtils.COMMA);
         builder.append("{\"protocolAttributes\":[");
         for (String key : this.getProtocolAttributes().keySet()) {
             builder.append("{");

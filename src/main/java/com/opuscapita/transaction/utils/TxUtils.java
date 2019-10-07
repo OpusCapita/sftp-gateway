@@ -9,11 +9,18 @@ import com.opuscapita.transaction.model.inbound.ServiceProfile;
 import com.opuscapita.transaction.model.properties.Version;
 import org.apache.kafka.common.errors.UnsupportedVersionException;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 
 public class TxUtils {
     public static String ESCAPED = "\"";
+    public static String SQARE_BRACKET_OPEN = "[";
+    public static String SQARE_BRACKET_CLOSE = "]";
     public static String COMMA = ",";
+    public static String DATEFORMAT = "E MMM dd HH:mm:ss z yyyy";
 
     enum DEFAULT {
         SYSTEMNODE("SFTP"),
@@ -60,7 +67,19 @@ public class TxUtils {
         builder.append(field);
         builder.append(ESCAPED);
         builder.append(":");
-        if (val.getClass() != Integer.class && val.getClass() != Boolean.class) {
+        if (value instanceof List) {
+            builder.append(SQARE_BRACKET_OPEN);
+            Tx currentVal = null;
+            Iterator<Tx> iter = ((List<Tx>) value).iterator();
+            while(iter.hasNext()) {
+                currentVal = iter.next();
+                builder.append(currentVal.toString());
+                if(iter.hasNext()) {
+                    builder.append(COMMA);
+                }
+            }
+            builder.append(SQARE_BRACKET_CLOSE);
+        } else if (val.getClass() != Integer.class && val.getClass() != Boolean.class) {
             builder.append(ESCAPED);
             builder.append(value);
             builder.append(ESCAPED);
@@ -71,5 +90,20 @@ public class TxUtils {
             builder.append(COMMA);
         }
         return builder.toString();
+    }
+
+    public static String getDateFormated(Date _date) {
+        if (Objects.isNull(_date))
+            throw new NullPointerException("Date is null");
+        return getDateFormated(_date, TxUtils.DATEFORMAT);
+    }
+
+    public static String getDateFormated(Date _date, String _format) {
+        if (Objects.isNull(_date))
+            throw new NullPointerException("Date is null");
+        if (Objects.isNull(_format))
+            _format = TxUtils.DATEFORMAT;
+        SimpleDateFormat formatter = new SimpleDateFormat(_format);
+        return formatter.format(_date);
     }
 }

@@ -39,7 +39,8 @@ public class AuthProvider implements PublickeyAuthenticator, PasswordAuthenticat
 		AuthResponse response = this.authService.authenticateWithPassword(username,password);
 		AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey = new AttributeRepository.AttributeKey();
 		session.setAttribute(authResponseAttributeKey, response);
-		return response.getStatusCode().is2xxSuccessful();
+
+		return response.getStatusCode().is2xxSuccessful() && response.getUser().hasRole("user");
 	}
 
 	@Override
