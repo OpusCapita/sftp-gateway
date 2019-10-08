@@ -1,7 +1,7 @@
 package com.opuscapita.sftp.service;
 
 import com.opuscapita.auth.model.AuthResponse;
-import com.opuscapita.sftp.service.uploadlistener.FileUploadCompleteListener;
+import com.opuscapita.sftp.service.uploadlistener.FileUploadListenerInterface;
 import com.opuscapita.sftp.utils.SFTPHelper;
 import com.opuscapita.transaction.service.TxService;
 import lombok.Getter;
@@ -27,13 +27,13 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
         this.service = _service;
     }
 
-    private List<FileUploadCompleteListener> fileReadyListeners = new ArrayList<>();
+    private List<FileUploadListenerInterface> fileReadyListeners = new ArrayList<>();
 
-    public void addFileUploadCompleteListener(FileUploadCompleteListener listener) {
+    public void addFileUploadCompleteListener(FileUploadListenerInterface listener) {
         fileReadyListeners.add(listener);
     }
 
-    public void removeFileUploadCompleteListener(FileUploadCompleteListener listener) {
+    public void removeFileUploadCompleteListener(FileUploadListenerInterface listener) {
         fileReadyListeners.remove(listener);
     }
 
@@ -54,7 +54,7 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
 
         log.info(String.format("User %s closed file: \"%s\"", session.getUsername(), localHandle.getFile().toAbsolutePath()));
         if (!(localHandle instanceof DirectoryHandle)) {
-            for (FileUploadCompleteListener fileReadyListener : fileReadyListeners) {
+            for (FileUploadListenerInterface fileReadyListener : fileReadyListeners) {
                 fileReadyListener.onPathReady(path, session);
             }
         }
@@ -62,7 +62,7 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
 
     @Override
     public void destroying(ServerSession session) {
-        for (FileUploadCompleteListener fileReadyListener : fileReadyListeners) {
+        for (FileUploadListenerInterface fileReadyListener : fileReadyListeners) {
             this.removeFileUploadCompleteListener(fileReadyListener);
         }
     }

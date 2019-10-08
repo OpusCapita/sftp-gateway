@@ -9,7 +9,6 @@ services:
       - registrator
       - redis
       - kong
-      #      - rabbitmq
       - api-registry
       - auth
       - blob
@@ -21,11 +20,11 @@ services:
       SERVICE_NAME: sftp-gateway
       SERVICE_TAGS: gateway
     environment:
-      PORT: 2222
+      PORT:
+        - 2222
+        - 2223
       SERVICE_NAME: ${SERVICE_NAME}
       SERVICE_2222_NAME: ${SERVICE_NAME}
-      #      RABBITMQ_USER: ${RABBITMQ_USER}
-      #      RABBITMQ_PASS: ${RABBITMQ_PASS}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_ROOT_USER: ${MYSQL_ROOT_USER}
@@ -33,6 +32,7 @@ services:
       KAFKA_PASSWORD: ${KAFKA_PASSWORD}
     ports:
       - 2222:2222
+      - 2223:2223
 
   tnt:
     image: opuscapita/tnt:dev

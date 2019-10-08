@@ -5,14 +5,11 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity(name = "SftpConfig")
-@Data
 public class SftpConfigEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator = "uuid2")
@@ -23,5 +20,9 @@ public class SftpConfigEntity {
     @Getter
     @Setter
     private String businessPartnerId;
+
+    @Getter
+    @OneToMany(mappedBy = "configEntity")
+    private Set<SftpRuleEntity> ruleList;
 
 }
