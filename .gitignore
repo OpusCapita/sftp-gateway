@@ -31,5 +31,5 @@ build/
 .vscode/
 
 ### NodeJS ###
-package-lock.json
+src/main/client/package-lock.json
 /node_modules/

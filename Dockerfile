@@ -1,13 +1,19 @@
-FROM openjdk:8-alpine
-
+#FROM openjdk:8-alpine
+#FROM maven:3-jdk-8-alpine
+FROM maven:3-jdk-8
+RUN apt-get update
+RUN apt-get install htop
 # Install maven
-RUN apk update
-RUN apk add maven
-RUN apk add htop
-RUN apk add mysql-client
-RUN apk add curl
-RUN apk add nodejs
-RUN apk add npm
+#RUN apk update
+#RUN apk add maven
+#RUN apk add htop
+#RUN apk add mysql-client
+#RUN apk add curl
+#RUN apk add nodejs
+#RUN apk add nodejs-npm
+
+RUN apt-get -y install mysql-client
+#RUN apt-get install nodejs
 
 ENV SERVICE_NAME=sftp-gateway
 
@@ -16,13 +22,8 @@ ENV TRGTDIR=$WRKDIR/target
 ENV APPDIR=/usr/app
 ENV UPLOADDIR=/home/upload
 
-ENV NODE_ENV=development NODE_PATH=$WRKDIR/node_modules
-
-# install nodejsnp
-#RUN apt-get install -y curl \
-#  && curl -sL https://deb.nodesource.com/setup_9.x | bash - \
-#  && apt-get install -y nodejs \
-#  && curl -L https://www.npmjs.com/install.sh | sh
+ENV NODE_ENV=development
+ENV NODE_PATH=$WRKDIR/node_modules
  
 WORKDIR $WRKDIR
 ADD src $WRKDIR/src
@@ -39,14 +40,11 @@ RUN mvn dependency:resolve
 
 # Adding source, compile and package into a fat jar
 
-RUN ls -lAh $WRKDIR
+RUN mkdir -p "target"
 RUN mvn package
-RUN ls -lAh $TRGTDIR
 RUN mkdir -p $APPDIR
-RUN ls -lAh $APPDIR
 RUN mv $TRGTDIR/SFTPj-0.0.1.jar $APPDIR/SFTPj.jar
-RUN rm -r $WRKDIR
-RUN mkdir -p $UPLOADDIR
+#RUN rm -r $WRKDIR
 
 WORKDIR $APPDIR
 

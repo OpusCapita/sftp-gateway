@@ -58,7 +58,7 @@
     "webpack-visualizer-plugin": "^0.1.11"
   },
   "scripts": {
-    "watch": "webpack --watch -d",
-    "build": "cross-env NODE_ENV=develop npx webpack -p --config ./webpack.config.js --profile --colors --bail"
+    "watch": "../../../node_modules/.bin/webpack --watch -d",
+    "build": "../../../node_modules/.bin/cross-env NODE_ENV=develop npx webpack -p --config ./webpack.config.js --profile --colors --bail"
   }
 }
