@@ -26,8 +26,6 @@ public class SftPjApplication implements CommandLineRunner {
     }
 
     public static void main(String[] args) {
-
-//        new SpringApplicationBuilder(SftPjApplication.class).addCommandLineProperties(true).run(args);
         SpringApplication.run(SftPjApplication.class, args);
     }
 }

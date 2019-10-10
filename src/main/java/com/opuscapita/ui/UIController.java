@@ -3,13 +3,13 @@ package com.opuscapita.ui;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 public class UIController {
     final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    @GetMapping("/")
+    @RequestMapping(value = "/")
     public String index() {
         log.info("Endpoint \"/\"");
         return "index";

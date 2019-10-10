@@ -1,6 +1,5 @@
 package com.opuscapita.sftp.model;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
