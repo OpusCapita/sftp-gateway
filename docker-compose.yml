@@ -17,12 +17,12 @@ services:
       - zoo
       - kafka
     labels:
-      SERVICE_NAME: sftp-gateway
-      SERVICE_TAGS: gateway
-    environment:
-      PORT: 2222
       SERVICE_NAME: ${SERVICE_NAME}
-      SERVICE_2222_NAME: ${SERVICE_NAME}
+      SERVICE_TAGS: external,gateway
+    environment:
+      PORT: 2223
+      SERVICE_NAME: ${SERVICE_NAME}
+      SERVICE_2222_NAME: ${SERVICE_NAME_DAEMON}
       SERVICE_2223_NAME: ${SERVICE_NAME}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
