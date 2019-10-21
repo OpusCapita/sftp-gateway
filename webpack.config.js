@@ -25,7 +25,7 @@ module.exports = {
         new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /en|de/),
         new webpack.NoEmitOnErrorsPlugin(),
         new webpack.DefinePlugin({
-            'process.env.NODE_ENV': '"production"'
+            'process.env.NODE_ENV': '"development"'
         }),
         new webpack.optimize.OccurrenceOrderPlugin(true),
         /*new webpack.optimize.CommonsChunkPlugin({

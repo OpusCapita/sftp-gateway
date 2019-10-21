@@ -1,0 +1,24 @@
+{
+  "sftp-gateway": {
+    "name": {
+      "en": "SFTP- Gateway",
+      "de": "SFTP- Gateway DE"
+    },
+    "description": {
+      "en": "Configuration of the SFTP",
+      "de": "Configuration of the SFTP DE"
+    },
+    "resources": [
+      {
+        "type": "ui",
+        "resourceId": "^/*",
+        "actions": ["view", "edit", "delete"]
+      },
+      {
+        "type": "ui",
+        "resourceId": "^/$",
+        "actions": ["view"]
+      }
+    ]
+  }
+}

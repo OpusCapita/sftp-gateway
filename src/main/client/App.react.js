@@ -1,7 +1,7 @@
 import React from 'react';
 import {Containers} from '@opuscapita/service-base-ui';
 import {Route} from 'react-router';
-import {SFTPConfigurator} from './components/configurator/SFTPConfigurator.react.js';
+import {SFTPConfigurator} from './components/configurator/SFTPConfigurator.react';
 
 const menu = (router) => (
     <div className="nav">

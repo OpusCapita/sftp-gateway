@@ -9,7 +9,6 @@ ENV SERVICE_NAME=sftp-gateway
 ENV WRKDIR=/code
 ENV TRGTDIR=$WRKDIR/target
 ENV APPDIR=/usr/app
-ENV UPLOADDIR=/home/upload
 
 ENV NODE_ENV=development
 ENV NODE_PATH=$WRKDIR/node_modules
@@ -25,7 +24,7 @@ ADD pom.xml $WRKDIR/pom.xml
 RUN mvn dependency:resolve
 
 # Adding source, compile and package into a fat jar
-RUN mkdir -p "target"
+#RUN mkdir -p "target"
 RUN mvn package
 RUN mkdir -p $APPDIR
 RUN mv $TRGTDIR/SFTPj-0.0.1.jar $APPDIR/SFTPj.jar

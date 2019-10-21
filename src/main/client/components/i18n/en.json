@@ -1,0 +1,6 @@
+{
+  "gateway.sftp.title": "SFTP- Gateway",
+  "gateway.sftp.config": "Configuration",
+  "gateway.sftp.rules": "Rules",
+  "gateway.sftp.actions": "Actions"
+}
