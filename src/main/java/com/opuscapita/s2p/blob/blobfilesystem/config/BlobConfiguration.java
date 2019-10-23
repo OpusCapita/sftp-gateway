@@ -4,7 +4,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 
+@PropertySource(value = "classpath:application-blob.properties")
 @Configuration
 @ConfigurationProperties(prefix = "blob.server")
 public class BlobConfiguration {

@@ -18,6 +18,16 @@
         "type": "ui",
         "resourceId": "^/$",
         "actions": ["view"]
+      },
+      {
+        "type": "rest",
+        "resourceId": "^/api/*",
+        "actions": ["view", "edit", "delete"]
+      },
+      {
+        "type": "rest",
+        "resourceId": "^/api/$",
+        "actions": ["view"]
       }
     ]
   }

@@ -2,7 +2,9 @@ package com.opuscapita.auth.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 
+@PropertySource(value = "classpath:application-auth.properties")
 @Configuration
 @ConfigurationProperties(prefix = "auth.server")
 public class AuthConfiguration {

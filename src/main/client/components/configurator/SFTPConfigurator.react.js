@@ -47,16 +47,7 @@ export class SFTPConfigurator extends Components.ContextComponent {
         }
     ];
 
-    rows = [
-        // {
-        //     id: 0,
-        //     businessPartnerId: "",
-        //     serviceProfileId: "",
-        //     name: "",
-        //     description: "",
-        //     path: ""
-        // }
-    ];
+    rows = [];
 
     constructor(props, context) {
         super(props);
@@ -69,24 +60,37 @@ export class SFTPConfigurator extends Components.ContextComponent {
         this.state = {
             selectableTenants: _tenants,
             currentTenant: null,
-            rules: [],
             loadingState: false,
             endState: false,
             showModal: false
         }
-    }
+    };
 
-    handleOnChange = (value) => {
-        let _state = this.state;
-        _state.currentTenant = value;
-        this.setState(_state);
-    }
+    save = (rows) => {
+        this.rows = rows;
+    };
+
+    addRow = (idx) => {
+        return {
+            id: idx,
+            businessPartnerId: "OC001",
+            serviceProfileId: "ServiceProfileID_idx_" + idx,
+            name: "",
+            description: "",
+            path: ""
+        }
+    };
 
     render() {
         return (<div className='col-xs-12 col-sm-offset-1 col-sm-10'>
             <h2>Config</h2>
             <div className='row'>
-                <ConfigDataGrid columns={this.columns} rows={this.rows}/>
+                <ConfigDataGrid
+                    columns={this.columns}
+                    rows={this.rows}
+                    onSave={this.save.bind(this)}
+                    onAddRow={this.addRow.bind(this)}
+                />
             </div>
         </div>);
     };

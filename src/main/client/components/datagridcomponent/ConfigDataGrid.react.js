@@ -19,6 +19,25 @@ export class ConfigDataGrid extends Components.ContextComponent {
         filterable: true
     };
 
+    get isDifferent() {
+        if (this.state.tmpRows.length !== this.state.rows.length) {
+            return true;
+        }
+        let result = true;
+
+        this.state.rows.forEach((e1, i) => this.state.tmpRows.forEach(e2 => {
+                if (e1 !== e2) {
+                    result = true
+                } else {
+                    result = false
+                }
+            })
+        );
+        console.log(result);
+
+        return result;
+    };
+
     icons = requireAll(require.context('!!raw-loader!@opuscapita/svg-icons/lib', true, /.*\.svg$/));
 
     constructor(props, context) {
@@ -26,7 +45,7 @@ export class ConfigDataGrid extends Components.ContextComponent {
         this.columns = props.columns.map(c => ({...c, ...this.defaultProperties}));
         this.state = {
             ...props,
-            tmpRows: props.rows,
+            tmpRows: Array.from(props.rows),
             edited: false
         };
     };
@@ -34,6 +53,11 @@ export class ConfigDataGrid extends Components.ContextComponent {
     getIcon(name) {
         let icon = this.icons.filter(icon => icon.name === name)[0].svg;
         return icon.default;
+    };
+
+    RowRenderer = ({ renderBaseRow, ...props }) => {
+        const color = props.idx % 2 ? "#D3DADE" : "#006070";
+        return <div style={{backgroundColor: color }}>{renderBaseRow(props)}</div>;
     };
 
     EmptyRowsView = () => {
@@ -66,40 +90,28 @@ export class ConfigDataGrid extends Components.ContextComponent {
      * Context Menu Actions
      */
     deleteRow = (rowIdx) => {
-        let nextRows = this.rows;
+        let nextRows = Array.from(this.state.tmpRows);
         nextRows.splice(rowIdx, 1);
         return nextRows;
     };
 
     insertRow = (rowIdx) => {
-        const newRow = this.createNewRow(rowIdx)
+        const newRow = this.state.onAddRow(rowIdx);
         const nextRows = [...this.state.tmpRows];
         nextRows.splice(rowIdx, 0, newRow);
         return nextRows;
     };
 
     onGridRowsUpdated = ({fromRow, toRow, updated}) => {
-        this.setState(state => {
-            const rows = state.slice();
-            for (let i = fromRow; i <= toRow; i++) {
-                rows[i] = {...rows[i], ...updated};
-            }
-            return {rows};
-        });
+        const rows = Array.from(this.state.tmpRows);
+        for (let i = fromRow; i <= toRow; i++) {
+            rows[i] = {...rows[i], ...updated};
+        }
+        this.setState({tmpRows: rows});
     };
 
-    createNewRow(idx) {
-        return {
-            id: idx,
-            businessPartnerId: "",
-            serviceProfileId: "",
-            name: "",
-            description: "",
-            path: ""
-        }
-    }
-
-    sortRows = (initialRows, sortColumn, sortDirection) => rows => {
+    sortRows = (initialRows, sortColumn, sortDirection) => {
+        let _sortedRows = Array.from(initialRows);
         const comparer = (a, b) => {
             if (sortDirection === "ASC") {
                 return a[sortColumn] > b[sortColumn] ? 1 : -1;
@@ -107,7 +119,7 @@ export class ConfigDataGrid extends Components.ContextComponent {
                 return a[sortColumn] < b[sortColumn] ? 1 : -1;
             }
         };
-        return sortDirection === "NONE" ? initialRows : [...rows].sort(comparer);
+        return sortDirection === "NONE" ? initialRows : [..._sortedRows].sort(comparer);
     };
 
     render() {
@@ -116,17 +128,28 @@ export class ConfigDataGrid extends Components.ContextComponent {
                 columns={this.columns}
                 rowGetter={i => this.state.tmpRows[i]}
                 rowsCount={this.state.tmpRows.length}
-                // minHeight={150}
                 onGridRowsUpdated={this.onGridRowsUpdated}
-                enableCellSelect={false}
-                onGridSort={(sortColumn, sortDirection) =>
-                    this.state.tmpRows = this.sortRows(this.state.tmpRows, sortColumn, sortDirection)
+                enableCellSelect={true}
+                rowRenderer={this.RowRenderer}
+                onGridSort={(sortColumn, sortDirection) => {
+                        const _rows = this.sortRows(this.state.tmpRows, sortColumn, sortDirection);
+                        this.setState({tmpRows: _rows});
+                    }
                 }
                 contextMenu={
                     <this.ContextMenu
-                        onRowDelete={(e, {rowIdx}) => this.setState({tmpRows: this.deleteRow(rowIdx)})}
-                        onRowInsertAbove={(e, {rowIdx}) => this.setState({tmpRows: this.insertRow(rowIdx)})}
-                        onRowInsertBelow={(e, {rowIdx}) => this.setState({tmpRows: this.insertRow(rowIdx + 1)})}
+                        onRowDelete={(e, {rowIdx}) => this.setState({
+                            tmpRows: this.deleteRow(rowIdx),
+                            edited: true
+                        })}
+                        onRowInsertAbove={(e, {rowIdx}) => this.setState({
+                            tmpRows: this.insertRow(rowIdx),
+                            edited: true
+                        })}
+                        onRowInsertBelow={(e, {rowIdx}) => this.setState({
+                            tmpRows: this.insertRow(rowIdx + 1),
+                            edited: true
+                        })}
                     />
                 }
                 toolbar={
@@ -136,13 +159,19 @@ export class ConfigDataGrid extends Components.ContextComponent {
                                 <Button
                                     svg={this.getIcon('add')}
                                     onClick={() => {
-                                        this.setState({tmpRows: this.insertRow(this.state.tmpRows.length + 1)})
+                                        this.setState({
+                                            tmpRows: this.insertRow(this.state.tmpRows.length + 1),
+                                            edited: true
+                                        })
                                     }}
                                     paper={true}
                                 />
                                 <Button
                                     svg={this.getIcon('refresh')}
-                                    onClick={() => this.setState({tmpRows: this.state.rows})}
+                                    onClick={() => this.setState({
+                                        tmpRows: Array.from(this.state.rows),
+                                        edited: this.isDifferent
+                                    })}
                                     paper={true}
                                 />
                                 <Button
@@ -153,13 +182,26 @@ export class ConfigDataGrid extends Components.ContextComponent {
                             </div>
                             <div style={{display: 'inline', float: 'right'}} className='m-md-2'>
                                 <Button
+                                    disabled={!this.state.edited}
                                     svg={this.getIcon('save')}
-                                    onClick={() => this.setState({rows: this.state.tmpRows})}
+                                    onClick={() => {
+                                        this.setState({
+                                            rows: Array.from(this.state.tmpRows),
+                                            edited: false
+                                        });
+                                        this.state.onSave(this.state.tmpRows);
+                                    }}
                                     paper={true}
                                 />
                                 <Button
+                                    disabled={!this.state.edited}
                                     svg={this.getIcon('cancel')}
-                                    onClick={() => this.setState({tmpRows: this.state.rows})}
+                                    onClick={() => {
+                                        this.setState({
+                                            tmpRows: Array.from(this.state.rows),
+                                            edited: false
+                                        })
+                                    }}
                                     paper={true}
                                 />
                             </div>

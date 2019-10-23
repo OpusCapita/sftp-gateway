@@ -25,7 +25,7 @@ RUN mvn dependency:resolve
 
 # Adding source, compile and package into a fat jar
 #RUN mkdir -p "target"
-RUN mvn package
+RUN mvn clean install
 RUN mkdir -p $APPDIR
 RUN mv $TRGTDIR/SFTPj-0.0.1.jar $APPDIR/SFTPj.jar
 
