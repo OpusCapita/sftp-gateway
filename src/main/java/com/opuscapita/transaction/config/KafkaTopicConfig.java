@@ -33,6 +33,14 @@ public class KafkaTopicConfig {
 
     @Bean
     public NewTopic sftpGatewayTopic() {
-        return new NewTopic(this.topic, this.numberOfPartitions, this.replicationFactor);
+        return this.newTopic(this.topic, this.numberOfPartitions, this.replicationFactor);
+    }
+
+    private NewTopic newTopic(
+            final String _topic,
+            final int _numberOfPartitions,
+            final short _replicationFactor
+    ) {
+        return new NewTopic(_topic, _numberOfPartitions, _replicationFactor);
     }
 }

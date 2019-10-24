@@ -1,5 +1,7 @@
 package com.opuscapita.sftp.service;
 
+import com.opuscapita.bouncer.model.RetryConfig;
+import com.opuscapita.bouncer.service.Bouncer;
 import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
 import com.opuscapita.sftp.config.SFTPConfiguration;
 import com.opuscapita.sftp.filesystem.BlobFileSystemFactory;
@@ -32,6 +34,7 @@ import java.util.List;
 public class SFTPDaemon extends AbstractLoggingBean {
 
     private final SFTPConfiguration configuration;
+    private final Bouncer bouncer;
     private SshServer sshd = SshServer.setUpDefaultServer();
     private KafkaTemplate<String, String> kafkaTemplate;
 
@@ -40,16 +43,20 @@ public class SFTPDaemon extends AbstractLoggingBean {
             SFTPConfiguration _configuration,
             BlobConfiguration _blobConfiguration,
             AuthProvider _authProvider,
-            KafkaTemplate<String, String> _kafkaTemplate
+            KafkaTemplate<String, String> _kafkaTemplate,
+            Bouncer _bouncer
     ) {
         this.configuration = _configuration;
         this.kafkaTemplate = _kafkaTemplate;
+        this.bouncer = _bouncer;
+        this.bouncer.registerPermissions(new RetryConfig());
+
         List<NamedFactory<Command>> subsystemFactories = new ArrayList<>();
         subsystemFactories.add(this.createDefaultSftpSubsystem());
         this.sshd.setSubsystemFactories(subsystemFactories);
 
-        this.sshd.setPort(this.configuration.getPort());
         this.sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("host.ser").toPath()));
+        this.sshd.setPort(this.configuration.getPort());
         PropertyResolverUtils.updateProperty(this.sshd, ServerAuthenticationManager.WELCOME_BANNER,
                 this.configuration.getWelcome());
         this.sshd.setPublickeyAuthenticator(_authProvider);

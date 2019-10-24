@@ -10,7 +10,7 @@
     },
     "resources": [
       {
-        "type": "ui",
+        "type": ["ui", "rest"],
         "resourceId": "^/*",
         "actions": ["view", "edit", "delete"]
       },
