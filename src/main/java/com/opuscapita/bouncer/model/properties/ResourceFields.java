@@ -58,4 +58,15 @@ public class ResourceFields extends AbstractBouncerDataObject<ResourceFields> {
         }
         return this;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder _builder = new StringBuilder();
+        _builder.append("\"" + this.getTitle() + "\": {")
+                .append("\"" + REMOVE + "\": " + this.listToString(this.getRemoveList()))
+                .append(",")
+                .append("\"" + ALLOW + "\": " + this.listToString(this.getAllowList()))
+                .append("}");
+        return _builder.toString();
+    }
 }

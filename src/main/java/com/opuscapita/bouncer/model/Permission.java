@@ -45,8 +45,10 @@ public class Permission extends AbstractBouncerDataObject<Permission> {
                 .append(",")
                 .append("\"resources\": [");
         for (Resource _resource : this.getResources()) {
-            _builder.append(_resource);
+            _builder.append(_resource)
+                    .append(",");
         }
+        _builder.setLength(_builder.length() - 1);
         _builder.append("]");
         return _builder.toString();
     }

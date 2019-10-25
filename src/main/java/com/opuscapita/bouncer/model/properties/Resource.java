@@ -90,6 +90,17 @@ public class Resource extends AbstractBouncerDataObject<Resource> {
     public String toString() {
         StringBuilder _builder = new StringBuilder();
         _builder.append("{")
+                .append("\"resourceId\": \"" + this.getResourceId() + "\"")
+                .append(",")
+                .append("\"" + TYPE + "\": " + this.listToString(this.getTypeList()))
+                .append(",")
+                .append("\"" + ACTIONS + "\": " + this.listToString(this.getActionList()))
+                .append(",")
+                .append("\"" + ROLEIDS + "\": " + this.listToString(this.getRoleIdList()))
+                .append(",")
+                .append(this.getRequestFields())
+                .append(",")
+                .append(this.getResponseFields())
                 .append("}");
         return _builder.toString();
     }

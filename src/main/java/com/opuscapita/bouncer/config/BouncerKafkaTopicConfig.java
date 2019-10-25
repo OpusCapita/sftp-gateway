@@ -1,5 +1,6 @@
-package com.opuscapita.transaction.config;
+package com.opuscapita.bouncer.config;
 
+import lombok.Getter;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,27 +13,33 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-@PropertySource(value = "classpath:application-kafka.properties")
-public class KafkaTopicConfig {
-
-    @Value(value = "${kafka.bootstrapAddress}")
+@PropertySource(value = "classpath:application-bouncer.properties")
+public class BouncerKafkaTopicConfig {
+    @Getter
+    @Value(value = "${bouncer.service-name}")
+    private String serviceName;
+    @Getter
+    @Value(value = "${bouncer.kafka.bootstrapAddress}")
     private String bootstrapAddress;
-    @Value(value = "${kafka.topicName}")
+    @Getter
+    @Value(value = "${bouncer.kafka.topicName}")
     private String topic;
-    @Value(value = "${kafka.numberOfPartitions}")
+    @Getter
+    @Value(value = "${bouncer.kafka.numberOfPartitions}")
     private int numberOfPartitions;
-    @Value(value = "${kafka.replicationFactor}")
+    @Getter
+    @Value(value = "${bouncer.kafka.replicationFactor}")
     private short replicationFactor;
 
     @Bean
-    public KafkaAdmin kafkaAdmin() {
+    public KafkaAdmin bouncerKafkaAdmin() {
         Map<String, Object> configs = new HashMap<>();
         configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
         return new KafkaAdmin(configs);
     }
 
     @Bean
-    public NewTopic sftpGatewayTopic() {
+    public NewTopic bouncerTopic() {
         return this.newTopic(this.topic, this.numberOfPartitions, this.replicationFactor);
     }
 

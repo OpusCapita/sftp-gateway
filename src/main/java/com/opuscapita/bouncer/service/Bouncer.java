@@ -7,6 +7,7 @@ import com.opuscapita.bouncer.config.BouncerConfiguration;
 import com.opuscapita.bouncer.exceptions.PermissionsFileNotExists;
 import com.opuscapita.bouncer.model.Permission;
 import com.opuscapita.bouncer.model.RetryConfig;
+import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,9 +26,12 @@ public class Bouncer implements BouncerInterface {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
+    @Getter
+    private final Map<String, Permission> permissionMap;
+
     private final BouncerConfiguration configuration;
     private final ServiceClient serviceClient;
-    private final Map<String, Permission> permissionMap;
+
 
     @Autowired
     public Bouncer(
@@ -81,11 +85,28 @@ public class Bouncer implements BouncerInterface {
 
     @Override
     public void registerPermissions(RetryConfig config) {
-        List<Permission> permissionList;
+
+        System.err.println(this.toString());
+        this.serviceClient.sendEvent(this.toString());
     }
 
     @Override
     public void findResources(String url, String method, Object userData, ServiceClient serviceClient, String serviceName) {
 
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder _builder = new StringBuilder();
+        _builder.append("{");
+        for (String key : this.getPermissionMap().keySet()) {
+            _builder.append("\"" + key + "\": {" + this.getPermissionMap().get(key).toString() + "}")
+                    .append(",");
+        }
+        if (_builder.length() > 1) {
+            _builder.setLength(_builder.length() - 1);
+        }
+        _builder.append("}");
+        return _builder.toString();
     }
 }

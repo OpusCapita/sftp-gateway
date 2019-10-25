@@ -7,4 +7,8 @@ import org.springframework.stereotype.Service;
 @Service
 @Qualifier("rabbitmqServiceClient")
 public class RabbitMQServiceClient implements ServiceClient {
+    @Override
+    public void sendEvent(String message) {
+
+    }
 }

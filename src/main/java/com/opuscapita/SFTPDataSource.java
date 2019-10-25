@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import javax.sql.DataSource;
 @Component
 public class SFTPDataSource {
-	
 
     @Value("${db-init.user:root}")
     private String user;
