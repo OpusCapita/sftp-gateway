@@ -18,6 +18,8 @@ ADD src $WRKDIR/src
 
 ADD package.json $WRKDIR/package.json
 ADD webpack.config.js $WRKDIR/webpack.config.js
+ADD host.ser $APPDIR/host.ser
+ADD acl.json $APPDIR/acl.json
 
 # Prepare by downloading dependencies
 ADD pom.xml $WRKDIR/pom.xml
