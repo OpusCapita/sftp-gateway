@@ -33,3 +33,5 @@ build/
 ### NodeJS ###
 src/main/client/package-lock.json
 /node_modules/
+.env
+.env.local
