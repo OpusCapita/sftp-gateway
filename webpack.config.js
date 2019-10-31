@@ -3,13 +3,19 @@ const webpack = require('webpack');
 const Visualizer = require('webpack-visualizer-plugin');
 
 module.exports = {
-    entry: ['babel-polyfill', './src/main/client/index.js'],
+    entry: {
+        app: ['babel-polyfill', './src/main/client/index.js'],
+        configurator: './src/main/client/components/configurator/index.js'
+    },
     devtool: 'eval-source-map',
     cache: true,
     output: {
         path: path.resolve(__dirname, './src/main/resources/static'),
         publicPath: '/static',
-        filename: 'built/bundle.js'
+        filename: 'built/sftp-gateway-[name].js',
+        library: 'sftp-gateway-[name]',
+        libraryTarget: 'umd',
+        umdNamedDefine: true
     },
 
     //exclude empty dependencies, require for Joi
@@ -69,11 +75,12 @@ module.exports = {
                 options: {
                     compact: true,
                     presets: [
-                        ['env', {'targets': {'node': 8, 'uglify': true}, 'modules': false}],
-                        'stage-0',
-                        'react'
+                        '@babel/preset-env',
+                        '@babel/preset-react'
                     ],
-                    plugins: ['transform-decorators-legacy']
+                    plugins: [
+                        '@babel/plugin-proposal-class-properties'
+                    ]
                 }
             }
         ]

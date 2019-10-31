@@ -1,5 +1,7 @@
 package com.opuscapita.sftp.service;
 
+import com.opuscapita.bouncer.exceptions.EmptyPermissionsException;
+import com.opuscapita.bouncer.exceptions.PermissionsNotRegistered;
 import com.opuscapita.bouncer.model.RetryConfig;
 import com.opuscapita.bouncer.service.Bouncer;
 import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
@@ -49,7 +51,13 @@ public class SFTPDaemon extends AbstractLoggingBean {
         this.configuration = _configuration;
         this.kafkaTemplate = _kafkaTemplate;
         this.bouncer = _bouncer;
-        this.bouncer.registerPermissions(new RetryConfig());
+        try {
+            this.bouncer.registerPermissions(new RetryConfig());
+        } catch (PermissionsNotRegistered permissionsNotRegistered) {
+            permissionsNotRegistered.printStackTrace();
+        } catch (EmptyPermissionsException emptyPermissionsException) {
+            log.warn(emptyPermissionsException.getMessage());
+        }
 
         List<NamedFactory<Command>> subsystemFactories = new ArrayList<>();
         subsystemFactories.add(this.createDefaultSftpSubsystem());

@@ -82,7 +82,7 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
     public void open(ServerSession session, String remoteHandle, Handle localHandle) {
         log.info("open");
         AttributeRepository.AttributeKey<TxService> txServiceAttributeKey = new AttributeRepository.AttributeKey<>();
-        session.setAttribute(txServiceAttributeKey, new TxService(this.service.getKafkaTemplate()));
+//        session.setAttribute(txServiceAttributeKey, new TxService(this.service.getKafkaTemplate()));
     }
 
     @Override

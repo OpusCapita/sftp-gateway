@@ -1,5 +1,5 @@
 {
-  "sftp-gateway": {
+  "test-permissions": {
     "name": {
       "en": "SFTP- Gateway",
       "de": "SFTP- Gateway DE"
@@ -13,21 +13,6 @@
         "type": ["ui", "rest"],
         "resourceId": "^/*",
         "actions": ["view", "edit", "delete"]
-      },
-      {
-        "type": "ui",
-        "resourceId": "^/$",
-        "actions": ["view"]
-      },
-      {
-        "type": "rest",
-        "resourceId": "^/api/*",
-        "actions": ["view", "edit", "delete"]
-      },
-      {
-        "type": "rest",
-        "resourceId": "^/api/$",
-        "actions": ["view"]
       }
     ]
   }

@@ -17,12 +17,8 @@ const home = (props) => (
 );
 
 const App = () => (
-    <div>
-        {menu(props.router)}
-        <SFTPConfigurator/>
-    </div>
-    // <Containers.ServiceLayout serviceName="sftp-gateway">
-    //     <Route path="/" component={home}/>
-    // </Containers.ServiceLayout>
+    <Containers.ServiceLayout serviceName="sftp-gateway">
+        <Route path="/" component={home}/>
+    </Containers.ServiceLayout>
 );
 export default App;

@@ -42,10 +42,8 @@ public class User {
     public User(String _jwt) {
         String[] split_string = _jwt.split("\\.");
         String base64EncodedBody = split_string[1];
-        log.info("Jwt Body: " + base64EncodedBody);
         String jsonUser = new String(Base64.getDecoder().decode(base64EncodedBody));
 
-        log.info("Jwt Json Body: " + jsonUser);
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             JsonNode jsonNode = objectMapper.readTree(jsonUser);
