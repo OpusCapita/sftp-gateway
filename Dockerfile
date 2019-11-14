@@ -1,5 +1,6 @@
 FROM maven:3-jdk-8 AS TEMP_BUILD_IMAGE
 LABEL author="Stefan Meier <Stefan.Meier@cdi-ag.de>"
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update
 RUN apt-get -y install htop
 
@@ -24,18 +25,15 @@ WORKDIR $WRKDIR
 ADD src $WRKDIR/src
 
 ADD package.json $WRKDIR/package.json
+ADD package-lock.json $WRKDIR/package-lock.json
 ADD webpack.config.js $WRKDIR/webpack.config.js
 ADD pom.xml $WRKDIR/pom.xml
 
 RUN npm install
-RUN npm run webpack-build
-
-# Prepare by downloading dependencies
-#RUN mvn dependency:resolve
+RUN npm run webpack-build-prod
 
 # Adding source, compile and package into a fat jar
-#RUN mkdir -p "target"
-RUN mvn clean install
+RUN mvn clean package
 RUN mkdir -p $APPDIR
 RUN mv $TRGTDIR/SFTPj-0.0.1.jar $APPDIR/SFTPj.jar
 

@@ -11,7 +11,6 @@ public class UIController {
 
     @RequestMapping(value = "/")
     public String index() {
-        log.info("Endpoint \"/\"");
         return "index";
     }
 

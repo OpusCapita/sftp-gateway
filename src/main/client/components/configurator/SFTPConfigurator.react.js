@@ -1,97 +1,173 @@
 import React from 'react';
 import {Components} from '@opuscapita/service-base-ui';
-import {tenants} from "../helper/helper.service"
-import {ConfigDataGrid} from "../datagridcomponent/ConfigDataGrid.react"
+import ConfigDataGrid from "../datagridcomponent"
+import RequestApi from "../helper/RequestApi";
+import {OCAlertsProvider} from '@opuscapita/react-alerts';
+import {SimpleModal} from "@opuscapita/react-overlays";
+import EditDialog from "../dialog";
 
-// import i18nMessages from './i18n';
 
-export class SFTPConfigurator extends Components.ContextComponent {
+export default class SFTPConfigurator extends Components.ContextComponent {
+    request = new RequestApi();
     state = {};
     columns = [
+        {
+            key: 'position',
+            name: 'ID',
+            sortDescendingFirst: true,
+            sortable: true
+        },
         {
             key: 'id',
             name: '',
             sortDescendingFirst: true,
             sortable: true,
-            editable: false
+            visible: false
         },
         {
             key: 'businessPartnerId',
             name: 'Business partner ID',
             sortable: true,
-            editable: false
+            visible: false
         },
         {
             key: 'serviceProfileId',
             name: 'Service profile ID',
             sortable: true,
-            editable: true
+            visible: false
         },
         {
             key: 'name',
             name: 'Name',
-            sortable: true,
-            editable: true
+            sortable: true
         },
         {
             key: 'description',
             name: 'Description',
-            sortable: true,
-            editable: true
+            sortable: true
         },
         {
             key: 'path',
             name: 'Path',
-            sortable: true,
-            editable: true
+            sortable: true
         }
     ];
 
-    rows = [];
-
     constructor(props, context) {
         super(props);
-        let _tenants = tenants;
-        _tenants.forEach(function (object) {
-            object.label = object.name;
-            object.value = object.id;
-            object.active = false;
-        });
+        this.loadData();
         this.state = {
-            selectableTenants: _tenants,
-            currentTenant: null,
             loadingState: false,
             endState: false,
-            showModal: false
-        }
+            showModal: false,
+            rows: [],
+            toEdit: null
+        };
+    };
+
+    loadData = () => {
+        this.request.getServiceConfigurations().then((data) => {
+            this.setState({rows: data});
+        });
     };
 
     save = (rows) => {
-        this.rows = rows;
+        this.request.saveServiceConfigurations(rows).then((_rows) => {
+            this.setState({rows: _rows});
+        });
     };
 
-    addRow = (idx) => {
+    delete = (rows) => {
+        this.request.deleteServiceConfigurations(rows).then((_rows) => {
+        });
+    };
+
+    editRow = (row) => {
+        const clone = JSON.parse(JSON.stringify(row));
+        this.setState({
+            toEdit: clone,
+            showModal: true,
+            edit: true
+        });
+    };
+
+    edit = (row) => {
+        this.state.rows[row.position - 1] = row;
+        this.setState({
+            showModal: false,
+            edit: false
+        });
+    };
+
+    addRow = () => {
+        this.setState({
+            toEdit: this.createEmptyRow(),
+            showModal: true,
+            edit: false
+        });
+    };
+
+    createEmptyRow = () => {
         return {
-            id: idx,
-            businessPartnerId: "OC001",
-            serviceProfileId: "ServiceProfileID_idx_" + idx,
+            id: null,
+            businessPartnerId: this.props.businessPartnerId,
+            serviceProfileId: this.props.serviceProfileId,
             name: "",
             description: "",
-            path: ""
+            path: "",
+            deleted: false
         }
     };
 
+    add = (row) => {
+        const _rows = Array.from(this.state.rows);
+        _rows.push(row);
+        this.setState({
+            rows: _rows,
+            showModal: false,
+            edit: false
+        });
+    };
+
+    cancel = () => {
+        this.setState({
+            showModal: false,
+            edit: false
+        });
+    };
+
     render() {
-        return (<div className='col-xs-12 col-sm-offset-1 col-sm-10'>
-            <h2>Config</h2>
-            <div className='row'>
+        return (
+            <div className='row' style={{
+                overflow: 'hidden'
+            }}>
                 <ConfigDataGrid
                     columns={this.columns}
-                    rows={this.rows}
+                    rows={this.state.rows}
                     onSave={this.save.bind(this)}
+                    onDelete={this.delete.bind(this)}
+                    onEdit={this.editRow.bind(this)}
                     onAddRow={this.addRow.bind(this)}
+                    onReload={this.loadData.bind(this)}
                 />
+                <OCAlertsProvider/>
+
+                <SimpleModal
+                    isShow={this.state.showModal}
+                    style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}
+                >
+                    <div
+                        style={{padding: '24px', backgroundColor: 'transparent'}}
+                    >
+                        {this.state.showModal && this.state.toEdit !== null && <EditDialog data={this.state.toEdit}
+                                                                                           onSubmit={this.add.bind(this)}
+                                                                                           onEdit={this.edit.bind(this)}
+                                                                                           onCancel={this.cancel.bind(this)}
+                                                                                           edit={this.state.edit}
+                        />}
+                    </div>
+                </SimpleModal>
             </div>
-        </div>);
+        );
     };
 }

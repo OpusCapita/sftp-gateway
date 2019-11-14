@@ -125,58 +125,58 @@ services:
       - '3026:3026'
     command: 'npm run dev'
 
-  supplier:
-    image: opuscapita/supplier:dev
-    depends_on:  # as of version 1.9.0 Dockerfile's HEALTHCHECK is not supported yet.
-      - mysql
-      - consul
-      - registrator
-      - redis
-    labels:
-      SERVICE_NAME: 'supplier'  # Service name used by Registrator for adding to Consul's service discovery registry.
-      SERVICE_TAGS: 'external'
-    ports:
-      - "3001:3001"
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASS: ${RABBITMQ_PASS}
-      NODE_ENV: ${NODE_ENV}
-      REDIS_AUTH: $REDIS_AUTH
-      USER_NAME: 'svc_supplier'
-      PASSWORD: 'test'
-      CLIENT_KEY: $CLIENT_KEY
-      CLIENT_SECRET: $CLIENT_SECRET
-      SCOPE: $SCOPE
-      SERVICE_3001_CHECK_HTTP: /api/health/check
-      SERVICE_3001_CHECK_INTERVAL: 15s
-      SERVICE_3001_CHECK_TIMEOUT: 3s
-    command: 'npm run dev'
+#  supplier:
+#    image: opuscapita/supplier:dev
+#    depends_on:  # as of version 1.9.0 Dockerfile's HEALTHCHECK is not supported yet.
+#      - mysql
+#      - consul
+#      - registrator
+#      - redis
+#    labels:
+#      SERVICE_NAME: 'supplier'  # Service name used by Registrator for adding to Consul's service discovery registry.
+#      SERVICE_TAGS: 'external'
+#    ports:
+#      - "3001:3001"
+#    environment:
+#      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+#      MYSQL_DATABASE: ${MYSQL_DATABASE}
+#      RABBITMQ_USER: ${RABBITMQ_USER}
+#      RABBITMQ_PASS: ${RABBITMQ_PASS}
+#      NODE_ENV: ${NODE_ENV}
+#      REDIS_AUTH: $REDIS_AUTH
+#      USER_NAME: 'svc_supplier'
+#      PASSWORD: 'test'
+#      CLIENT_KEY: $CLIENT_KEY
+#      CLIENT_SECRET: $CLIENT_SECRET
+#      SCOPE: $SCOPE
+#      SERVICE_3001_CHECK_HTTP: /api/health/check
+#      SERVICE_3001_CHECK_INTERVAL: 15s
+#      SERVICE_3001_CHECK_TIMEOUT: 3s
+#    command: 'npm run dev'
 
-  customer:
-    image: opuscapita/customer:dev
-    depends_on:
-      - mysql
-      - consul
-      - registrator
-      - redis
-    labels:
-      SERVICE_NAME: 'customer'
-    environment:
-      USER_NAME: 'svc_customer'
-      PASSWORD: 'test'
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASS: ${RABBITMQ_PASS}
-      SERVICE_3009_CHECK_HTTP: /api/health/check
-      SERVICE_3009_CHECK_INTERVAL: 15s
-      SERVICE_3009_CHECK_TIMEOUT: 3s
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      REDIS_AUTH: ${REDIS_AUTH}
-    ports:
-      - '3009:3009'
-    command: 'npm run dev'
+#  customer:
+#    image: opuscapita/customer:dev
+#    depends_on:
+#      - mysql
+#      - consul
+#      - registrator
+#      - redis
+#    labels:
+#      SERVICE_NAME: 'customer'
+#    environment:
+#      USER_NAME: 'svc_customer'
+#      PASSWORD: 'test'
+#      RABBITMQ_USER: ${RABBITMQ_USER}
+#      RABBITMQ_PASS: ${RABBITMQ_PASS}
+#      SERVICE_3009_CHECK_HTTP: /api/health/check
+#      SERVICE_3009_CHECK_INTERVAL: 15s
+#      SERVICE_3009_CHECK_TIMEOUT: 3s
+#      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+#      MYSQL_DATABASE: ${MYSQL_DATABASE}
+#      REDIS_AUTH: ${REDIS_AUTH}
+#    ports:
+#      - '3009:3009'
+#    command: 'npm run dev'
 
   auth:
     image: opuscapita/auth:dev

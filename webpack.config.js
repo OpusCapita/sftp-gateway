@@ -3,20 +3,28 @@ const webpack = require('webpack');
 const Visualizer = require('webpack-visualizer-plugin');
 
 module.exports = {
-    entry: {
-        app: ['babel-polyfill', './src/main/client/index.js'],
-        configurator: './src/main/client/components/configurator/index.js'
-    },
+    entry: ['babel-polyfill', './src/main/client/index.js'],
     devtool: 'eval-source-map',
     cache: true,
     output: {
         path: path.resolve(__dirname, './src/main/resources/static'),
         publicPath: '/static',
-        filename: 'built/sftp-gateway-[name].js',
-        library: 'sftp-gateway-[name]',
-        libraryTarget: 'umd',
-        umdNamedDefine: true
+        filename: 'built/bundle.js'
     },
+    // entry: {
+    //     app: ['babel-polyfill', './src/main/client/index.js'],
+    //     configurator: './src/main/client/components/configurator/index.js'
+    // },
+    // devtool: 'eval-source-map',
+    // cache: true,
+    // output: {
+    //     path: path.resolve(__dirname, './src/main/resources/static'),
+    //     publicPath: '/static',
+    //     filename: 'built/sftp-gateway-[name].js',
+    //     library: 'sftp-gateway-[name]',
+    //     libraryTarget: 'umd',
+    //     umdNamedDefine: true
+    // },
 
     //exclude empty dependencies, require for Joi
     node: {
@@ -31,7 +39,8 @@ module.exports = {
         new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /en|de/),
         new webpack.NoEmitOnErrorsPlugin(),
         new webpack.DefinePlugin({
-            'process.env.NODE_ENV': '"production"'
+            'process.env.NODE_ENV': '"production"',
+            'process.traceDeprecation': false
         }),
         new webpack.optimize.OccurrenceOrderPlugin(true),
         /*new webpack.optimize.CommonsChunkPlugin({

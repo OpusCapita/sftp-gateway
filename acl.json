@@ -10,9 +10,35 @@
     },
     "resources": [
       {
-        "type": ["ui", "rest"],
-        "resourceId": "^/*",
-        "actions": ["view", "edit", "delete"]
+        "type": [
+          "ui"
+        ],
+        "resourceId": "^/",
+        "actions": [
+          "view",
+          "edit",
+          "delete"
+        ]
+      },
+      {
+        "type": [
+          "rest"
+        ],
+        "resourceId": "^/api/sftp/*",
+        "actions": [
+          "view",
+          "edit",
+          "delete"
+        ]
+      },
+      {
+        "type": [
+          "rest"
+        ],
+        "resourceId": "^/api/check/health",
+        "actions": [
+          "view"
+        ]
       }
     ]
   }
