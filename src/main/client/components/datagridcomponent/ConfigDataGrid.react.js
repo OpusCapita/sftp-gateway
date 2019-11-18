@@ -5,6 +5,7 @@ import {Menu} from "react-data-grid-addons";
 import {Icon} from '@opuscapita/react-icons';
 import {requireAll} from "../helper/helper.service";
 import {OCAlert} from '@opuscapita/react-alerts';
+import {Button} from '../component';
 
 const {ContextMenu, MenuItem, ContextMenuTrigger} = Menu;
 
@@ -40,7 +41,7 @@ export default class ConfigDataGrid extends Components.ContextComponent {
             .map(c => ({...c, ...this.defaultProperties}));
         this.state = {
             ...props,
-            tmpRows: Array.from(props.rows),
+            tmpRows: JSON.parse(JSON.stringify(props.rows)),
             edited: false
         };
     };
@@ -155,10 +156,12 @@ export default class ConfigDataGrid extends Components.ContextComponent {
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (prevProps !== this.props) {
+            console.log(this.state);
             const _rows = Array.from(this.props.rows);
             this.setState({
                 tmpRows: _rows,
-                rows: this.props.rows
+                rows: this.props.rows,
+                edited: true
             });
         }
         if (prevState.rows !== this.state.rows) {
@@ -170,6 +173,41 @@ export default class ConfigDataGrid extends Components.ContextComponent {
     render() {
         return (
             <div>
+                <div className="btn-toolbar" role="toolbar">
+                    <div className="btn-group"
+                         role="group"
+                         style={{display: 'inline'}}>
+                        <Button type="button"
+                                className="btn btn-primary"
+                                onClick={() => this.insertRow()}
+                                label="Add"/>
+                        <Button type="button"
+                                className="btn btn-default"
+                                onClick={() => this.reloadData()}
+                                label="Reload"/>
+                    </div>
+                    <div className="btn-group"
+                         role="group"
+                         style={{display: 'inline', float: 'right'}}>
+                        <Button
+                            type="submit"
+                            className="btn btn-primary"
+                            // disabled={!this.state.edited}
+                            onClick={() => this.save()}
+                            label="Save"
+                        />
+                        <Button
+                            type="button"
+                            className="btn btn-default"
+                            // disabled={!this.state.edited}
+                            onClick={() => this.setState({
+                                rows: JSON.parse(JSON.stringify(this.state.tmpRows)),
+                                edited: false
+                            })}
+                            label="Cancel"
+                        />
+                    </div>
+                </div>
                 <ReactDataGrid
                     columns={this.columns}
                     rowGetter={idx => this.state.rows.filter(row => !row.deleted)[idx]}
@@ -191,44 +229,6 @@ export default class ConfigDataGrid extends Components.ContextComponent {
                             })}
                             onRowInsert={() => this.insertRow()}
                         />
-                    }
-                    toolbar={
-                        <div className="btn-toolbar" role="toolbar">
-                            <div className="btn-group"
-                                 role="group"
-                                 style={{display: 'inline'}}>
-                                <button type="button"
-                                        className="btn btn-primary"
-                                        onClick={() => this.insertRow()}>
-                                    Add
-                                </button>
-                                <button type="button"
-                                        className="btn btn-default"
-                                        onClick={() => this.reloadData()}>
-                                    Reload
-                                </button>
-                            </div>
-                            <div className="btn-group"
-                                 role="group"
-                                 style={{display: 'inline', float: 'right'}}
-                            >
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary"
-                                    disabled={!this.state.edited}
-                                    onClick={() => this.save()}
-                                >
-                                    Save
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-default"
-                                    disabled={!this.state.edited}
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </div>
                     }
                     emptyRowsView={this.EmptyRowsView}
                     RowsContainer={ContextMenuTrigger}

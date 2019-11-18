@@ -1,5 +1,6 @@
 import React from "react";
 import {Components} from "@opuscapita/service-base-ui";
+import {Button, Select} from '../component';
 
 export default class EditDialog extends Components.ContextComponent {
     state = {};
@@ -28,7 +29,7 @@ export default class EditDialog extends Components.ContextComponent {
 
         const _row = this.state.data;
         _row[name] = value;
-
+        console.log(_row);
         this.setState({
             data: _row,
             error: this.error
@@ -36,15 +37,14 @@ export default class EditDialog extends Components.ContextComponent {
     };
 
 
-    handleSubmit = (e) => {
-        e.preventDefault();
+    handleSubmit = () => {
         if (this.handleValidation()) {
             this.state.onSubmit(this.state.data);
         }
     };
 
-    handleEdit = (e) => {
-        e.preventDefault();
+    handleEdit = () => {
+        console.log(this.state.data);
         if (this.handleValidation()) {
             this.state.onEdit(this.state.data);
         }
@@ -61,6 +61,12 @@ export default class EditDialog extends Components.ContextComponent {
             _errors["name"] = "Cannot be empty";
         }
 
+        //FileFilter
+        if (_data["fileFilter"].length < 1) {
+            _formIsValid = false;
+            _errors["fileFilter"] = "Cannot be empty";
+        }
+
         // if(typeof _data["name"] !== "undefined"){
         //     if(!_data["name"].match(/^[a-zA-Z0-9]+$/)){
         //         _formIsValid = false;
@@ -68,7 +74,7 @@ export default class EditDialog extends Components.ContextComponent {
         //     }
         // }
 
-        //Email
+        //Path
         if (!_data["path"].length > 0) {
             _formIsValid = false;
             _errors["path"] = "Cannot be empty";
@@ -77,11 +83,11 @@ export default class EditDialog extends Components.ContextComponent {
             const firstChar = _data["path"].charAt(0);
             const lastChar = _data["path"].charAt(_data["path"].length - 1);
 
-            if (!(firstChar === backslash)) {
+            if (firstChar !== backslash) {
                 _formIsValid = false;
                 _errors["path"] = "Path is not valid. Should begin with \"" + backslash + "\"";
             }
-            if (!(lastChar === backslash)) {
+            if (lastChar !== backslash) {
                 _formIsValid = false;
                 _errors["path"] = "Path is not valid. Should end with \"" + backslash + "\"";
             }
@@ -91,8 +97,7 @@ export default class EditDialog extends Components.ContextComponent {
         return _formIsValid;
     };
 
-    handleCancel = (e) => {
-        e.preventDefault();
+    handleCancel = () => {
         this.state.onCancel();
     };
 
@@ -127,14 +132,49 @@ export default class EditDialog extends Components.ContextComponent {
                                        onChange={this.handleChange} required={true}/>
                                 <span style={{color: "red"}}>{this.state.errors["path"]}</span>
                             </div>
+                            <div className="form-group">
+                                <label htmlFor="profile-filefilter" className="control-label">File Filter:</label>
+                                <input type="text" className="form-control" id="profile-filefilter" name="fileFilter"
+                                       value={this.state.data.fileFilter}
+                                       onChange={this.handleChange} required={true}/>
+                                <span style={{color: "red"}}>{this.state.errors["fileFilter"]}</span>
+                            </div>
+                            <div className="form-group">
+                                <Select
+                                    className="form-control"
+                                    id="profile-action"
+                                    name="action"
+                                    required={true}
+                                    options={this.state.actions}
+                                    value={this.state.data.action}
+                                    onChange={this.handleChange.bind(this)}
+                                    onSelect={this.handleChange.bind(this)}
+                                />
+                                <span style={{color: "red"}}>{this.state.errors["action"]}</span>
+                            </div>
                         </form>
                     </div>
                     <div className="modal-footer">
-                        <button type="button" className="btn btn-default" data-dismiss="modal"
-                                onClick={this.handleCancel}>Close
-                        </button>
-                        {!this.state.edit && <button type="submit" className="btn btn-primary" onClick={this.handleSubmit}>Create</button>}
-                        {this.state.edit && <button type="submit" className="btn btn-primary" onClick={this.handleEdit}>Edit</button>}
+                        <Button type="button"
+                                className="btn btn-default"
+                                data-dismiss="modal"
+                                onClick={() => this.handleCancel()}
+                                label="Close"
+                        />
+                        <Button
+                            type="submit"
+                            className="btn btn-primary"
+                            onClick={() => this.handleSubmit()}
+                            label="Create"
+                            hidden={this.state.edit}
+                        />
+                        <Button
+                            type="submit"
+                            className="btn btn-primary"
+                            onClick={() => this.handleEdit()}
+                            label="Edit"
+                            hidden={!this.state.edit}
+                        />
                     </div>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import {Components} from '@opuscapita/service-base-ui';
-import ConfigDataGrid from "../datagridcomponent"
+import {ConfigDataGrid} from "../datagridcomponent"
 import RequestApi from "../helper/RequestApi";
 import {OCAlertsProvider} from '@opuscapita/react-alerts';
 import {SimpleModal} from "@opuscapita/react-overlays";
@@ -44,12 +44,23 @@ export default class SFTPConfigurator extends Components.ContextComponent {
         {
             key: 'description',
             name: 'Description',
-            sortable: true
+            sortable: false
         },
         {
             key: 'path',
             name: 'Path',
             sortable: true
+        },
+        {
+            key: 'fileFilter',
+            name: 'File Filter',
+            sortable: false
+        },
+        {
+            key: 'actionName',
+            name: 'Action',
+            sortable: false,
+            visible: true
         }
     ];
 
@@ -63,10 +74,23 @@ export default class SFTPConfigurator extends Components.ContextComponent {
             rows: [],
             toEdit: null
         };
+        this.request.getEventActions().then((data) => {
+            let _actions = [];
+            data.forEach((action) => {
+                _actions.push({
+                    key: Object.keys(action)[0],
+                    value: Object.values(action)[0],
+                });
+            });
+            this.setState({
+                actions: _actions
+            });
+        });
     };
 
     loadData = () => {
         this.request.getServiceConfigurations().then((data) => {
+            console.log(data);
             this.setState({rows: data});
         });
     };
@@ -115,6 +139,8 @@ export default class SFTPConfigurator extends Components.ContextComponent {
             name: "",
             description: "",
             path: "",
+            fileFilter: "",
+            action: "",
             deleted: false
         }
     };
@@ -163,6 +189,7 @@ export default class SFTPConfigurator extends Components.ContextComponent {
                                                                                            onSubmit={this.add.bind(this)}
                                                                                            onEdit={this.edit.bind(this)}
                                                                                            onCancel={this.cancel.bind(this)}
+                                                                                           actions={this.state.actions}
                                                                                            edit={this.state.edit}
                         />}
                     </div>

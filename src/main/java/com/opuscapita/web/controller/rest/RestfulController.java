@@ -1,6 +1,5 @@
 package com.opuscapita.web.controller.rest;
 
-import com.opuscapita.sftp.model.SftpServiceConfigActionRepository;
 import com.opuscapita.sftp.model.SftpServiceConfigEntity;
 import com.opuscapita.sftp.model.SftpServiceConfigRepository;
 import org.slf4j.Logger;
@@ -23,15 +22,12 @@ public class RestfulController extends AbstractRestController {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private SftpServiceConfigRepository serviceConfigRepository;
-    private SftpServiceConfigActionRepository serviceConfigActionRepository;
 
     @Autowired
     public RestfulController(
-            SftpServiceConfigRepository _sftpServiceConfigRepository,
-            SftpServiceConfigActionRepository _sftpServiceConfigActionRepository
+            SftpServiceConfigRepository _sftpServiceConfigRepository
     ) {
         this.serviceConfigRepository = _sftpServiceConfigRepository;
-        this.serviceConfigActionRepository = _sftpServiceConfigActionRepository;
     }
 
     @GetMapping("/listHeaders")

@@ -3,28 +3,28 @@ const webpack = require('webpack');
 const Visualizer = require('webpack-visualizer-plugin');
 
 module.exports = {
-    entry: ['babel-polyfill', './src/main/client/index.js'],
+    devtool: 'eval-source-map',
+    cache: true,
+    // entry: ['babel-polyfill', './src/main/client/index.js'],
+    // output: {
+    //     path: path.resolve(__dirname, './src/main/resources/static'),
+    //     publicPath: '/static',
+    //     filename: 'built/bundle.js'
+    // },
+    entry: {
+        app: ['babel-polyfill', './src/main/client/index.js'],
+        configurator: ['babel-polyfill', './src/main/client/components/configurator/index.js']
+    },
     devtool: 'eval-source-map',
     cache: true,
     output: {
         path: path.resolve(__dirname, './src/main/resources/static'),
         publicPath: '/static',
-        filename: 'built/bundle.js'
+        filename: 'built/sftp-gateway-[name].js',
+        library: 'sftp-gateway-[name]',
+        libraryTarget: 'umd',
+        umdNamedDefine: true
     },
-    // entry: {
-    //     app: ['babel-polyfill', './src/main/client/index.js'],
-    //     configurator: './src/main/client/components/configurator/index.js'
-    // },
-    // devtool: 'eval-source-map',
-    // cache: true,
-    // output: {
-    //     path: path.resolve(__dirname, './src/main/resources/static'),
-    //     publicPath: '/static',
-    //     filename: 'built/sftp-gateway-[name].js',
-    //     library: 'sftp-gateway-[name]',
-    //     libraryTarget: 'umd',
-    //     umdNamedDefine: true
-    // },
 
     //exclude empty dependencies, require for Joi
     node: {

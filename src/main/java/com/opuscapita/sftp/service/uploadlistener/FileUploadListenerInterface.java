@@ -7,8 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 
 public interface FileUploadListenerInterface {
-    String title = "";
-    Logger log = LoggerFactory.getLogger(FileUploadListenerInterface.class);
-
     void onPathReady(Path path, ServerSession session);
+    String getId();
+    String getTitle();
 }

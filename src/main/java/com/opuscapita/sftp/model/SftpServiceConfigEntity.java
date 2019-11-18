@@ -43,6 +43,19 @@ public class SftpServiceConfigEntity {
     private String path;
 
     @Getter
-    @OneToMany(mappedBy = "serviceConfiguration", fetch = FetchType.EAGER)
-    private Set<SftpServiceConfigAction> ruleActionSet;
+    @Setter
+    private String fileFilter;
+
+    @Getter
+    @Setter
+    private String action;
+
+    @Getter
+    @Setter
+    private String actionName;
+
+//
+//    @Getter
+//    @OneToMany(mappedBy = "serviceConfiguration", fetch = FetchType.EAGER)
+//    private Set<SftpServiceConfigAction> ruleActionSet;
 }

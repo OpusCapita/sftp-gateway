@@ -1,3 +1,1 @@
-import ConfigDataGrid from './ConfigDataGrid.react';
-
-export default ConfigDataGrid;
+export {default as ConfigDataGrid} from './ConfigDataGrid.react';
