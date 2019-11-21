@@ -1,3 +1,3 @@
-export {default as Button} from '../component/Button.react';
-export {default as Select} from '../component/Select.react';
-export {default as Option} from '../component/Option.react';
+export {default as Button} from './Button.react.jsx';
+export {default as Select} from './Select.react.jsx';
+export {default as Option} from './Option.react.jsx';

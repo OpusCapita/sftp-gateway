@@ -1,3 +1,1 @@
-import EditDialog from "./EditDialog.react";
-
-export default EditDialog;
+export {default as EditDialog} from 'EditDialog.react';

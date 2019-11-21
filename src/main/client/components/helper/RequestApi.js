@@ -1,9 +1,10 @@
 import request from 'superagent';
+// const request = import('superagent');
 
 export default class RequestApi {
     _request = request;
 
-    _serviceUrl = '/sftp-gateway/api';
+    _serviceUrl = './api';
     _serviceUrlDev = 'http://localhost:2223/api';
 
     async getServiceConfigurations() {
@@ -37,5 +38,9 @@ export default class RequestApi {
         }).catch((error) => {
             return error;
         });
+    }
+
+    async checkBackendAvailability() {
+        return this._request.get(this._serviceUrl + '/health/check');
     }
 }

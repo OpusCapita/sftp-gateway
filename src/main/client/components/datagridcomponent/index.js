@@ -1,1 +1,1 @@
-export {default as ConfigDataGrid} from './ConfigDataGrid.react';
+export {default as ConfigDataGrid} from './ConfigDataGrid.react.jsx';

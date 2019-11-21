@@ -1,3 +1,1 @@
-import SFTPConfigurator from './SFTPConfigurator.react';
-
-export default SFTPConfigurator;
+export {default as SFTPConfigurator} from './SFTPConfigurator.react.jsx';

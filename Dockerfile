@@ -26,11 +26,12 @@ ADD src $WRKDIR/src
 
 ADD package.json $WRKDIR/package.json
 ADD package-lock.json $WRKDIR/package-lock.json
-ADD webpack.config.js $WRKDIR/webpack.config.js
+ADD webpack.config.dev.js $WRKDIR/webpack.config.dev.js
+ADD webpack.config.prod.js $WRKDIR/webpack.config.prod.js
 ADD pom.xml $WRKDIR/pom.xml
 
 RUN npm install
-RUN npm run webpack-build-prod
+RUN npm run webpack-build-dev
 
 # Adding source, compile and package into a fat jar
 RUN mvn clean package

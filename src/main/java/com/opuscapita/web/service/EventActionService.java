@@ -1,7 +1,6 @@
 package com.opuscapita.web.service;
 
 import com.opuscapita.sftp.service.uploadlistener.FileUploadListenerInterface;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.SimpleBeanDefinitionRegistry;
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
@@ -12,9 +11,11 @@ import org.springframework.stereotype.Service;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class EventActionService {
+
 
     public class EventEntry extends AbstractMap.SimpleEntry {
         public EventEntry(Object key, Object value) {
@@ -28,6 +29,17 @@ public class EventActionService {
                     "value:" + this.getValue() +
                     "}";
         }
+    }
+
+    public EventEntry getFileUploadListenerById(String evntActionId) {
+        List<EventEntry> entryList = this.listFileUploadListener();
+        AtomicReference<EventEntry> eventEntry = new AtomicReference<>();
+        entryList.forEach(entry -> {
+            if (entry.getKey().equals(evntActionId)) {
+                eventEntry.set(entry);
+            }
+        });
+        return eventEntry.get();
     }
 
     public List<EventEntry> listFileUploadListener() {

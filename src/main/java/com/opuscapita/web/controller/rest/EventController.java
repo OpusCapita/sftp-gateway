@@ -31,18 +31,17 @@ public class EventController extends AbstractRestController {
 
     @GetMapping(value = "/{evntActionId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ResponseEntity<List<SftpServiceConfigEntity>> getAllEventsActions(
+    public ResponseEntity<EventActionService.EventEntry> getAllEventsActions(
             @RequestHeader(name = "X-User-Id-Token") String jwt,
             @PathVariable String evntActionId
     ) {
-        logger.info(jwt);
-        logger.info(evntActionId);
         if (Objects.isNull(jwt)) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         if (!this.canAccess(jwt)) {
             new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
+        EventActionService.EventEntry eventEntry = this.eventActionService.getFileUploadListenerById(evntActionId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -51,7 +50,6 @@ public class EventController extends AbstractRestController {
     public ResponseEntity<List<EventActionService.EventEntry>> getAllEventsActions(
             @RequestHeader(name = "X-User-Id-Token") String jwt
     ) {
-        logger.info(jwt);
         if (Objects.isNull(jwt)) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
