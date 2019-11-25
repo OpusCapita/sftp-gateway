@@ -33,7 +33,6 @@ class EditDialog extends Components.ContextComponent {
 
         const _row = this.state.data;
         _row[name] = value;
-        console.log(_row);
         this.setState({
             data: _row,
             error: this.error
@@ -48,7 +47,6 @@ class EditDialog extends Components.ContextComponent {
     };
 
     handleEdit = () => {
-        console.log(this.state.data);
         if (this.handleValidation()) {
             this.state.onEdit(this.state.data);
         }

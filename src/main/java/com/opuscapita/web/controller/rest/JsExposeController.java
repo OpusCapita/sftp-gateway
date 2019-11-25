@@ -32,7 +32,6 @@ public class JsExposeController extends AbstractRestController {
     public ResponseEntity<String> getJs(
             @PathVariable String js
     ) {
-        logger.info(js);
         List<String> jsFiles;
         ResponseEntity<String> responseEntity;
         try {

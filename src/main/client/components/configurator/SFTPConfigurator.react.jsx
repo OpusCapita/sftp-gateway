@@ -1,9 +1,7 @@
 import React from 'react';
-import { Components } from '@opuscapita/service-base-ui';
+import {Components} from '@opuscapita/service-base-ui';
 import {ConfigDataGrid} from "../datagridcomponent"
 import RequestApi from "../helper/RequestApi";
-import {OCAlertsProvider, OCAlert} from '@opuscapita/react-alerts';
-import {SimpleModal} from "@opuscapita/react-overlays";
 import EditDialog from "../dialog/EditDialog.react";
 
 // const ConfigDataGrid = import('../datagridcomponent');
@@ -72,8 +70,12 @@ class SFTPConfigurator extends Components.ContextComponent {
 
     constructor(props, context) {
         super(props);
+        console.log('props', props);
+        console.log('context', context);
         this.loadData();
         this.state = {
+            ...props,
+            ...context,
             loadingState: false,
             endState: false,
             showModal: false,
@@ -81,6 +83,7 @@ class SFTPConfigurator extends Components.ContextComponent {
             toEdit: null,
             actions: []
         };
+        console.log('state', this.state);
     };
 
     loadData = () => {
@@ -97,23 +100,28 @@ class SFTPConfigurator extends Components.ContextComponent {
                     actions: _actions
                 });
             }).catch((error) => {
-                OCAlert.alertError('Cannot load Data from Backend!\n');
+                this.props.showNotification('Backend is not available', 'error', 4);
+                // OCAlert.alertError('Cannot load Data from Backend!\n');
             });
             this.request.getServiceConfigurations().then((data) => {
                 this.setState({rows: data});
             }).catch((error) => {
-                OCAlert.alertError('Cannot load Data from Backend!');
+                this.props.showNotification('Backend is not available', 'error', 4);
+                // OCAlert.alertError('Cannot load Data from Backend!');
             });
         }).catch(() => {
-            OCAlert.alertError('Backend is not available');
+            this.props.showNotification('Backend is not available', 'error', 4);
+            // OCAlert.alertError('Backend is not available');
         });
     };
 
     save = (rows) => {
         this.request.saveServiceConfigurations(rows).then((_rows) => {
             this.setState({rows: _rows});
+            this.props.showNotification('Operation was successful!', 'success', 4);
         }).catch((error) => {
-            OCAlert.alertError('Operation was not successful!');
+            this.props.showNotification('Operation was not successful!', 'warning', 4);
+            // OCAlert.alertError('Operation was not successful!');
         });
     };
 
@@ -192,26 +200,21 @@ class SFTPConfigurator extends Components.ContextComponent {
                     onAddRow={this.addRow.bind(this)}
                     onReload={this.loadData.bind(this)}
                 />
-                <OCAlertsProvider/>
 
-                <SimpleModal
-                    isShow={this.state.showModal}
-                    style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}
+                <div
+                    style={{padding: '24px', backgroundColor: 'transparent'}}
                 >
-                    <div
-                        style={{padding: '24px', backgroundColor: 'transparent'}}
-                    >
-                        {this.state.showModal && this.state.toEdit !== null && <EditDialog data={this.state.toEdit}
-                                                                                           onSubmit={this.add.bind(this)}
-                                                                                           onEdit={this.edit.bind(this)}
-                                                                                           onCancel={this.cancel.bind(this)}
-                                                                                           actions={this.state.actions}
-                                                                                           edit={this.state.edit}
-                        />}
-                    </div>
-                </SimpleModal>
+                    {this.state.showModal && this.state.toEdit !== null && <EditDialog data={this.state.toEdit}
+                                                                                       onSubmit={this.add.bind(this)}
+                                                                                       onEdit={this.edit.bind(this)}
+                                                                                       onCancel={this.cancel.bind(this)}
+                                                                                       actions={this.state.actions}
+                                                                                       edit={this.state.edit}
+                    />}
+                </div>
             </div>
         );
     };
 }
+
 export default SFTPConfigurator;

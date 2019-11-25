@@ -8,7 +8,7 @@ export default class RequestApi {
     _serviceUrlDev = 'http://localhost:2223/api';
 
     async getServiceConfigurations() {
-        return await this._request.get(this._serviceUrl + '/').then((response) => {
+        return await this._request.get(this._serviceUrl + '/sftp/').then((response) => {
             return response.body;
         }).catch((error) => {
             return error;
@@ -16,7 +16,7 @@ export default class RequestApi {
     }
 
     async saveServiceConfigurations(data) {
-        return await this._request.post(this._serviceUrl + '/').send(data).then((response) => {
+        return await this._request.post(this._serviceUrl + '/sftp/').send(data).then((response) => {
             return response.body;
         }).catch((error) => {
             return error;
@@ -24,8 +24,7 @@ export default class RequestApi {
     }
 
     async deleteServiceConfigurations(data) {
-        return await this._request.delete(this._serviceUrl + '/').send(data).then((response) => {
-            console.log('DELETE', response.body);
+        return await this._request.delete(this._serviceUrl + '/sftp/').send(data).then((response) => {
             return response.body;
         }).catch((error) => {
             return error;

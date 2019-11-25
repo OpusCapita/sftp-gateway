@@ -1,8 +1,22 @@
 import React from 'react';
+import {Containers} from '@opuscapita/service-base-ui';
 import {SFTPConfigurator} from "./components/configurator";
-// const SFTPConfigurator = import('./components/configurator');
+import {Route} from 'react-router';
 
-const App = () => (
-    <SFTPConfigurator businessPartnerId='OC001' serviceProfileId='SP_001_DE'/>
+const configurator = () => {
+    return (
+        <div>
+            <SFTPConfigurator
+                businessPartnerId='OC001'
+                serviceProfileId='SP_001_DE'
+            />
+        </div>
+    );
+};
+
+const App = (props) => (
+    <Containers.ServiceLayout serviceName="sftp-gateway">
+        <Route path="/" component={configurator}/>
+    </Containers.ServiceLayout>
 );
 export default App;
