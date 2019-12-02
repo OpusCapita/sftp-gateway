@@ -100,28 +100,24 @@ class SFTPConfigurator extends Components.ContextComponent {
                     actions: _actions
                 });
             }).catch((error) => {
-                this.props.showNotification('Backend is not available', 'error', 4);
-                // OCAlert.alertError('Cannot load Data from Backend!\n');
+                this.state.showNotification('Backend is not available', 'error', 4);
             });
             this.request.getServiceConfigurations().then((data) => {
                 this.setState({rows: data});
             }).catch((error) => {
-                this.props.showNotification('Backend is not available', 'error', 4);
-                // OCAlert.alertError('Cannot load Data from Backend!');
+                this.state.showNotification('Backend is not available', 'error', 4);
             });
         }).catch(() => {
-            this.props.showNotification('Backend is not available', 'error', 4);
-            // OCAlert.alertError('Backend is not available');
+            this.state.showNotification('Backend is not available', 'error', 4);
         });
     };
 
     save = (rows) => {
         this.request.saveServiceConfigurations(rows).then((_rows) => {
             this.setState({rows: _rows});
-            this.props.showNotification('Operation was successful!', 'success', 4);
+            this.state.showNotification('Operation was successful!', 'success', 4);
         }).catch((error) => {
-            this.props.showNotification('Operation was not successful!', 'warning', 4);
-            // OCAlert.alertError('Operation was not successful!');
+            this.state.showNotification('Operation was not successful!', 'warning', 4);
         });
     };
 
@@ -188,9 +184,30 @@ class SFTPConfigurator extends Components.ContextComponent {
 
     render() {
         return (
-            <div className='row' style={{
-                overflow: 'hidden'
-            }}>
+            <div className='row'>
+                <div
+                    style={{
+                        padding: '24px',
+                        backgroundColor: 'transparent',
+                        overflow: 'hidden',
+                        display: 'inline-block',
+                        verticalAlign: 'middle',
+                        position: 'absolute'
+                    }}
+                >
+                    {
+                        this.state.showModal &&
+                        this.state.toEdit !== null &&
+                        <EditDialog
+                            data={this.state.toEdit}
+                            onSubmit={this.add.bind(this)}
+                            onEdit={this.edit.bind(this)}
+                            onCancel={this.cancel.bind(this)}
+                            actions={this.state.actions}
+                            edit={this.state.edit}
+                        />
+                    }
+                </div>
                 <ConfigDataGrid
                     columns={this.columns}
                     rows={this.state.rows}
@@ -200,18 +217,6 @@ class SFTPConfigurator extends Components.ContextComponent {
                     onAddRow={this.addRow.bind(this)}
                     onReload={this.loadData.bind(this)}
                 />
-
-                <div
-                    style={{padding: '24px', backgroundColor: 'transparent'}}
-                >
-                    {this.state.showModal && this.state.toEdit !== null && <EditDialog data={this.state.toEdit}
-                                                                                       onSubmit={this.add.bind(this)}
-                                                                                       onEdit={this.edit.bind(this)}
-                                                                                       onCancel={this.cancel.bind(this)}
-                                                                                       actions={this.state.actions}
-                                                                                       edit={this.state.edit}
-                    />}
-                </div>
             </div>
         );
     };

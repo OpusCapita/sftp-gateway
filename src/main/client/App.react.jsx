@@ -1,7 +1,9 @@
 import React from 'react';
-import {Containers} from '@opuscapita/service-base-ui';
+// import {Containers} from '@opuscapita/service-base-ui';
 import {SFTPConfigurator} from "./components/configurator";
 import {Route} from 'react-router';
+
+const Containers = require('@opuscapita/service-base-ui');
 
 const configurator = () => {
     return (

@@ -1,30 +1,22 @@
 const path = require('path');
 const webpack = require('webpack');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const Visualizer = require('webpack-visualizer-plugin');
 
 module.exports = {
-    // entry: ['babel-polyfill', './src/main/client/index.js'],
-    // output: {
-    //     path: path.resolve(__dirname, './src/main/resources/static'),
-    //     publicPath: '/static',
-    //     filename: 'built/bundle.js'
-    // },
     performance: {
         maxAssetSize: 100000,
         maxEntrypointSize: 100000,
         hints: "warning"
     },
     entry: {
-        app: ['./src/main/client/index.js'],
-        configurator: ['babel-polyfill', './src/main/client/components/configurator/index.js']
+        app: ['babel-polyfill', './src/main/client/index.js'],
+        configurator: ['./src/main/client/components/configurator/index.js']
     },
     output: {
-        path: path.resolve(__dirname, './src/main/resources/static'),
-        publicPath: '/static',
-        filename: 'built/sftp-gateway-[name].js',
-        chunkFilename: 'built/sftp-gateway-[name].js',
-        library: 'sftp-gateway-[name]',
+        path: path.resolve(__dirname, './src/main/resources/static/built'),
+        publicPath: '/built/',
+        filename: '[name].js',
+        library: 'sftp-gateway',
         libraryTarget: 'umd',
         umdNamedDefine: true
     },

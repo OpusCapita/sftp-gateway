@@ -1,8 +1,8 @@
 import React from "react";
 
-import { Components } from '@opuscapita/service-base-ui';
+import {Components} from '@opuscapita/service-base-ui';
 import {Button, Select} from '../component';
-
+import './style.css';
 // const Components = import('@opuscapita/service-base-ui');
 // const {Button, Select} = import('../component');
 
@@ -105,78 +105,81 @@ class EditDialog extends Components.ContextComponent {
 
     render() {
         return (
-            <div className="modal-dialog" role="document">
-                <div className="modal-content">
-                    <div className="modal-header">
-                        <button type="button" className="close" data-dismiss="modal" aria-label="Close"
-                                onClick={this.handleCancel}><span
-                            aria-hidden="true">&times;</span></button>
-                        <h4 className="modal-title" id="exampleModalLabel">{this.state.title}</h4>
-                    </div>
-                    <div className="modal-body">
-                        <form>
-                            <div className="form-group">
-                                <label htmlFor="profile-name" className="control-label">Name:</label>
-                                <input type="text" className="form-control" id="profile-name" name="name"
-                                       value={this.state.data.name}
-                                       onChange={this.handleChange} required={true}/>
-                                <span style={{color: "red"}}>{this.state.errors["name"]}</span>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="profile-description" className="control-label">Description:</label>
-                                <textarea className="form-control" id="profile-description" name="description"
-                                          onChange={this.handleChange} defaultValue={this.state.data.description}/>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="profile-path" className="control-label">Path:</label>
-                                <input type="text" className="form-control" id="profile-path" name="path"
-                                       value={this.state.data.path}
-                                       onChange={this.handleChange} required={true}/>
-                                <span style={{color: "red"}}>{this.state.errors["path"]}</span>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="profile-filefilter" className="control-label">File Filter:</label>
-                                <input type="text" className="form-control" id="profile-filefilter" name="fileFilter"
-                                       value={this.state.data.fileFilter}
-                                       onChange={this.handleChange} required={true}/>
-                                <span style={{color: "red"}}>{this.state.errors["fileFilter"]}</span>
-                            </div>
-                            <div className="form-group">
-                                <Select
-                                    className="form-control"
-                                    id="profile-action"
-                                    name="action"
-                                    required={true}
-                                    options={this.state.actions}
-                                    value={this.state.data.action}
-                                    onChange={this.handleChange.bind(this)}
-                                    onSelect={this.handleChange.bind(this)}
-                                />
-                                <span style={{color: "red"}}>{this.state.errors["action"]}</span>
-                            </div>
-                        </form>
-                    </div>
-                    <div className="modal-footer">
-                        <Button type="button"
-                                className="btn btn-default"
-                                data-dismiss="modal"
-                                onClick={() => this.handleCancel()}
-                                label="Close"
-                        />
-                        <Button
-                            type="submit"
-                            className="btn btn-primary"
-                            onClick={() => this.handleSubmit()}
-                            label="Create"
-                            hidden={this.state.edit}
-                        />
-                        <Button
-                            type="submit"
-                            className="btn btn-primary"
-                            onClick={() => this.handleEdit()}
-                            label="Edit"
-                            hidden={!this.state.edit}
-                        />
+            <div className='overlay'>
+                <div className="modal-dialog overlay-content" role="dialog">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <button type="button" className="close" data-dismiss="modal" aria-label="Close"
+                                    onClick={this.handleCancel}><span
+                                aria-hidden="true">&times;</span></button>
+                            <h4 className="modal-title" id="exampleModalLabel">{this.state.title}</h4>
+                        </div>
+                        <div className="modal-body">
+                            <form>
+                                <div className="form-group">
+                                    <label htmlFor="profile-name" className="control-label">Name:</label>
+                                    <input type="text" className="form-control" id="profile-name" name="name"
+                                           value={this.state.data.name}
+                                           onChange={this.handleChange} required={true}/>
+                                    <span style={{color: "red"}}>{this.state.errors["name"]}</span>
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="profile-description" className="control-label">Description:</label>
+                                    <textarea className="form-control" id="profile-description" name="description"
+                                              onChange={this.handleChange} defaultValue={this.state.data.description}/>
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="profile-path" className="control-label">Path:</label>
+                                    <input type="text" className="form-control" id="profile-path" name="path"
+                                           value={this.state.data.path}
+                                           onChange={this.handleChange} required={true}/>
+                                    <span style={{color: "red"}}>{this.state.errors["path"]}</span>
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="profile-filefilter" className="control-label">File Filter:</label>
+                                    <input type="text" className="form-control" id="profile-filefilter"
+                                           name="fileFilter"
+                                           value={this.state.data.fileFilter}
+                                           onChange={this.handleChange} required={true}/>
+                                    <span style={{color: "red"}}>{this.state.errors["fileFilter"]}</span>
+                                </div>
+                                <div className="form-group">
+                                    <Select
+                                        className="form-control"
+                                        id="profile-action"
+                                        name="action"
+                                        required={true}
+                                        options={this.state.actions}
+                                        value={this.state.data.action}
+                                        onChange={this.handleChange.bind(this)}
+                                        onSelect={this.handleChange.bind(this)}
+                                    />
+                                    <span style={{color: "red"}}>{this.state.errors["action"]}</span>
+                                </div>
+                            </form>
+                        </div>
+                        <div className="modal-footer">
+                            <Button type="button"
+                                    className="btn btn-default"
+                                    data-dismiss="modal"
+                                    onClick={() => this.handleCancel()}
+                                    label="Close"
+                            />
+                            <Button
+                                type="submit"
+                                className="btn btn-primary"
+                                onClick={() => this.handleSubmit()}
+                                label="Create"
+                                hidden={this.state.edit}
+                            />
+                            <Button
+                                type="submit"
+                                className="btn btn-primary"
+                                onClick={() => this.handleEdit()}
+                                label="Edit"
+                                hidden={!this.state.edit}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

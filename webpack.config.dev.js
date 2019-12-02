@@ -3,19 +3,13 @@ const webpack = require('webpack');
 const Visualizer = require('webpack-visualizer-plugin');
 
 module.exports = {
-    // entry: ['babel-polyfill', './src/main/client/index.js'],
-    // output: {
-    //     path: path.resolve(__dirname, './src/main/resources/static'),
-    //     publicPath: '/static',
-    //     filename: 'built/app.js'
-    // },
     performance: {
-        maxAssetSize: 100000,
-        maxEntrypointSize: 100000,
+        maxAssetSize: 150000,
+        maxEntrypointSize: 150000,
         hints: "warning"
     },
     entry: {
-        app: './src/main/client/index.js',
+        app: ['babel-polyfill', './src/main/client/index.js'],
         configurator: './src/main/client/components/configurator/index.js'
     },
     output: {
@@ -26,28 +20,31 @@ module.exports = {
         libraryTarget: 'umd',
         umdNamedDefine: true
     },
-    externals: {
-        react: {
-            commonjs: "react",
-            commonjs2: "react",
-            amd: "React",
-            root: "React"
-        },
-        "react-dom": {
-            commonjs: "react-dom",
-            commonjs2: "react-dom",
-            amd: "ReactDOM",
-            root: "ReactDOM"
-        },
-        "react-router": {
-            commonjs: "react-router",
-            commonjs2: "react-router"
-        },
-        "@opuscapita/service-base-ui": {
-            commonjs: "@opuscapita/service-base-ui",
-            commonjs2: "@opuscapita/service-base-ui"
-        }
-    },
+    // externals: {
+    //     react: {
+    //         commonjs: "react",
+    //         commonjs2: "react",
+    //         amd: "React",
+    //         root: "React"
+    //     },
+    //     "react-dom": {
+    //         commonjs: "react-dom",
+    //         commonjs2: "react-dom",
+    //         amd: "ReactDOM",
+    //         root: "ReactDOM"
+    //     },
+    //     "react-router": {
+    //         commonjs: "react-router",
+    //         commonjs2: "react-router"
+    //     },
+    //     "@opuscapita/service-base-ui": {
+    //         commonjs: "@opuscapita/service-base-ui",
+    //         commonjs2: "@opuscapita/service-base-ui",
+    //         amd: "@opuscapita/service-base-ui",
+    //         root: "@opuscapita/service-base-ui",
+    //         umd: "@opuscapita/service-base-ui"
+    //     }
+    // },
     node: {
         net: 'empty',
         tls: 'empty',
@@ -75,12 +72,12 @@ module.exports = {
     resolve: {
         modules: ['NODE_PATH', 'node_modules'],
         extensions: ['.js', '.jsx'],
-        alias: {
-            'react': path.resolve(__dirname, './node_modules/react'),
-            'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
-            'react-router': path.resolve(__dirname, './node_modules/react-router'),
-            '@opuscapita/service-base-ui': path.resolve(__dirname, './node_modules/@opuscapita/service-base-ui')
-        }
+        // alias: {
+        //     'react': path.resolve(__dirname, './node_modules/react'),
+        //     'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
+        //     'react-router': path.resolve(__dirname, './node_modules/react-router'),
+        //     '@opuscapita/service-base-ui': path.resolve('@opuscapita/service-base-ui')
+        // }
     },
 
     resolveLoader: {
