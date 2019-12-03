@@ -12,7 +12,6 @@ public class SimpleUploadListener extends AbstractFileUploadListener implements 
 
     @Override
     public void onPathReady(Path path, ServerSession session) {
-
     }
 
     @Override

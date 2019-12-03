@@ -1,5 +1,5 @@
 import React, {PropTypes} from 'react';
-import { Components } from '@opuscapita/service-base-ui';
+import {Components} from '@opuscapita/service-base-ui';
 import {Option} from '../component';
 
 // import React from 'react';
@@ -7,7 +7,7 @@ import {Option} from '../component';
 // const Components = import('@opuscapita/service-base-ui');
 // const Option = import('../component');
 
-class Select extends Components.ContextComponent{
+class Select extends Components.ContextComponent {
 
     static propTypes = {
         id: PropTypes.string.isRequired,
@@ -37,7 +37,6 @@ class Select extends Components.ContextComponent{
         label: '',
     };
 
-
     state = {};
 
     constructor(props) {
@@ -48,6 +47,7 @@ class Select extends Components.ContextComponent{
     }
 
     render() {
+        console.log('renderSelect', this.state);
         return (
             !this.state.hidden &&
             <div>
@@ -57,7 +57,14 @@ class Select extends Components.ContextComponent{
                         name={this.state.name}
                         required={this.required}
                         onChange={(e) => this.state.onChange(e)}
+                        onSelect={(e) => this.state.onSelect(e)}
                         value={this.state.value}>
+                    <Option
+                        key=''
+                        value=''
+                        label='None'
+                        disabled={true}
+                    />
                     {this.state.options.map((object) => {
                         return (<Option
                             key={object.key}
@@ -71,4 +78,5 @@ class Select extends Components.ContextComponent{
         );
     };
 }
+
 export default Select;

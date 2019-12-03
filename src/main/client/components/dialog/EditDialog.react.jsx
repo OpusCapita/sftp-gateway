@@ -3,8 +3,6 @@ import React from "react";
 import {Components} from '@opuscapita/service-base-ui';
 import {Button, Select} from '../component';
 import './style.css';
-// const Components = import('@opuscapita/service-base-ui');
-// const {Button, Select} = import('../component');
 
 class EditDialog extends Components.ContextComponent {
     state = {};
@@ -26,7 +24,23 @@ class EditDialog extends Components.ContextComponent {
         };
     }
 
+    handleSelect = (event) => {
+        console.log('handleSelect', event);
+
+        const target = event.target;
+        const value = target.value;
+        const _row = this.state.data;
+        _row['action'] = value;
+        _row['actionName'] = this.state.actions.find(action => action.key === value).value;
+        this.setState({
+            data: _row,
+            error: this.error
+        });
+    };
+
     handleChange = (event) => {
+        console.log('handleChange', event);
+
         const target = event.target;
         const value = target.type === 'checkbox' ? target.checked : target.value;
         const name = target.name;
@@ -38,7 +52,6 @@ class EditDialog extends Components.ContextComponent {
             error: this.error
         });
     };
-
 
     handleSubmit = () => {
         if (this.handleValidation()) {
@@ -104,6 +117,7 @@ class EditDialog extends Components.ContextComponent {
     };
 
     render() {
+        console.log('render()', this.state);
         return (
             <div className='overlay'>
                 <div className="modal-dialog overlay-content" role="dialog">
@@ -151,8 +165,7 @@ class EditDialog extends Components.ContextComponent {
                                         required={true}
                                         options={this.state.actions}
                                         value={this.state.data.action}
-                                        onChange={this.handleChange.bind(this)}
-                                        onSelect={this.handleChange.bind(this)}
+                                        onChange={this.handleSelect.bind(this)}
                                     />
                                     <span style={{color: "red"}}>{this.state.errors["action"]}</span>
                                 </div>

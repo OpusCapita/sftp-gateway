@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +26,7 @@ public class JsExposeController extends AbstractRestController {
         this.jsLoaderService = _jsLoaderService;
     }
 
-    @GetMapping(value = "/{js}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/{js}", produces = "application/javascript")
     @ResponseBody
     public ResponseEntity<String> getJs(
             @PathVariable String js
@@ -37,6 +36,22 @@ public class JsExposeController extends AbstractRestController {
         try {
             jsFiles = this.jsLoaderService.getResourceFiles("/static/built/" + js);
             responseEntity = new ResponseEntity<>(jsFiles.toString(), HttpStatus.OK);
+        } catch (IOException | NullPointerException e) {
+            responseEntity = new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return responseEntity;
+    }
+
+    @GetMapping(value = "/fs/{js}", produces = "application/javascript")
+    @ResponseBody
+    public ResponseEntity<String> getJsFromFileSystem(
+            @PathVariable String js
+    ) {
+        String jsFile;
+        ResponseEntity<String> responseEntity;
+        try {
+            jsFile = this.jsLoaderService.getResourceFromFileSystem(js);
+            responseEntity = new ResponseEntity<>(jsFile, HttpStatus.OK);
         } catch (IOException | NullPointerException e) {
             responseEntity = new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

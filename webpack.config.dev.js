@@ -4,8 +4,8 @@ const Visualizer = require('webpack-visualizer-plugin');
 
 module.exports = {
     performance: {
-        maxAssetSize: 150000,
-        maxEntrypointSize: 150000,
+        maxAssetSize: 4096000,
+        maxEntrypointSize: 4096000,
         hints: "warning"
     },
     entry: {

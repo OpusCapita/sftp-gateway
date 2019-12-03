@@ -4,13 +4,13 @@ const Visualizer = require('webpack-visualizer-plugin');
 
 module.exports = {
     performance: {
-        maxAssetSize: 100000,
-        maxEntrypointSize: 100000,
-        hints: "warning"
+        maxAssetSize: 4096000,
+        maxEntrypointSize: 4096000,
+        hints: "error"
     },
     entry: {
         app: ['babel-polyfill', './src/main/client/index.js'],
-        configurator: ['./src/main/client/components/configurator/index.js']
+        configurator: './src/main/client/components/configurator/index.js'
     },
     output: {
         path: path.resolve(__dirname, './src/main/resources/static/built'),
@@ -20,8 +20,6 @@ module.exports = {
         libraryTarget: 'umd',
         umdNamedDefine: true
     },
-
-    //exclude empty dependencies, require for Joi
     node: {
         net: 'empty',
         tls: 'empty',
@@ -37,15 +35,9 @@ module.exports = {
             'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
         }),
         new webpack.optimize.OccurrenceOrderPlugin(true),
-        /*new webpack.optimize.CommonsChunkPlugin({
-            name: 'vendor'
-        }),*/
-        new Visualizer({
-            filename: './statistics.html'
-        }),
         new webpack.LoaderOptionsPlugin({
             minimize: true,
-            debug: true
+            debug: false
         })
     ],
 
@@ -69,13 +61,22 @@ module.exports = {
                 test: /.jsx?$/,
                 loader: 'babel-loader',
                 include: [
-                    path.join(__dirname, 'src')
+                    path.join(__dirname, 'src/main/client')
                 ],
-                // exclude: /node_modules/,
+                exclude: /node_modules/,
                 options: {
                     compact: true,
                     presets: [
-                        ['env', {'targets': {'node': 8, 'uglify': true}, 'modules': 'umd'}],
+                        [
+                            'env',
+                            {
+                                'targets': {
+                                    'node': 8,
+                                    'uglify': true
+                                },
+                                'modules': false
+                            }
+                        ],
                         'stage-0',
                         'react'
                     ],

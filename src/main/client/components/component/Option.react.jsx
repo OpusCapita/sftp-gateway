@@ -19,7 +19,6 @@ class Option extends Components.ContextComponent {
         selected: false
     };
 
-
     state = {};
 
     constructor(props) {

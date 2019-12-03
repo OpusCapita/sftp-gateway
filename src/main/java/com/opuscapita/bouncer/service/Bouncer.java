@@ -91,23 +91,8 @@ public class Bouncer implements BouncerInterface {
         if (this.getPermissionMap().isEmpty()) {
             throw new EmptyPermissionsException("Permissions does not exists");
         }
-//        do {
-//            try {
         log.info("Trying to register the Permissions: {}", retryCounter + 1);
         this.serviceClient.sendEvent(this.toString());
-//            } catch (PermissionsNotRegistered ex) {
-//                retryCounter++;
-//                if (retryCounter >= config.getRetryCount()) {
-//                    throw ex;
-//                } else {
-//                    try {
-//                        wait(config.getRetryTimeout());
-//                    } catch (InterruptedException e) {
-//                        throw ex;
-//                    }
-//                }
-//            }
-//        } while (retryCounter < config.getRetryCount());
     }
 
     @Override

@@ -4,13 +4,6 @@ import {ConfigDataGrid} from "../datagridcomponent"
 import RequestApi from "../helper/RequestApi";
 import EditDialog from "../dialog/EditDialog.react";
 
-// const ConfigDataGrid = import('../datagridcomponent');
-// const RequestApi = import('../helper/RequestApi');
-// const {OCAlertsProvider, OCAlert} = import('@opuscapita/react-alerts')
-// const SimpleModal = import('@opuscapita/react-overlays');
-// const EditDialog = import('../dialog');
-// const Components = import('@opuscapita/service-base-ui');
-
 class SFTPConfigurator extends Components.ContextComponent {
     request = new RequestApi();
     state = {};
@@ -113,10 +106,11 @@ class SFTPConfigurator extends Components.ContextComponent {
     };
 
     save = (rows) => {
+        console.log('toSave', rows);
         this.request.saveServiceConfigurations(rows).then((_rows) => {
             this.setState({rows: _rows});
             this.state.showNotification('Operation was successful!', 'success', 4);
-        }).catch((error) => {
+        }).catch(() => {
             this.state.showNotification('Operation was not successful!', 'warning', 4);
         });
     };
@@ -161,6 +155,7 @@ class SFTPConfigurator extends Components.ContextComponent {
             path: "",
             fileFilter: "",
             action: "",
+            actionName: "",
             deleted: false
         }
     };

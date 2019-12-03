@@ -1,16 +1,17 @@
 package com.opuscapita.web.service;
 
+import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class JsLoaderService {
+
+    private final String path = "/usr/app/built/";
+
     public List<String> getResourceFiles(String path) throws IOException, NullPointerException {
         List<String> filenames = new ArrayList<>();
         try (
@@ -32,6 +33,12 @@ public class JsLoaderService {
                 = getContextClassLoader().getResourceAsStream(resource);
 
         return in == null ? getClass().getResourceAsStream(resource) : in;
+    }
+
+    public String getResourceFromFileSystem(String resource) throws IOException, NullPointerException {
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(this.path + resource);
+        return FileUtils.readFileToString(file, "UTF-8");
     }
 
     ClassLoader getContextClassLoader() {
