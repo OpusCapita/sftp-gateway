@@ -25,22 +25,23 @@ class EditDialog extends Components.ContextComponent {
     }
 
     handleSelect = (event) => {
-        console.log('handleSelect', event);
-
         const target = event.target;
         const value = target.value;
         const _row = this.state.data;
+        let _errors = {};
         _row['action'] = value;
-        _row['actionName'] = this.state.actions.find(action => action.key === value).value;
+        if (value === '') {
+            _errors['action'] = "Please select a valid action";
+        } else {
+            _row['actionName'] = this.state.actions.find(action => action.key === value).value;
+        }
         this.setState({
             data: _row,
-            error: this.error
+            error: _errors
         });
     };
 
     handleChange = (event) => {
-        console.log('handleChange', event);
-
         const target = event.target;
         const value = target.type === 'checkbox' ? target.checked : target.value;
         const name = target.name;
@@ -82,6 +83,12 @@ class EditDialog extends Components.ContextComponent {
             _errors["fileFilter"] = "Cannot be empty";
         }
 
+        //Action
+        if (_data["action"] === '') {
+            _formIsValid = false;
+            _errors["action"] = "Please select a valid action";
+        }
+
         // if(typeof _data["name"] !== "undefined"){
         //     if(!_data["name"].match(/^[a-zA-Z0-9]+$/)){
         //         _formIsValid = false;
@@ -117,7 +124,6 @@ class EditDialog extends Components.ContextComponent {
     };
 
     render() {
-        console.log('render()', this.state);
         return (
             <div className='overlay'>
                 <div className="modal-dialog overlay-content" role="dialog">

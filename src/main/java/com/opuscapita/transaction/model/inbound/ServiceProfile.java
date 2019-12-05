@@ -34,7 +34,7 @@ public class ServiceProfile implements Tx {
         if (Objects.isNull(_gatewayId))
             throw new NullPointerException("GatewayId is null");
 
-        this.setId(id);
+        this.setId(_id);
         this.setBusinessPartnerId(_businessPartnerId);
         this.setSenderBusinessPartnerId(_senderBusinessPartnerId);
         this.setGatewayId(_gatewayId);

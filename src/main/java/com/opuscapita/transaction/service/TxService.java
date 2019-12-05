@@ -1,11 +1,14 @@
 package com.opuscapita.transaction.service;
 
+import com.opuscapita.transaction.config.TNTConfiguration;
 import com.opuscapita.transaction.model.Tx;
 import com.opuscapita.transaction.model.properties.Version;
 import com.opuscapita.transaction.utils.TxUtils;
 import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
@@ -17,6 +20,9 @@ public class TxService {
 
     private final Logger log = LoggerFactory.getLogger(TxService.class);
 
+    @Autowired
+    private TNTConfiguration tntConfiguration;
+
 //    @Getter
 //    private RestTemplate restTemplate;
 //    private final TNTConfiguration configuration;
@@ -24,17 +30,18 @@ public class TxService {
 //    private final String tenantId;
 
     @Getter
-    private final Tx transaction = TxUtils.createEventTx(
+    @Setter
+    private Tx transaction = TxUtils.createEventTx(
             Version.V_1_5,
-            "actionId",
-            "businessPartner",
-            "senderBusinessparner",
-            "gatewayId");
+            "{actionId}",
+            "{businessPartner}",
+            "{senderBusinessparner}",
+            "{gatewayId}");
 //    private final String url;
 
 //    private String response;
 
-    public static String TOPICNAME = "sftp-gateway";
+    public static final String TOPICNAME = "sftp-gateway";
 
     private KafkaTemplate<String, String> kafkaTemplate;
 

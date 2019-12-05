@@ -1,7 +1,6 @@
 package com.opuscapita.web.controller.rest;
 
-import com.opuscapita.sftp.model.SftpServiceConfigEntity;
-import com.opuscapita.web.service.EventActionService;
+import com.opuscapita.sftp.service.UploadListenerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,18 +19,18 @@ public class EventController extends AbstractRestController {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private EventActionService eventActionService;
+    private UploadListenerService uploadListenerService;
 
     @Autowired
     public EventController(
-            EventActionService _eventActionService
+            UploadListenerService _uploadListenerService
     ) {
-        this.eventActionService = _eventActionService;
+        this.uploadListenerService = _uploadListenerService;
     }
 
     @GetMapping(value = "/{evntActionId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ResponseEntity<EventActionService.EventEntry> getAllEventsActions(
+    public ResponseEntity<UploadListenerService.EventEntry> getAllEventsActions(
             @RequestHeader(name = "X-User-Id-Token") String jwt,
             @PathVariable String evntActionId
     ) {
@@ -41,13 +40,13 @@ public class EventController extends AbstractRestController {
         if (!this.canAccess(jwt)) {
             new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
-        EventActionService.EventEntry eventEntry = this.eventActionService.getFileUploadListenerById(evntActionId);
+        UploadListenerService.EventEntry eventEntry = this.uploadListenerService.getFileUploadListenerAsEventEntryById(evntActionId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ResponseEntity<List<EventActionService.EventEntry>> getAllEventsActions(
+    public ResponseEntity<List<UploadListenerService.EventEntry>> getAllEventsActions(
             @RequestHeader(name = "X-User-Id-Token") String jwt
     ) {
         if (Objects.isNull(jwt)) {
@@ -56,7 +55,7 @@ public class EventController extends AbstractRestController {
         if (!this.canAccess(jwt)) {
             new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
-        return new ResponseEntity<>(this.eventActionService.listFileUploadListener(), HttpStatus.OK);
+        return new ResponseEntity<>(this.uploadListenerService.listFileUploadListener(), HttpStatus.OK);
     }
 
 }

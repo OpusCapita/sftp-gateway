@@ -10,13 +10,15 @@ class Option extends Components.ContextComponent {
     static propTypes = {
         label: PropTypes.string.isRequired,
         value: PropTypes.any.isRequired,
-        selected: PropTypes.bool
+        selected: PropTypes.bool,
+        disabled: PropTypes.bool
     };
 
     static defaultProps = {
         label: '',
         value: '',
-        selected: false
+        selected: false,
+        disabled: false
     };
 
     state = {};
@@ -30,7 +32,7 @@ class Option extends Components.ContextComponent {
 
     render() {
         return (
-            <option selected={this.state.select} value={this.state.value}>{this.state.label}</option>
+            <option selected={this.state.select} value={this.state.value} disabled={this.state.disabled}>{this.state.label}</option>
         );
     };
 }

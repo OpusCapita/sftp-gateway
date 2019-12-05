@@ -1,4 +1,4 @@
-package com.opuscapita.sftp.service;
+package com.opuscapita.sftp;
 
 import com.opuscapita.bouncer.exceptions.EmptyPermissionsException;
 import com.opuscapita.bouncer.exceptions.PermissionsNotRegistered;
@@ -7,8 +7,12 @@ import com.opuscapita.bouncer.service.Bouncer;
 import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
 import com.opuscapita.sftp.config.SFTPConfiguration;
 import com.opuscapita.sftp.filesystem.BlobFileSystemFactory;
+import com.opuscapita.sftp.model.SftpServiceConfigRepository;
+import com.opuscapita.sftp.service.SFTPEventListener;
+import com.opuscapita.sftp.service.UploadListenerService;
 import com.opuscapita.sftp.service.auth.AuthProvider;
 import com.opuscapita.sftp.service.commands.OCRestFileSystemAccessor;
+import lombok.Getter;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
@@ -38,7 +42,12 @@ public class SFTPDaemon extends AbstractLoggingBean {
     private final SFTPConfiguration configuration;
     private final Bouncer bouncer;
     private SshServer sshd = SshServer.setUpDefaultServer();
+    @Getter
     private KafkaTemplate<String, String> kafkaTemplate;
+    @Getter
+    private SftpServiceConfigRepository sftpServiceConfigRepository;
+    @Getter
+    private UploadListenerService uploadListenerService;
 
     @Autowired
     public SFTPDaemon(
@@ -46,8 +55,12 @@ public class SFTPDaemon extends AbstractLoggingBean {
             BlobConfiguration _blobConfiguration,
             AuthProvider _authProvider,
             KafkaTemplate<String, String> _kafkaTemplate,
-            Bouncer _bouncer
+            Bouncer _bouncer,
+            SftpServiceConfigRepository _sftpServiceConfigRepository,
+            UploadListenerService _uploadListenerService
     ) {
+        this.sftpServiceConfigRepository = _sftpServiceConfigRepository;
+        this.uploadListenerService = _uploadListenerService;
         this.configuration = _configuration;
         this.kafkaTemplate = _kafkaTemplate;
         this.bouncer = _bouncer;
@@ -104,9 +117,5 @@ public class SFTPDaemon extends AbstractLoggingBean {
         } finally {
             this.sshd = null;
         }
-    }
-
-    KafkaTemplate<String, String> getKafkaTemplate() {
-        return this.kafkaTemplate;
     }
 }

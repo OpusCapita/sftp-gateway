@@ -2,18 +2,12 @@ import React, {PropTypes} from 'react';
 import {Components} from '@opuscapita/service-base-ui';
 import {Option} from '../component';
 
-// import React from 'react';
-// const PropTypes = import('react');
-// const Components = import('@opuscapita/service-base-ui');
-// const Option = import('../component');
-
 class Select extends Components.ContextComponent {
 
     static propTypes = {
         id: PropTypes.string.isRequired,
         name: PropTypes.string.isRequired,
         onChange: PropTypes.func.isRequired,
-        onSelect: PropTypes.func.isRequired,
         disabled: PropTypes.bool,
         hidden: PropTypes.bool,
         required: PropTypes.bool,
@@ -27,7 +21,6 @@ class Select extends Components.ContextComponent {
         id: '',
         name: '',
         onChange: () => null,
-        onSelect: () => null,
         options: [],
         value: null,
         disabled: false,
@@ -46,8 +39,14 @@ class Select extends Components.ContextComponent {
         };
     }
 
+    select = (event) => {
+        this.setState({
+            value: event.target.value
+        });
+        this.state.onChange(event);
+    };
+
     render() {
-        console.log('renderSelect', this.state);
         return (
             !this.state.hidden &&
             <div>
@@ -56,14 +55,14 @@ class Select extends Components.ContextComponent {
                         id={this.state.id}
                         name={this.state.name}
                         required={this.required}
-                        onChange={(e) => this.state.onChange(e)}
-                        onSelect={(e) => this.state.onSelect(e)}
+                        onChange={(e) => this.select(e)}
                         value={this.state.value}>
                     <Option
                         key=''
                         value=''
                         label='None'
                         disabled={true}
+                        selected={this.state.value === null}
                     />
                     {this.state.options.map((object) => {
                         return (<Option

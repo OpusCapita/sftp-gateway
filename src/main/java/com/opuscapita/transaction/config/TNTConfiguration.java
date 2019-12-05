@@ -1,20 +1,21 @@
 package com.opuscapita.transaction.config;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import lombok.Data;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 
 @Configuration
-@ConfigurationProperties(prefix = "tnt.server")
+@PropertySource(value = "classpath:application-tnt.properties")
+@Data
 public class TNTConfiguration {
-    @Setter
-    @Getter
+
+    @Value(value = "${tnt.method}")
     private String method;
-    @Setter
-    @Getter
+    @Value(value = "${tnt.url}")
     private String url;
-    @Setter
-    @Getter
+    @Value(value = "${tnt.port}")
     private int port;
+    @Value(value = "${tnt.event.path}")
+    private String path;
 }

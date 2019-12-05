@@ -53,7 +53,8 @@ public class JsExposeController extends AbstractRestController {
             jsFile = this.jsLoaderService.getResourceFromFileSystem(js);
             responseEntity = new ResponseEntity<>(jsFile, HttpStatus.OK);
         } catch (IOException | NullPointerException e) {
-            responseEntity = new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            logger.warn("Javascript file could not be found. Loading from the Archive");
+            responseEntity = this.getJs(js);
         }
         return responseEntity;
     }

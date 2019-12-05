@@ -67,8 +67,8 @@ class SFTPConfigurator extends Components.ContextComponent {
         console.log('context', context);
         this.loadData();
         this.state = {
-            ...props,
             ...context,
+            ...props,
             loadingState: false,
             endState: false,
             showModal: false,

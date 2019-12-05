@@ -2,8 +2,8 @@ package com.opuscapita.sftp.filesystem;
 
 import com.opuscapita.auth.model.AuthResponse;
 import com.opuscapita.auth.model.User;
-import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
 import com.opuscapita.s2p.blob.blobfilesystem.BlobHttpFileSystemProvider;
+import com.opuscapita.s2p.blob.blobfilesystem.config.BlobConfiguration;
 import com.opuscapita.sftp.utils.SFTPHelper;
 import org.apache.sshd.common.AttributeRepository;
 import org.apache.sshd.common.file.FileSystemFactory;
@@ -60,12 +60,11 @@ public class BlobFileSystemFactory extends AbstractLoggingBean implements FileSy
         AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey = SFTPHelper.findAttributeKey((ServerSession) session, AuthResponse.class);
         AuthResponse authResponse = session.getAttribute(authResponseAttributeKey);
         User user = authResponse.getUser();
-        return (!user.getCustomerId().isEmpty() && user.getCustomerId() != null ? "c_" + user.getCustomerId() : "s_" + user.getSupplierId());
+        return (user.getBusinessPartner().isIscustomer() ? "c_" + user.getBusinessPartner().getId() : "s_" + user.getBusinessPartner().getId());
     }
 
     private AuthResponse authResponse(Session session) {
         AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey = SFTPHelper.findAttributeKey((ServerSession) session, AuthResponse.class);
         return session.getAttribute(authResponseAttributeKey);
-
     }
 }

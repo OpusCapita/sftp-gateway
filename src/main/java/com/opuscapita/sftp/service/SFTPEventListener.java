@@ -1,9 +1,14 @@
 package com.opuscapita.sftp.service;
 
 import com.opuscapita.auth.model.AuthResponse;
+import com.opuscapita.sftp.SFTPDaemon;
+import com.opuscapita.sftp.model.SftpServiceConfigEntity;
+import com.opuscapita.sftp.model.SftpServiceConfigRepository;
 import com.opuscapita.sftp.service.uploadlistener.FileUploadListenerInterface;
 import com.opuscapita.sftp.utils.SFTPHelper;
+import com.opuscapita.transaction.model.properties.Version;
 import com.opuscapita.transaction.service.TxService;
+import com.opuscapita.transaction.utils.TxUtils;
 import lombok.Getter;
 import org.apache.sshd.common.AttributeRepository;
 import org.apache.sshd.server.session.ServerSession;
@@ -13,28 +18,38 @@ import org.apache.sshd.server.subsystem.sftp.Handle;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
     @Getter
     private AuthResponse authResponse;
 
+    @Getter
     private final SFTPDaemon service;
 
-    public SFTPEventListener(SFTPDaemon _service) {
+    private final SftpServiceConfigRepository serviceConfigRepository;
+    private final UploadListenerService uploadListenerService;
+
+    public SFTPEventListener(
+            SFTPDaemon _service
+    ) {
         super();
         this.service = _service;
+        this.serviceConfigRepository = _service.getSftpServiceConfigRepository();
+        this.uploadListenerService = _service.getUploadListenerService();
     }
 
-    private List<FileUploadListenerInterface> fileReadyListeners = new ArrayList<>();
+    private Map<String, FileUploadListenerInterface> fileReadyListeners = new HashMap<>();
 
-    public void addFileUploadCompleteListener(FileUploadListenerInterface listener) {
-        fileReadyListeners.add(listener);
+    public void addFileUploadCompleteListener(String path, String file, FileUploadListenerInterface listener) {
+        fileReadyListeners.put(path.replace("*", ".*") + file.replace("*", ".*"), listener);
     }
 
-    public void removeFileUploadCompleteListener(FileUploadListenerInterface listener) {
-        fileReadyListeners.remove(listener);
+    public void removeFileUploadCompleteListener(String path, FileUploadListenerInterface fileUploadListener) {
+        fileReadyListeners.remove(path, fileUploadListener);
     }
 
     @Override
@@ -46,6 +61,33 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
 
         AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey = SFTPHelper.findAttributeKey(session, AuthResponse.class);
         this.authResponse = session.getAttribute(authResponseAttributeKey);
+
+        List<SftpServiceConfigEntity> configProfiles = this.serviceConfigRepository.findByBusinessPartnerId(
+                this.authResponse.getUser().getBusinessPartner().getId()
+        );
+
+        TxService txService = null;
+        for (SftpServiceConfigEntity entity : configProfiles) {
+            try {
+                txService = new TxService(this.service.getKafkaTemplate());
+                txService.setTransaction(TxUtils.createEventTx(
+                        Version.V_1_5,
+                        entity.getAction(),
+                        entity.getBusinessPartnerId(),
+                        entity.getBusinessPartnerId(),
+                        entity.getServiceProfileId())
+                );
+                this.addFileUploadCompleteListener(
+                        entity.getPath(),
+                        entity.getFileFilter(),
+                        uploadListenerService.getFileUploadListenerById(entity.getAction(), txService)
+                );
+            } catch (InstantiationException | IllegalAccessException e) {
+                log.error(e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
     }
 
     @Override
@@ -53,17 +95,21 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
         Path path = localHandle.getFile();
 
         log.info(String.format("User %s closed file: \"%s\"", session.getUsername(), localHandle.getFile().toAbsolutePath()));
+        Pattern pattern = null;
         if (!(localHandle instanceof DirectoryHandle)) {
-            for (FileUploadListenerInterface fileReadyListener : fileReadyListeners) {
-                fileReadyListener.onPathReady(path, session);
+            for (String key : fileReadyListeners.keySet()) {
+                pattern = Pattern.compile(key);
+                if (pattern.matcher(path.toAbsolutePath().toString()).matches()) {
+                    this.fileReadyListeners.get(key).onPathReady(path, session);
+                }
             }
         }
     }
 
     @Override
     public void destroying(ServerSession session) {
-        for (FileUploadListenerInterface fileReadyListener : fileReadyListeners) {
-            this.removeFileUploadCompleteListener(fileReadyListener);
+        for (String key : this.fileReadyListeners.keySet()) {
+            this.removeFileUploadCompleteListener(key, this.fileReadyListeners.get(key));
         }
     }
 
@@ -81,7 +127,7 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
     @Override
     public void open(ServerSession session, String remoteHandle, Handle localHandle) {
         log.info("open");
-        AttributeRepository.AttributeKey<TxService> txServiceAttributeKey = new AttributeRepository.AttributeKey<>();
+//        AttributeRepository.AttributeKey<TxService> txServiceAttributeKey = new AttributeRepository.AttributeKey<>();
 //        session.setAttribute(txServiceAttributeKey, new TxService(this.service.getKafkaTemplate()));
     }
 
