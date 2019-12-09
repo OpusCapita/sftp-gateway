@@ -71,4 +71,4 @@ workflows:
   commit:
     jobs:
       - build:
-          context: sftp-gateway
+          context: gateway
