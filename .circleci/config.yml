@@ -1,4 +1,4 @@
-version: 3.4
+version: 2
 jobs:
   build:
     docker:
@@ -65,3 +65,10 @@ jobs:
       - run:
           name: "Build Base Image"
           command: "node ../buildprocess/bp_build_base.js opuscapita/$CIRCLE_PROJECT_REPONAME ;"
+
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - build:
+          context: andariel
