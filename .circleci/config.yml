@@ -71,4 +71,6 @@ workflows:
   commit:
     jobs:
       - build:
-          context: andariel
+          context:
+            - andariel
+            - $CIRCLE_PROJECT_REPONAME
