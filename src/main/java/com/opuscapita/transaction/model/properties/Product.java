@@ -15,4 +15,9 @@ public enum Product {
     private Product(String _product) {
         this.product = _product;
     }
+
+    @Override
+    public String toString() {
+        return this.product;
+    }
 }

@@ -12,6 +12,7 @@ import com.opuscapita.sftp.service.SFTPEventListener;
 import com.opuscapita.sftp.service.UploadListenerService;
 import com.opuscapita.sftp.service.auth.AuthProvider;
 import com.opuscapita.sftp.service.commands.OCRestFileSystemAccessor;
+import com.opuscapita.transaction.config.TNTConfiguration;
 import lombok.Getter;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
@@ -43,6 +44,8 @@ public class SFTPDaemon extends AbstractLoggingBean {
     private final Bouncer bouncer;
     private SshServer sshd = SshServer.setUpDefaultServer();
     @Getter
+    private final TNTConfiguration tntConfiguration;
+    @Getter
     private KafkaTemplate<String, String> kafkaTemplate;
     @Getter
     private SftpServiceConfigRepository sftpServiceConfigRepository;
@@ -53,6 +56,7 @@ public class SFTPDaemon extends AbstractLoggingBean {
     public SFTPDaemon(
             SFTPConfiguration _configuration,
             BlobConfiguration _blobConfiguration,
+            TNTConfiguration _tntConfiguration,
             AuthProvider _authProvider,
             KafkaTemplate<String, String> _kafkaTemplate,
             Bouncer _bouncer,
@@ -62,14 +66,13 @@ public class SFTPDaemon extends AbstractLoggingBean {
         this.sftpServiceConfigRepository = _sftpServiceConfigRepository;
         this.uploadListenerService = _uploadListenerService;
         this.configuration = _configuration;
+        this.tntConfiguration = _tntConfiguration;
         this.kafkaTemplate = _kafkaTemplate;
         this.bouncer = _bouncer;
         try {
             this.bouncer.registerPermissions(new RetryConfig());
-        } catch (PermissionsNotRegistered permissionsNotRegistered) {
-            permissionsNotRegistered.printStackTrace();
-        } catch (EmptyPermissionsException emptyPermissionsException) {
-            log.warn(emptyPermissionsException.getMessage());
+        } catch (PermissionsNotRegistered | EmptyPermissionsException permissionsNotRegistered) {
+            log.warn(permissionsNotRegistered.getMessage());
         }
 
         List<NamedFactory<Command>> subsystemFactories = new ArrayList<>();

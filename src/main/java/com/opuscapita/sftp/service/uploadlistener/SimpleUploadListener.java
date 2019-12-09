@@ -1,5 +1,8 @@
 package com.opuscapita.sftp.service.uploadlistener;
 
+import com.opuscapita.auth.model.AuthResponse;
+import com.opuscapita.sftp.utils.SFTPHelper;
+import org.apache.sshd.common.AttributeRepository;
 import org.apache.sshd.server.session.ServerSession;
 import org.springframework.stereotype.Component;
 
@@ -14,7 +17,9 @@ public class SimpleUploadListener extends AbstractFileUploadListener implements 
 
     @Override
     public void onPathReady(Path path, ServerSession session) {
-        this.getTxService().sendTx();
+        AttributeRepository.AttributeKey<AuthResponse> authResponseAttributeKey = SFTPHelper.findAttributeKey(session, AuthResponse.class);
+        AuthResponse authResponse = session.getAttribute(authResponseAttributeKey);
+        this.getTxService().sendTx(authResponse);
     }
 
     @Override

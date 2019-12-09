@@ -18,4 +18,11 @@ public class TNTConfiguration {
     private int port;
     @Value(value = "${tnt.event.path}")
     private String path;
+
+    public String getUri() {
+        return this.method + "://"
+                + this.url + ":"
+                + this.port
+                + this.path;
+    }
 }

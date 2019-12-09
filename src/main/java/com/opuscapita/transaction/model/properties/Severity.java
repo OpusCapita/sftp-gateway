@@ -13,4 +13,9 @@ public enum Severity {
     private Severity(String _severity) {
         this.severity = _severity;
     }
+
+    @Override
+    public String toString() {
+        return this.severity;
+    }
 }

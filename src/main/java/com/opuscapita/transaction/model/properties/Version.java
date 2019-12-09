@@ -10,4 +10,9 @@ public enum Version {
     private Version(String _version) {
         this.version = _version;
     }
+
+    @Override
+    public String toString() {
+        return this.version;
+    }
 }

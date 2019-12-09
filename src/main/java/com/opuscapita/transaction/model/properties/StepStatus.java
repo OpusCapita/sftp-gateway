@@ -15,4 +15,9 @@ public enum StepStatus {
     private StepStatus(String _status) {
         this.status = _status;
     }
+
+    @Override
+    public String toString() {
+        return this.status;
+    }
 }

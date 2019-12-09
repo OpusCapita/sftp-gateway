@@ -20,4 +20,9 @@ public enum StepType {
     private StepType(String _type) {
         this.type = _type;
     }
+
+    @Override
+    public String toString() {
+        return this.type;
+    }
 }

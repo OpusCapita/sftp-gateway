@@ -62,9 +62,9 @@ public class TxSchemaV1_5 implements Tx {
 
         builder.append(TxUtils.attributeAsJson("version", this.getVersion()));
         builder.append(TxUtils.attributeAsJson("transactionId", this.getTransactionId()));
-        builder.append(TxUtils.attributeAsJson("timestamp", this.getTimestamp()));
-        builder.append(TxUtils.attributeAsJson("logAccess", this.getLogAccess()));
-        builder.append(TxUtils.attributeAsJson("severity", this.getSeverity()));
+        builder.append(TxUtils.attributeAsJson("timestamp", TxUtils.getDateFormated(this.getTimestamp())));
+        builder.append(TxUtils.attributeAsJson("logAccess", this.getLogAccess().toString()));
+        builder.append(TxUtils.attributeAsJson("severity", this.getSeverity().toString()));
         builder.append(TxUtils.attributeAsJson("eventText", this.getEventText()));
         builder.append(TxUtils.attributeAsJson("shortEventText", this.getShortEventText()));
         builder.append(Objects.requireNonNull(this.getEventOrigin(), "").toString());

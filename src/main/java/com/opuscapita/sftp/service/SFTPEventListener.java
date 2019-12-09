@@ -66,10 +66,13 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
                 this.authResponse.getUser().getBusinessPartner().getId()
         );
 
-        TxService txService = null;
+        TxService txService;
         for (SftpServiceConfigEntity entity : configProfiles) {
             try {
-                txService = new TxService(this.service.getKafkaTemplate());
+                txService = new TxService(
+                        this.service.getKafkaTemplate(),
+                        this.service.getTntConfiguration()
+                );
                 txService.setTransaction(TxUtils.createEventTx(
                         Version.V_1_5,
                         entity.getAction(),
@@ -84,7 +87,6 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
                 );
             } catch (InstantiationException | IllegalAccessException e) {
                 log.error(e.getMessage());
-                e.printStackTrace();
             }
         }
 
@@ -111,28 +113,5 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
         for (String key : this.fileReadyListeners.keySet()) {
             this.removeFileUploadCompleteListener(key, this.fileReadyListeners.get(key));
         }
-    }
-
-    @Override
-    public void removing(ServerSession session, Path path, boolean isDirectory) throws IOException {
-        super.removing(session, path, isDirectory);
-        log.info("{} removing", path);
-    }
-
-    @Override
-    public void opening(ServerSession session, String remoteHandle, Handle localHandle) {
-        log.info("opening");
-    }
-
-    @Override
-    public void open(ServerSession session, String remoteHandle, Handle localHandle) {
-        log.info("open");
-//        AttributeRepository.AttributeKey<TxService> txServiceAttributeKey = new AttributeRepository.AttributeKey<>();
-//        session.setAttribute(txServiceAttributeKey, new TxService(this.service.getKafkaTemplate()));
-    }
-
-    @Override
-    public void openFailed(ServerSession session, String remotePath, Path localPath, boolean isDirectory, Throwable thrown) {
-        log.info("openFailed");
     }
 }

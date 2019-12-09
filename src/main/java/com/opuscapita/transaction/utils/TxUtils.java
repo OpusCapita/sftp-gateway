@@ -20,7 +20,7 @@ public class TxUtils {
     public static String SQARE_BRACKET_OPEN = "[";
     public static String SQARE_BRACKET_CLOSE = "]";
     public static String COMMA = ",";
-    public static String DATEFORMAT = "E MMM dd HH:mm:ss z yyyy";
+    public static String DATEFORMAT = "yyyy-MM-dd'T'HH:mm:ss.S'Z'";
 
     enum DEFAULT {
         SYSTEMNODE("SFTP"),

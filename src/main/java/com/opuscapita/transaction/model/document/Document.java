@@ -62,9 +62,9 @@ public class Document implements Tx {
         builder.append(TxUtils.attributeAsJson("entityType", Objects.requireNonNull(this.getEntityType(), "--- no value ---")));
         builder.append(TxUtils.attributeAsJson("docTypeSub", Objects.requireNonNull(this.getDocTypeSub(), "--- no value ---")));
         builder.append(TxUtils.attributeAsJson("docTypeSubCode", Objects.requireNonNull(this.getDocTypeSubCode(), "--- no value ---")));
-        builder.append(TxUtils.attributeAsJson("number", Objects.requireNonNull(this.getNumber(), "0")));
-        builder.append(TxUtils.attributeAsJson("issuedDate", Objects.requireNonNull(TxUtils.getDateFormated(this.getIssuedDate())), !this.getContent().isEmpty()));
-        builder.append(TxUtils.attributeAsJson("content", Objects.requireNonNull(this.getContent()), false));
+        builder.append(TxUtils.attributeAsJson("number", Objects.requireNonNull(String.valueOf(this.getNumber()), String.valueOf(0))));
+        builder.append(TxUtils.attributeAsJson("content", Objects.requireNonNull(this.getContent())));
+        builder.append(TxUtils.attributeAsJson("issuedDate", Objects.requireNonNull(TxUtils.getDateFormated(this.getIssuedDate())), false));
         builder.append("}");
         return builder.toString();
     }

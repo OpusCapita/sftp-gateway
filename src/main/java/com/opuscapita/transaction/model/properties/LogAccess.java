@@ -11,4 +11,10 @@ public enum LogAccess {
     private LogAccess(String _access) {
         this.access = _access;
     }
+
+
+    @Override
+    public String toString() {
+        return this.access;
+    }
 }

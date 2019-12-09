@@ -1,5 +1,6 @@
 package com.opuscapita.transaction.service;
 
+import com.opuscapita.auth.model.AuthResponse;
 import com.opuscapita.transaction.config.TNTConfiguration;
 import com.opuscapita.transaction.model.Tx;
 import com.opuscapita.transaction.model.properties.Version;
@@ -8,26 +9,22 @@ import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class TxService {
 
     private final Logger log = LoggerFactory.getLogger(TxService.class);
-
-    @Autowired
-    private TNTConfiguration tntConfiguration;
-
-//    @Getter
-//    private RestTemplate restTemplate;
-//    private final TNTConfiguration configuration;
-//    private final String jwt;
-//    private final String tenantId;
+    private final TNTConfiguration tntConfiguration;
 
     @Getter
     @Setter
@@ -37,30 +34,44 @@ public class TxService {
             "{businessPartner}",
             "{senderBusinessparner}",
             "{gatewayId}");
-//    private final String url;
-
-//    private String response;
 
     public static final String TOPICNAME = "sftp-gateway";
 
     private KafkaTemplate<String, String> kafkaTemplate;
 
     public TxService(
-            KafkaTemplate<String, String> _kafkaTemplate
-//            RestTemplateBuilder _restTemplateBuilder,
-//            TNTConfiguration _configuration,
-//            String _tenantId,
-//            String _jwt
+            final KafkaTemplate<String, String> _kafkaTemplate,
+            final TNTConfiguration _configuration
     ) {
         this.kafkaTemplate = _kafkaTemplate;
-//        this.restTemplate = _restTemplateBuilder.build();
-//        this.configuration = _configuration;
-//        this.jwt = _jwt;
-//        this.tenantId = _tenantId;
-//        this.url = _configuration.getMethod() + "://" + _configuration.getUrl() + ":" + _configuration.getPort() + "/api/events";
+        this.tntConfiguration = _configuration;
     }
 
-    public void sendTx() {
+    public void sendTx(final AuthResponse authenticationToken) {
+        try {
+            this.sendTntTx(authenticationToken.getId_token());
+            log.info("Tnt Transaction Event sent");
+        } catch (Exception e) {
+            log.error("Tnt Transaction could not be started: {}", e.getMessage());
+        }
+
+        try {
+            this.sendKafkaTx();
+            log.info("Kafka Transaction Event sent");
+        } catch (Exception e) {
+            log.error("Kafka Transaction could not be started: {}", e.getMessage());
+        }
+    }
+
+    private ResponseEntity<String> sendTntTx(final String jwt) {
+        RestTemplate rest = new RestTemplate();
+        HttpHeaders header = new HttpHeaders();
+        header.set("X-User-Id-Token", jwt);
+        HttpEntity<String> entity = new HttpEntity<>(this.transaction.toString(), header);
+        return rest.exchange(this.tntConfiguration.getUri(), HttpMethod.POST, entity, String.class);
+    }
+
+    private void sendKafkaTx() {
         ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send(TOPICNAME, this.transaction.toString());
 
         future.addCallback(new ListenableFutureCallback<SendResult<String, String>>() {
@@ -77,8 +88,6 @@ public class TxService {
                         + getTransaction().toString() + "] due to : " + ex.getMessage());
             }
         });
-
-        log.info("Send Transaction");
     }
 
 }
