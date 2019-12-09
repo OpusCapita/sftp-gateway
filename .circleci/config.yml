@@ -71,6 +71,4 @@ workflows:
   commit:
     jobs:
       - build:
-          context:
-            - andariel
-            - sftp-gateway
+          context: andariel,sftp-gateway
