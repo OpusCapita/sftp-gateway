@@ -1,4 +1,4 @@
-version: 2
+version: 3.4
 jobs:
   build:
     docker:
@@ -65,22 +65,3 @@ jobs:
       - run:
           name: "Build Base Image"
           command: "node ../buildprocess/bp_build_base.js opuscapita/$CIRCLE_PROJECT_REPONAME ;"
-
-workflows:
-  version: 2
-  commit:
-    jobs:
-      - build:
-          context: peppol
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 0 * * *"
-          filters:
-            branches:
-              only:
-                - dev
-                - nbp
-    jobs:
-      - build_base:
-          context: peppol
