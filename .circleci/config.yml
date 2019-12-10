@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       - image: ayltai/circleci-openjdk-node:jdk8-node11
-    parallelism: 4
+    parallelism: 1
     working_directory: ~/build
     steps:
       - checkout
