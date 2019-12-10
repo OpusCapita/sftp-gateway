@@ -36,7 +36,7 @@ ADD webpack.config.prod.js $WRKDIR/webpack.config.prod.js
 ADD pom.xml $WRKDIR/pom.xml
 
 RUN npm install
-RUN npm run webpack-build-prod
+RUN npm run webpack-build-dev
 # Adding source, compile and package into a fat jar
 
 
