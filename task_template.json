@@ -4,28 +4,27 @@
     "log-driver": "gelf",
     "log-opt": ["gelf-address=udp://${logstash_ip}:12201", "tag=\"${serviceName}\""],
     "constraint": ["engine.labels.nodetype==worker"],
-    "publish": ["mode=host,target=2222,published=2222,protocol=tcp"],
+    "publish": [
+      "mode=host,target=2222,published=2222,protocol=tcp",
+      "mode=host,target=2223,published=2223,protocol=tcp"
+    ],
     "host": ["consul:172.17.0.1"],
     "env": [
       "SERVICE_NAME=${serviceName}",
-      "SERVICE_2222_CHECK_HTTP=/api/health/check",
-      "SERVICE_2222_CHECK_INTERVAL=15s",
-      "SERVICE_2222_CHECK_TIMEOUT=3s",
+      "SERVICE_2223_CHECK_HTTP=/api/health/check",
+      "SERVICE_2223_CHECK_INTERVAL=15s",
+      "SERVICE_2223_CHECK_TIMEOUT=3s",
       "RABBITMQ_USER=${SECRET_:env_RABBITMQUSER}",
       "RABBITMQ_PASS=${SECRET_:env_RABBITMQPASS}"
     ],
     "oc-consul-injection": {
+      "db-init/service-name": "${SECRET_:env_MYSQL_SERVICE}",
       "redis/password": "${SECRET_:env_REDIS}",
       "mq/user": "${SECRET_:env_RABBITMQUSER}",
       "mq/password": "${SECRET_:env_RABBITMQPASS}",
-      "snc/enabled": "true",
-      "snc/rest/url": "${PEPPOL_:env_SNCURL}",
-      "snc/rest/scope": "${PEPPOL_:env_SNCSCOPE}",
-      "snc/rest/username": "${PEPPOL_:env_SNCUSER}",
-      "snc/rest/password": "${PEPPOL_:env_SNCPASS}",
-      "snc/bsc": "peppol-AP",
-      "snc/from": "peppol-AP@",
-      "snc/businessGroup": "Itella Information"
+    },
+    "oc-db-init": {
+      "populate-test-data": "false"
     },
     "limit-cpu": "0.3",
     "limit-memory": "900M",

@@ -1,5 +1,5 @@
 version: '3.7'
-#services:
-#   main:
-#      image: opuscapita/sftp-gateway:dev
+services:
+   main:
+      image: opuscapita/sftp-gateway:dev
 #      command: mvnw spring-boot:run
