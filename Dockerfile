@@ -23,7 +23,7 @@ WORKDIR $WRKDIR
 ADD src $WRKDIR/src
 
 ADD .mvn $WRKDIR/.mvn
-ADD mvn $WRKDIR/mvn
+#ADD mvn $WRKDIR/mvn
 ADD mvnw $WRKDIR/mvnw
 ADD mvnw.cmd $WRKDIR/mvnw.cmd
 
