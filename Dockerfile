@@ -31,8 +31,8 @@ RUN chmod +x mvnw
 
 ADD package.json $WRKDIR/package.json
 ADD package-lock.json $WRKDIR/package-lock.json
-ADD webpack.config.dev.js $WRKDIR/webpack.config.dev.js
-ADD webpack.config.prod.js $WRKDIR/webpack.config.prod.js
+ADD webpack.config.dev.js $WRKDIR/webpack.development.config.js
+ADD webpack.config.prod.js $WRKDIR/webpack.production.config.js
 ADD pom.xml $WRKDIR/pom.xml
 
 RUN npm install

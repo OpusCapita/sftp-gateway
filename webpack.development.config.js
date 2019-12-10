@@ -14,7 +14,7 @@ module.exports = {
     },
     output: {
         path: path.resolve(__dirname, './src/main/resources/static/built'),
-        publicPath: '/built/',
+        publicPath: '/built',
         filename: '[name].js',
         library: 'sftp-gateway',
         libraryTarget: 'umd',
@@ -45,27 +45,31 @@ module.exports = {
     //         umd: "@opuscapita/service-base-ui"
     //     }
     // },
-    node: {
-        net: 'empty',
-        tls: 'empty',
-        dns: 'empty'
-    },
+    // node: {
+    //     net: 'empty',
+    //     tls: 'empty',
+    //     dns: 'empty'
+    // },
 
     bail: true,
 
     plugins: [
+        // new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /en|de/),
+        // new webpack.NoEmitOnErrorsPlugin(),
+        // new webpack.DefinePlugin({
+        //     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+        // }),
+        // new webpack.optimize.OccurrenceOrderPlugin(true),
+        // new Visualizer({
+        //     filename: './statistics.html'
+        // }),
+        // new webpack.LoaderOptionsPlugin({
+        //     minimize: true,
+        //     debug: false
+        // })
         new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /en|de/),
-        new webpack.NoEmitOnErrorsPlugin(),
         new webpack.DefinePlugin({
-            'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
-        }),
-        new webpack.optimize.OccurrenceOrderPlugin(true),
-        new Visualizer({
-            filename: './statistics.html'
-        }),
-        new webpack.LoaderOptionsPlugin({
-            minimize: true,
-            debug: false
+            'process.env.EXPERIMENTAL_FEATURES_ENABLED': JSON.stringify(process.env.EXPERIMENTAL_FEATURES_ENABLED),
         })
     ],
 
@@ -81,7 +85,7 @@ module.exports = {
     },
 
     resolveLoader: {
-        modules: ['NODE_PATH', 'node_modules'],
+        modules: ['node_modules'],
         extensions: ['.js', '.jsx']
     },
 
@@ -95,9 +99,9 @@ module.exports = {
                 test: /.jsx?$/,
                 loader: 'babel-loader',
                 include: [
-                    path.join(__dirname, 'src/main/client')
+                    path.join(__dirname, 'src')
                 ],
-                exclude: /node_modules/,
+                // exclude: /node_modules/,
                 options: {
                     compact: true,
                     presets: [

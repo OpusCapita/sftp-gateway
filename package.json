@@ -52,7 +52,7 @@
   },
   "scripts": {
     "webpack-watch": "webpack --watch -d",
-    "webpack-build-prod": "cross-env NODE_ENV=production npx webpack -p --config ./webpack.config.prod.js --profile --colors --bail",
-    "webpack-build-dev": "cross-env NODE_ENV=development npx webpack -p --config ./webpack.config.dev.js --profile --colors --bail"
+    "webpack-build-prod": "cross-env NODE_ENV=production npx webpack -p --config ./webpack.production.config.js --profile --colors --bail",
+    "webpack-build-dev": "cross-env NODE_ENV=development npx webpack -p --config ./webpack.development.config.js --profile --colors --bail"
   }
 }
