@@ -3,6 +3,7 @@ jobs:
   build:
     docker:
       - image: ayltai/circleci-openjdk-node:jdk8-node11
+    parallelism: 4
     working_directory: ~/build
     steps:
       - checkout
@@ -71,4 +72,4 @@ workflows:
   commit:
     jobs:
       - build:
-          context: gateway
+          context: andariel
