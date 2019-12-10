@@ -1,14 +1,12 @@
-FROM maven:3-jdk-8 AS TEMP_BUILD_IMAGE
+FROM openjdk:8 AS TEMP_BUILD_IMAGE
 LABEL author="Stefan Meier <Stefan.Meier@cdi-ag.de>"
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update
+RUN apt-get install -y apt-utils
 RUN apt-get -y install htop
 
 RUN curl -sL https://deb.nodesource.com/setup_13.x | bash - \
   && apt-get install -y nodejs
-#RUN apt-get -y install nodejs
-#RUN apt-get -y install npm
-
 RUN apt-get -y install mysql-client
 
 ENV SERVICE_NAME=sftp-gateway
@@ -24,6 +22,13 @@ ENV NODE_PATH=$WRKDIR/node_modules
 WORKDIR $WRKDIR
 ADD src $WRKDIR/src
 
+ADD .mvn $WRKDIR/.mvn
+ADD mvn $WRKDIR/mvn
+ADD mvnw $WRKDIR/mvnw
+ADD mvnw.cmd $WRKDIR/mvnw.cmd
+
+RUN chmod +x mvnw
+
 ADD package.json $WRKDIR/package.json
 ADD package-lock.json $WRKDIR/package-lock.json
 ADD webpack.config.dev.js $WRKDIR/webpack.config.dev.js
@@ -33,12 +38,14 @@ ADD pom.xml $WRKDIR/pom.xml
 RUN npm install
 RUN npm run webpack-build-prod
 # Adding source, compile and package into a fat jar
-RUN mvn clean package
+
+
+RUN $WRKDIR/mvnw clean package
 RUN mkdir -p $APPDIR
 RUN mv $TRGTDIR/SFTPj-0.0.1.jar $APPDIR/SFTPj.jar
 RUN cp -rp $WRKDIR/src/main/resources/static/built/ $APPDIR/built/
 
-FROM maven:3-jdk-8
+FROM openjdk:8
 LABEL author="Stefan Meier <Stefan.Meier@cdi-ag.de>"
 
 ENV APPDIR=/usr/app
