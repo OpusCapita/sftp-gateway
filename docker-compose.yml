@@ -2,7 +2,7 @@ version: '3.7'
 services:
   main:
     build: .
-    image: opuscapita/sftp-gateway:dev
+#    image: opuscapita/sftp-gateway:dev
     depends_on:
       - mysql
       - consul
