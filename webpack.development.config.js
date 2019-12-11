@@ -10,7 +10,7 @@ module.exports = {
     },
     entry: {
         app: ['babel-polyfill', './src/main/client/index.js'],
-        configurator: './src/main/client/components/configurator/index.js'
+        configurator: './src/main/client/components/configurator/SFTPConfigurator.react.jsx'
     },
     output: {
         path: path.resolve(__dirname, './src/main/resources/static/built'),
