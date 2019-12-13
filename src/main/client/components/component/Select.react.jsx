@@ -32,10 +32,11 @@ class Select extends Components.ContextComponent {
 
     state = {};
 
-    constructor(props) {
-        super(props);
+    constructor(props, context) {
+        super(props, context);
         this.state = {
-            ...props
+            ...props,
+            ...context
         };
     }
 
@@ -50,7 +51,6 @@ class Select extends Components.ContextComponent {
         return (
             !this.state.hidden &&
             <div>
-                <label htmlFor={this.state.id} className="control-label">Action:</label>
                 <select className={this.state.className}
                         id={this.state.id}
                         name={this.state.name}

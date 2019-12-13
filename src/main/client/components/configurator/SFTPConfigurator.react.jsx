@@ -1,70 +1,27 @@
-import React from 'react';
+import React, {PropTypes} from 'react';
 import {Components} from '@opuscapita/service-base-ui';
 import {ConfigDataGrid} from "../datagridcomponent"
 import RequestApi from "../helper/RequestApi";
-import EditDialog from "../dialog/EditDialog.react";
+import DialogForm from "../sftpform/SftpConfigForm.react";
+import i18nMessages from '../i18n';
 
 class SFTPConfigurator extends Components.ContextComponent {
+
+    static propTypes = {
+        businessPartnerId: PropTypes.string.isRequired,
+        serviceProfileId: PropTypes.string.isRequired
+    };
+
+
     request = new RequestApi();
     state = {};
-    columns = [
-        {
-            key: 'position',
-            name: 'ID',
-            sortDescendingFirst: true,
-            sortable: true
-        },
-        {
-            key: 'id',
-            name: '',
-            sortDescendingFirst: true,
-            sortable: true,
-            visible: false
-        },
-        {
-            key: 'businessPartnerId',
-            name: 'Business partner ID',
-            sortable: true,
-            visible: false
-        },
-        {
-            key: 'serviceProfileId',
-            name: 'Service profile ID',
-            sortable: true,
-            visible: false
-        },
-        {
-            key: 'name',
-            name: 'Name',
-            sortable: true
-        },
-        {
-            key: 'description',
-            name: 'Description',
-            sortable: false
-        },
-        {
-            key: 'path',
-            name: 'Path',
-            sortable: true
-        },
-        {
-            key: 'fileFilter',
-            name: 'File Filter',
-            sortable: false
-        },
-        {
-            key: 'actionName',
-            name: 'Action',
-            sortable: false,
-            visible: true
-        }
-    ];
+    columns = [];
+
 
     constructor(props, context) {
-        super(props);
-        console.log('props', props);
-        console.log('context', context);
+        super(props, context);
+        context.i18n.register('SftpGateway', i18nMessages);
+
         this.loadData();
         this.state = {
             ...context,
@@ -76,7 +33,60 @@ class SFTPConfigurator extends Components.ContextComponent {
             toEdit: null,
             actions: []
         };
-        console.log('state', this.state);
+        this.columns = [
+            {
+                key: 'position',
+                name: '',
+                sortDescendingFirst: true,
+                sortable: true,
+                visible: false
+            },
+            {
+                key: 'id',
+                name: context.i18n.getMessage('gateway.sftp.id'),
+                sortDescendingFirst: true,
+                sortable: true,
+                visible: false
+            },
+            {
+                key: 'businessPartnerId',
+                name: context.i18n.getMessage('gateway.sftp.businessPartnerId'),
+                sortable: true,
+                visible: false
+            },
+            {
+                key: 'serviceProfileId',
+                name: context.i18n.getMessage('gateway.sftp.serviceProfileId'),
+                sortable: true,
+                visible: false
+            },
+            {
+                key: 'name',
+                name: context.i18n.getMessage('gateway.sftp.name'),
+                sortable: true
+            },
+            {
+                key: 'description',
+                name: context.i18n.getMessage('gateway.sftp.description'),
+                sortable: false
+            },
+            {
+                key: 'path',
+                name: context.i18n.getMessage('gateway.sftp.path'),
+                sortable: true
+            },
+            {
+                key: 'fileFilter',
+                name: context.i18n.getMessage('gateway.sftp.fileFilter'),
+                sortable: false
+            },
+            {
+                key: 'actionName',
+                name: context.i18n.getMessage('gateway.sftp.action'),
+                sortable: false,
+                visible: true
+            }
+        ];
     };
 
     loadData = () => {
@@ -93,34 +103,49 @@ class SFTPConfigurator extends Components.ContextComponent {
                     actions: _actions
                 });
             }).catch((error) => {
-                this.state.showNotification('Backend is not available', 'error', 4);
+                console.error(error);
+                this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.backend_not_available'), 'error', 4);
             });
             this.request.getServiceConfigurations().then((data) => {
                 this.setState({rows: data});
             }).catch((error) => {
-                this.state.showNotification('Backend is not available', 'error', 4);
+                console.error(error);
+                this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.backend_not_available'), 'error', 4);
             });
-        }).catch(() => {
-            this.state.showNotification('Backend is not available', 'error', 4);
+        }).catch((error) => {
+            console.error(error);
+            this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.backend_not_available'), 'error', 4);
         });
     };
 
-    save = (rows) => {
-        console.log('toSave', rows);
-        this.request.saveServiceConfigurations(rows).then((_rows) => {
+    save = (row) => {
+        console.log(row);
+        this.request.saveServiceConfiguration(row).then((_rows) => {
+            console.log('save', _rows);
+            this.setState({
+                rows: _rows,
+                toEdit: null,
+                showModal: false,
+                edit: false
+            });
+            this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.success'), 'success', 4);
+        }).catch((error) => {
+            console.error('save', error);
+            this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.warning'), 'warning', 4);
+        });
+    };
+
+    delete = (row) => {
+        this.request.deleteServiceConfigurations(row).then((_rows) => {
             this.setState({rows: _rows});
-            this.state.showNotification('Operation was successful!', 'success', 4);
-        }).catch(() => {
-            this.state.showNotification('Operation was not successful!', 'warning', 4);
+            this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.success'), 'success', 4);
+        }).catch((error) => {
+            console.error(error);
+            this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.warning'), 'warning', 4);
         });
     };
 
-    delete = (rows) => {
-        this.request.deleteServiceConfigurations(rows).then((_rows) => {
-        });
-    };
-
-    editRow = (row) => {
+    edit = (row) => {
         const clone = JSON.parse(JSON.stringify(row));
         this.setState({
             toEdit: clone,
@@ -129,15 +154,7 @@ class SFTPConfigurator extends Components.ContextComponent {
         });
     };
 
-    edit = (row) => {
-        this.state.rows[row.position - 1] = row;
-        this.setState({
-            showModal: false,
-            edit: false
-        });
-    };
-
-    addRow = () => {
+    add = () => {
         this.setState({
             toEdit: this.createEmptyRow(),
             showModal: true,
@@ -160,56 +177,55 @@ class SFTPConfigurator extends Components.ContextComponent {
         }
     };
 
-    add = (row) => {
-        const _rows = Array.from(this.state.rows);
-        _rows.push(row);
-        this.setState({
-            rows: _rows,
-            showModal: false,
-            edit: false
-        });
-    };
-
     cancel = () => {
         this.setState({
+            toEdit: null,
             showModal: false,
             edit: false
         });
     };
 
     render() {
+        const {i18n} = this.context;
+        const saveButtonTitle = this.state.edit ? i18n.getMessage('gateway.sftp.button.edit') : i18n.getMessage('gateway.sftp.button.create');
+        const modalTitle = this.state.edit ? i18n.getMessage('gateway.sftp.modal.edit') + ': ' + this.state.toEdit.id : i18n.getMessage('gateway.sftp.modal.new');
         return (
             <div className='row'>
-                <div
-                    style={{
-                        padding: '24px',
-                        backgroundColor: 'transparent',
-                        overflow: 'hidden',
-                        display: 'inline-block',
-                        verticalAlign: 'middle',
-                        position: 'absolute'
-                    }}
-                >
-                    {
-                        this.state.showModal &&
-                        this.state.toEdit !== null &&
-                        <EditDialog
+                {
+                    this.state.toEdit !== null &&
+                    <Components.ModalDialog
+                        ref={ref => this.modalDialog = ref}
+                        buttons={{'save': saveButtonTitle, 'cancel': i18n.getMessage('gateway.sftp.button.cancel')}}
+                        size='large'
+                        visible={this.state.showModal}
+                        allowClose={false}
+                        title={modalTitle}
+                        onButtonClick={(cmd) => {
+                            if (cmd === 'save') {
+                                if (this.dialogForm.handleValidation()) {
+                                    this.save(this.state.toEdit);
+                                    return true;
+                                } else {
+                                    return false;
+                                }
+                            }
+                        }}
+                        onClose={() => this.cancel()}
+                    >
+                        <DialogForm
                             data={this.state.toEdit}
-                            onSubmit={this.add.bind(this)}
-                            onEdit={this.edit.bind(this)}
-                            onCancel={this.cancel.bind(this)}
                             actions={this.state.actions}
-                            edit={this.state.edit}
+                            ref={ref => this.dialogForm = ref}
                         />
-                    }
-                </div>
+                    </Components.ModalDialog>
+                }
                 <ConfigDataGrid
                     columns={this.columns}
                     rows={this.state.rows}
                     onSave={this.save.bind(this)}
                     onDelete={this.delete.bind(this)}
-                    onEdit={this.editRow.bind(this)}
-                    onAddRow={this.addRow.bind(this)}
+                    onEdit={this.edit.bind(this)}
+                    onAddRow={this.add.bind(this)}
                     onReload={this.loadData.bind(this)}
                 />
             </div>

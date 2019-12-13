@@ -46,8 +46,6 @@ public class RestfulController extends AbstractRestController {
             @RequestHeader(name = "X-User-Id-Token") String jwt,
             @PathVariable String businesspartnerId
     ) {
-        logger.info(jwt);
-        logger.info(businesspartnerId);
         if (Objects.isNull(jwt)) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -62,7 +60,6 @@ public class RestfulController extends AbstractRestController {
     public ResponseEntity<List<SftpServiceConfigEntity>> getAllServiceConfigurations(
             @RequestHeader(name = "X-User-Id-Token") String jwt
     ) {
-        logger.info(jwt);
         if (Objects.isNull(jwt)) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -88,11 +85,34 @@ public class RestfulController extends AbstractRestController {
         return new ResponseEntity<>(this.serviceConfigRepository.saveAll(configEntityList), HttpStatus.OK);
     }
 
+    @PutMapping(value = "/", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<List<SftpServiceConfigEntity>> putServiceConfiguration(
+            @RequestHeader(name = "X-User-Id-Token") String jwt,
+            @RequestBody SftpServiceConfigEntity configEntity
+    ) {
+        if (Objects.isNull(jwt)) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        if (!this.canAccess(jwt)) {
+            new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
+        try {
+            this.serviceConfigRepository.save(configEntity);
+        } catch (Throwable e) {
+            logger.error(e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return new ResponseEntity<>(this.serviceConfigRepository.findAll(), HttpStatus.OK);
+    }
+
     @DeleteMapping(value = "/", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ResponseEntity<List<SftpServiceConfigEntity>> deleteServiceConfigurations(
+    public ResponseEntity<List<SftpServiceConfigEntity>> deleteServiceConfiguration(
             @RequestHeader(name = "X-User-Id-Token") String jwt,
-            @RequestBody List<SftpServiceConfigEntity> configEntityList
+            @RequestBody SftpServiceConfigEntity configEntityList
     ) {
         if (Objects.isNull(jwt)) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
@@ -101,10 +121,31 @@ public class RestfulController extends AbstractRestController {
             new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         try {
-            this.serviceConfigRepository.deleteInBatch(configEntityList);
+            this.serviceConfigRepository.delete(configEntityList);
         } catch (Throwable e) {
+            logger.error(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(this.serviceConfigRepository.findAll(), HttpStatus.OK);
     }
+
+//    @DeleteMapping(value = "/", consumes = MediaType.APPLICATION_JSON_VALUE)
+//    @ResponseBody
+//    public ResponseEntity<List<SftpServiceConfigEntity>> deleteServiceConfigurations(
+//            @RequestHeader(name = "X-User-Id-Token") String jwt,
+//            @RequestBody List<SftpServiceConfigEntity> configEntityList
+//    ) {
+//        if (Objects.isNull(jwt)) {
+//            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+//        }
+//        if (!this.canAccess(jwt)) {
+//            new ResponseEntity<>(HttpStatus.FORBIDDEN);
+//        }
+//        try {
+//            this.serviceConfigRepository.deleteInBatch(configEntityList);
+//        } catch (Throwable e) {
+//            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//        return new ResponseEntity<>(HttpStatus.OK);
+//    }
 }

@@ -23,6 +23,15 @@ export default class RequestApi {
         });
     }
 
+    async saveServiceConfiguration(data) {
+        console.log('data', data);
+        return await this._request.put(this._serviceUrl + '/sftp/').send(data).then((response) => {
+            return response.body;
+        }).catch((error) => {
+            return error;
+        });
+    }
+
     async deleteServiceConfigurations(data) {
         return await this._request.delete(this._serviceUrl + '/sftp/').send(data).then((response) => {
             return response.body;

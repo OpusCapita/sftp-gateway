@@ -14,7 +14,7 @@ const configurator = () => {
     );
 };
 
-const App = (props) => (
+const App = () => (
     <Containers.ServiceLayout serviceName="sftp-gateway">
         <Route path="/" component={configurator}/>
     </Containers.ServiceLayout>

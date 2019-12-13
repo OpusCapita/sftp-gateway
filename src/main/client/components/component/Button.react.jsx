@@ -1,9 +1,6 @@
 import React, {PropTypes} from 'react';
-import { Components } from '@opuscapita/service-base-ui';
+import {Components} from '@opuscapita/service-base-ui';
 
-// import React from 'react';
-// const PropTypes = import('react');
-// const Components = import('@opuscapita/service-base-ui');
 
 class Button extends Components.ContextComponent {
 
@@ -28,12 +25,19 @@ class Button extends Components.ContextComponent {
 
     state = {};
 
-    constructor(props) {
-        super(props);
+    constructor(props, context) {
+        super(props, context);
         this.state = {
-            ...props
+            ...props,
+            ...context
         };
     }
+
+    componentWillReceiveProps = (newProps) => {
+        this.setState({
+            ...newProps
+        });
+    };
 
     render() {
         return (
@@ -48,4 +52,5 @@ class Button extends Components.ContextComponent {
         );
     }
 }
+
 export default Button;

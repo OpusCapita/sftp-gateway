@@ -75,7 +75,7 @@ module.exports = {
 
     resolve: {
         modules: ['NODE_PATH', 'node_modules'],
-        extensions: ['.js', '.jsx'],
+        extensions: ['.js', '.jsx', '.json'],
         // alias: {
         //     'react': path.resolve(__dirname, './node_modules/react'),
         //     'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
@@ -86,7 +86,7 @@ module.exports = {
 
     resolveLoader: {
         modules: ['node_modules'],
-        extensions: ['.js', '.jsx']
+        extensions: ['.js', '.jsx', '.json']
     },
 
     module: {
