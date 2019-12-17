@@ -35,7 +35,6 @@ class DialogForm extends Components.ContextComponent {
             data: _row,
             error: _errors
         });
-        this.handleValidation();
     };
 
     handleChange = (event) => {
@@ -50,8 +49,6 @@ class DialogForm extends Components.ContextComponent {
         this.setState({
             data: _row
         });
-
-        this.handleValidation();
     };
 
     handleValidation = () => {

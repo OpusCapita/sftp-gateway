@@ -9,10 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
@@ -48,11 +45,14 @@ public class TxService {
     }
 
     public void sendTx(final AuthResponse authenticationToken) {
-        try {
-            this.sendTntTx(authenticationToken.getId_token());
-            log.info("Tnt Transaction Event sent");
-        } catch (Exception e) {
-            log.error("Tnt Transaction could not be started: {}", e.getMessage());
+        if (this.tntConfiguration.isActive()) {
+            try {
+                this.sendTntTx(authenticationToken.getId_token());
+                log.info("Tnt Transaction Event sent");
+            } catch (Exception e) {
+                e.printStackTrace();
+                log.error("Tnt Transaction could not be started: {}", e.getMessage());
+            }
         }
 
         try {
@@ -66,6 +66,7 @@ public class TxService {
     private ResponseEntity<String> sendTntTx(final String jwt) {
         RestTemplate rest = new RestTemplate();
         HttpHeaders header = new HttpHeaders();
+        header.setContentType(MediaType.APPLICATION_JSON);
         header.set("X-User-Id-Token", jwt);
         HttpEntity<String> entity = new HttpEntity<>(this.transaction.toString(), header);
         return rest.exchange(this.tntConfiguration.getUri(), HttpMethod.POST, entity, String.class);

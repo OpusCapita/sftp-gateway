@@ -1,7 +1,7 @@
 package com.opuscapita.transaction.model.properties;
 
 public enum DocumentCategory {
-    DOCUMENT("inbound"),
+    INBOUND("inbound"),
     CANONCAL("canonical"),
     ATTACHMENT("inboundAttachment");
 

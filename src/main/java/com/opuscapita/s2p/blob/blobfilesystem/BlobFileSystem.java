@@ -49,8 +49,11 @@ public class BlobFileSystem extends FileSystem {
             GenericUtils.asSortedSet(String.CASE_INSENSITIVE_ORDER, "basic", "posix", "owner"));
 
 
-    public BlobFileSystem(AbstractBlobFileSystemProvider fileSystemProvider, BlobConfiguration configuration, Map<String, ?> env) throws IOException {
-
+    public BlobFileSystem(
+            AbstractBlobFileSystemProvider fileSystemProvider,
+            BlobConfiguration configuration,
+            Map<String, ?> env
+    ) throws IOException {
 
         String id_token = "";
         String tenant_id = "";
@@ -58,7 +61,7 @@ public class BlobFileSystem extends FileSystem {
             id_token = (String) env.get("id_token");
             tenant_id = (String) env.get("tenant_id");
         }
-        this.access = "public";
+        this.access = configuration.getAccess();
         this.defaultDir = new BlobPath(BlobFileSystem.this, "/".getBytes());
         this.fileSystemProvider = fileSystemProvider;
         this.id_token = id_token;

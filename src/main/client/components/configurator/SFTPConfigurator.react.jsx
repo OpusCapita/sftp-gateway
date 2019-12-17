@@ -146,7 +146,6 @@ class SFTPConfigurator extends Components.ContextComponent {
             this.setState({rows: _rows});
             this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.success'), 'success', 4);
         }).catch((error) => {
-            console.error(error);
             this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.warning'), 'warning', 4);
         });
     };

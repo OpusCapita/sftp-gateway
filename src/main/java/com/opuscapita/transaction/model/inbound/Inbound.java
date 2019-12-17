@@ -21,7 +21,7 @@ public class Inbound implements Tx {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("\"" + title + "\":{");
-        Objects.requireNonNull(this.serviceProfile, "").toString();
+        builder.append(Objects.requireNonNull(this.serviceProfile, "").toString());
         builder.append("}");
         return builder.toString();
     }

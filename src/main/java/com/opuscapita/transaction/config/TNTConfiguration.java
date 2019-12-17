@@ -18,6 +18,8 @@ public class TNTConfiguration {
     private int port;
     @Value(value = "${tnt.event.path}")
     private String path;
+    @Value(value = "${tnt.event.active:true}")
+    private boolean active;
 
     public String getUri() {
         return this.method + "://"
