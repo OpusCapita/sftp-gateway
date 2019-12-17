@@ -1,10 +1,9 @@
 import request from 'superagent';
-// const request = import('superagent');
 
 export default class RequestApi {
     _request = request;
 
-    _serviceUrl = './api';
+    _serviceUrl = '/sftp-gateway/api';
     _serviceUrlDev = 'http://localhost:2223/api';
 
     async getServiceConfigurations() {

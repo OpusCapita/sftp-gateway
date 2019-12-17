@@ -1,15 +1,18 @@
 {
-  "test-permissions": {
+  "ui-permissions": {
     "name": {
       "en": "SFTP- Gateway",
       "de": "SFTP- Gateway DE"
     },
     "description": {
-      "en": "Configuration of the SFTP",
-      "de": "Configuration of the SFTP DE"
+      "en": "Configuration of the SFTPUI",
+      "de": "Configuration of the SFTPUI DE"
     },
     "resources": [
       {
+        "roleIds": [
+          "*"
+        ],
         "type": [
           "ui"
         ],
@@ -19,8 +22,23 @@
           "edit",
           "delete"
         ]
-      },
+      }
+    ]
+  },
+  "rest-permissions": {
+    "name": {
+      "en": "SFTP- Gateway Rest",
+      "de": "SFTP- Gateway Rest DE"
+    },
+    "description": {
+      "en": "Configuration of the SFTP Rest",
+      "de": "Configuration of the SFTP Rest DE"
+    },
+    "resources": [
       {
+        "roleIds": [
+          "*"
+        ],
         "type": [
           "rest"
         ],
@@ -32,10 +50,61 @@
         ]
       },
       {
+        "roleIds": [
+          "*"
+        ],
         "type": [
           "rest"
         ],
-        "resourceId": "^/api/check/health",
+        "resourceId": "^/api/evnt/*",
+        "actions": [
+          "view"
+        ]
+      },
+      {
+        "roleIds": [
+          "*"
+        ],
+        "type": [
+          "rest"
+        ],
+        "resourceId": "^/api/js/*",
+        "actions": [
+          "view"
+        ]
+      },
+      {
+        "roleIds": [
+          "*"
+        ],
+        "type": [
+          "rest"
+        ],
+        "resourceId": "^/api/js/fs/*",
+        "actions": [
+          "view"
+        ]
+      }
+    ]
+  },
+  "health-permissions": {
+    "name": {
+      "en": "SFTP- Gateway Healthcheck",
+      "de": "SFTP- Gateway Healthcheck DE"
+    },
+    "description": {
+      "en": "Configuration of the SFTP Healthcheck",
+      "de": "Configuration of the SFTP Healthcheck DE"
+    },
+    "resources": [
+      {
+        "roleIds": [
+          "*"
+        ],
+        "type": [
+          "rest"
+        ],
+        "resourceId": "^/api/health/check",
         "actions": [
           "view"
         ]

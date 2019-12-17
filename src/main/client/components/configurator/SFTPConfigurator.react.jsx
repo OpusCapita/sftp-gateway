@@ -9,9 +9,13 @@ class SFTPConfigurator extends Components.ContextComponent {
 
     static propTypes = {
         businessPartnerId: PropTypes.string.isRequired,
-        serviceProfileId: PropTypes.string.isRequired
+        serviceProfileId: PropTypes.string.isRequired,
+        visible: PropTypes.boolean
     };
 
+    static defaultProps = {
+        visible: true
+    };
 
     request = new RequestApi();
     state = {};
@@ -89,7 +93,15 @@ class SFTPConfigurator extends Components.ContextComponent {
         ];
     };
 
-    loadData = () => {
+    deleteByServiceProfileId = async () => {
+        return this.request.deleteByServiceProfileId(this.props.serviceProfileId);
+    };
+
+    deleteByBusinessPartnerId = async () => {
+        return this.request.deleteByBusinessPartnerId(this.props.businessPartnerId);
+    };
+
+    loadData = async () => {
         this.request.checkBackendAvailability().then(() => {
             this.request.getEventActions().then((_data) => {
                 let _actions = [];
@@ -103,25 +115,20 @@ class SFTPConfigurator extends Components.ContextComponent {
                     actions: _actions
                 });
             }).catch((error) => {
-                console.error(error);
                 this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.backend_not_available'), 'error', 4);
             });
             this.request.getServiceConfigurations().then((data) => {
                 this.setState({rows: data});
             }).catch((error) => {
-                console.error(error);
                 this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.backend_not_available'), 'error', 4);
             });
         }).catch((error) => {
-            console.error(error);
             this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.backend_not_available'), 'error', 4);
         });
     };
 
     save = (row) => {
-        console.log(row);
         this.request.saveServiceConfiguration(row).then((_rows) => {
-            console.log('save', _rows);
             this.setState({
                 rows: _rows,
                 toEdit: null,
@@ -130,7 +137,6 @@ class SFTPConfigurator extends Components.ContextComponent {
             });
             this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.success'), 'success', 4);
         }).catch((error) => {
-            console.error('save', error);
             this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.warning'), 'warning', 4);
         });
     };
@@ -190,7 +196,7 @@ class SFTPConfigurator extends Components.ContextComponent {
         const saveButtonTitle = this.state.edit ? i18n.getMessage('gateway.sftp.button.edit') : i18n.getMessage('gateway.sftp.button.create');
         const modalTitle = this.state.edit ? i18n.getMessage('gateway.sftp.modal.edit') + ': ' + this.state.toEdit.id : i18n.getMessage('gateway.sftp.modal.new');
         return (
-            <div className='row'>
+            this.props.visible && <div>
                 {
                     this.state.toEdit !== null &&
                     <Components.ModalDialog
