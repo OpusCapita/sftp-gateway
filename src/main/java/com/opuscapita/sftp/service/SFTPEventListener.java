@@ -70,6 +70,7 @@ public class SFTPEventListener extends AbstractSftpEventListenerAdapter {
         for (SftpServiceConfigEntity entity : configProfiles) {
             try {
                 txService = new TxService(
+                        entity,
                         this.service.getKafkaTemplate(),
                         this.service.getTntConfiguration()
                 );

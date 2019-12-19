@@ -2,17 +2,25 @@ package com.opuscapita.sftp.model;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import java.util.UUID;
 
 @Entity(name = "SftpServiceConfig")
 public class SftpServiceConfigEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+//    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @Column(columnDefinition = "BINARY(16)")
     @Getter
     @Setter
-    private long id;
+    private UUID id;
 
     @Getter
     @Setter

@@ -63,6 +63,6 @@ HEALTHCHECK --interval=15s --timeout=30s --start-period=40s --retries=15 \
 CMD netstat -an | grep 2222 > /dev/null; if [ 0 != $? ]; then exit 1; fi;
 
 EXPOSE 2222
-EXPOSE 2223
+EXPOSE 3058
 
 ENTRYPOINT exec java $JAVA_OPTS -jar $APPDIR/SFTPj.jar --permissions=./acl.json

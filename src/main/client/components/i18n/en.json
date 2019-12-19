@@ -24,6 +24,7 @@
   "gateway.sftp.button.edit": "Edit",
   "gateway.sftp.button.cancel": "Cancel",
   "gateway.sftp.button.delete": "Delete",
+  "gateway.sftp.button.save": "Save",
   "gateway.sftp.button.add": "Add",
   "gateway.sftp.modal.new": "New",
   "gateway.sftp.modal.edit": "Edit"

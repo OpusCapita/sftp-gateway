@@ -6,6 +6,8 @@ import com.opuscapita.transaction.model.TxSchemaV1_5;
 import com.opuscapita.transaction.model.document.Content;
 import com.opuscapita.transaction.model.properties.DocumentCategory;
 import com.opuscapita.transaction.model.properties.EntityType;
+import com.opuscapita.transaction.model.properties.Version;
+import com.opuscapita.transaction.utils.TxUtils;
 import org.apache.sshd.common.AttributeRepository;
 import org.apache.sshd.server.session.ServerSession;
 import org.springframework.stereotype.Component;
@@ -42,20 +44,12 @@ public class SimpleUploadListener extends AbstractFileUploadListener implements 
 
         this.getTxService().setTransaction(tx);
         this.getTxService().sendTx(authResponse);
-    }
-
-    @Override
-    public String getId() {
-        return this.id;
-    }
-
-    @Override
-    public String getTitle() {
-        return this.title;
-    }
-
-    @Override
-    public String getDescription() {
-        return this.description;
+        this.getTxService().setTransaction(TxUtils.createEventTx(
+                Version.V_1_5,
+                this.getTxService().getConfigEntity().getAction(),
+                this.getTxService().getConfigEntity().getBusinessPartnerId(),
+                this.getTxService().getConfigEntity().getBusinessPartnerId(),
+                this.getTxService().getConfigEntity().getServiceProfileId())
+        );
     }
 }

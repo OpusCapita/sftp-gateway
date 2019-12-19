@@ -19,19 +19,4 @@ public class DoNothingUploadListener extends AbstractFileUploadListener implemen
     public void onPathReady(Path path, ServerSession session) {
 
     }
-
-    @Override
-    public String getId() {
-        return this.id;
-    }
-
-    @Override
-    public String getTitle() {
-        return this.title;
-    }
-
-    @Override
-    public String getDescription() {
-        return this.description;
-    }
 }

@@ -94,7 +94,7 @@ class SFTPConfigurator extends Components.ContextComponent {
     };
 
     deleteByServiceProfileId = async () => {
-        return this.request.deleteByServiceProfileId(this.props.serviceProfileId);
+        return this.request.deleteByServiceProfileId(this.props.businessPartnerId, this.props.serviceProfileId);
     };
 
     deleteByBusinessPartnerId = async () => {
@@ -117,7 +117,7 @@ class SFTPConfigurator extends Components.ContextComponent {
             }).catch((error) => {
                 this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.backend_not_available'), 'error', 4);
             });
-            this.request.getServiceConfigurations().then((data) => {
+            this.request.getServiceConfigurations(this.props.businessPartnerId, this.props.serviceProfileId).then((data) => {
                 this.setState({rows: data});
             }).catch((error) => {
                 this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.backend_not_available'), 'error', 4);
@@ -128,7 +128,7 @@ class SFTPConfigurator extends Components.ContextComponent {
     };
 
     save = (row) => {
-        this.request.saveServiceConfiguration(row).then((_rows) => {
+        this.request.editServiceConfiguration(row).then((_rows) => {
             this.setState({
                 rows: _rows,
                 toEdit: null,
@@ -141,8 +141,23 @@ class SFTPConfigurator extends Components.ContextComponent {
         });
     };
 
+    create = (row) => {
+        this.request.createServiceConfiguration(row).then((_rows) => {
+            this.setState({
+                rows: _rows,
+                toEdit: null,
+                showModal: false,
+                edit: false
+            });
+            this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.success'), 'success', 4);
+        }).catch((error) => {
+            this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.warning'), 'warning', 4);
+        });
+    };
+
+
     delete = (row) => {
-        this.request.deleteServiceConfigurations(row).then((_rows) => {
+        this.request.deleteServiceConfiguration(row).then((_rows) => {
             this.setState({rows: _rows});
             this.context.showNotification(this.context.i18n.getMessage('gateway.sftp.notification.success'), 'success', 4);
         }).catch((error) => {
@@ -192,7 +207,6 @@ class SFTPConfigurator extends Components.ContextComponent {
 
     render() {
         const {i18n} = this.context;
-        const saveButtonTitle = this.state.edit ? i18n.getMessage('gateway.sftp.button.edit') : i18n.getMessage('gateway.sftp.button.create');
         const modalTitle = this.state.edit ? i18n.getMessage('gateway.sftp.modal.edit') + ': ' + this.state.toEdit.id : i18n.getMessage('gateway.sftp.modal.new');
         return (
             this.props.visible && <div>
@@ -200,7 +214,10 @@ class SFTPConfigurator extends Components.ContextComponent {
                     this.state.toEdit !== null &&
                     <Components.ModalDialog
                         ref={ref => this.modalDialog = ref}
-                        buttons={{'save': saveButtonTitle, 'cancel': i18n.getMessage('gateway.sftp.button.cancel')}}
+                        buttons={{
+                            'save': i18n.getMessage('gateway.sftp.button.save'),
+                            'cancel': i18n.getMessage('gateway.sftp.button.cancel')
+                        }}
                         size='large'
                         visible={this.state.showModal}
                         allowClose={false}
@@ -208,7 +225,11 @@ class SFTPConfigurator extends Components.ContextComponent {
                         onButtonClick={(cmd) => {
                             if (cmd === 'save') {
                                 if (this.dialogForm.handleValidation()) {
-                                    this.save(this.state.toEdit);
+                                    if (this.state.edit) {
+                                        this.save(this.state.toEdit);
+                                    } else {
+                                        this.create(this.state.toEdit);
+                                    }
                                     return true;
                                 } else {
                                     return false;

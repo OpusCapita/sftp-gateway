@@ -28,4 +28,19 @@ abstract class AbstractFileUploadListener implements FileUploadListenerInterface
     public final TxService getTxService() {
         return this.txService;
     }
+
+    @Override
+    public String getId() {
+        return this.id;
+    }
+
+    @Override
+    public String getTitle() {
+        return this.title;
+    }
+
+    @Override
+    public String getDescription() {
+        return this.description;
+    }
 }

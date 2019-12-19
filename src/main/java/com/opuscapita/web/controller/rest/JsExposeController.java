@@ -12,8 +12,7 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
-@RequestMapping("/api/js")
+@RequestMapping("/static")
 public class JsExposeController extends AbstractRestController {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -26,10 +25,8 @@ public class JsExposeController extends AbstractRestController {
         this.jsLoaderService = _jsLoaderService;
     }
 
-    @GetMapping(value = "/{js}", produces = "application/javascript")
-    @ResponseBody
-    public ResponseEntity<String> getJs(
-            @PathVariable String js
+    private ResponseEntity<String> getJs(
+            String js
     ) {
         List<String> jsFiles;
         ResponseEntity<String> responseEntity;
@@ -42,7 +39,7 @@ public class JsExposeController extends AbstractRestController {
         return responseEntity;
     }
 
-    @GetMapping(value = "/fs/{js}", produces = "application/javascript")
+    @GetMapping(value = "/{js}", produces = "application/javascript")
     @ResponseBody
     public ResponseEntity<String> getJsFromFileSystem(
             @PathVariable String js

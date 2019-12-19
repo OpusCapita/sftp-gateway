@@ -4,35 +4,72 @@ export default class RequestApi {
     _request = request;
 
     _serviceUrl = '/sftp-gateway/api';
-    _serviceUrlDev = 'http://localhost:2223/api';
 
-    async getServiceConfigurations() {
-        return await this._request.get(this._serviceUrl + '/sftp/').then((response) => {
+    _configuration = '/configs';
+    _events = '/evnts';
+
+    async getServiceConfigurations(businessPartnerId, serviceProfileId) {
+        return await this._request.get(
+            this._serviceUrl
+            + this._configuration + '/'
+            + businessPartnerId + '/'
+            + serviceProfileId
+        ).then((response) => {
             return response.body;
         }).catch((error) => {
             return error;
         });
     }
 
-    async saveServiceConfigurations(data) {
-        return await this._request.post(this._serviceUrl + '/sftp/').send(data).then((response) => {
+    async createServiceConfiguration(data) {
+        return await this._request.post(this._serviceUrl + this._configuration + '/').send(data).then((response) => {
             return response.body;
         }).catch((error) => {
             return error;
         });
     }
 
-    async saveServiceConfiguration(data) {
-        console.log('data', data);
-        return await this._request.put(this._serviceUrl + '/sftp/').send(data).then((response) => {
+    async editServiceConfiguration(data) {
+        return await this._request.put(this._serviceUrl + this._configuration + '/').send(data).then((response) => {
             return response.body;
         }).catch((error) => {
             return error;
         });
     }
 
-    async deleteServiceConfigurations(data) {
-        return await this._request.delete(this._serviceUrl + '/sftp/').send(data).then((response) => {
+    async deleteServiceConfiguration(data) {
+        return await this._request.delete(
+            this._serviceUrl
+            + this._configuration + '/'
+            + data.businessPartnerId + '/'
+            + data.serviceProfileId + '/'
+            + data.id
+        ).send().then((response) => {
+            return response.body;
+        }).catch((error) => {
+            return error;
+        });
+    }
+
+    async deleteServiceConfigurationsByBusinessPartnerId(businessPartnerId) {
+        return await this._request.delete(
+            this._serviceUrl
+            + this._configuration + '/'
+            + businessPartnerId
+        ).send().then((response) => {
+            return response.body;
+        }).catch((error) => {
+            return error;
+        });
+    }
+
+    async deleteServiceConfigurationsByServiceProfileId(businessPartnerId, serviceProfileId) {
+        return await this._request.delete(
+            this._serviceUrl
+            + this._configuration + '/'
+            + businessPartnerId + '/'
+            + serviceProfileId
+        ).send().then((response) => {
             return response.body;
         }).catch((error) => {
             return error;
@@ -40,7 +77,7 @@ export default class RequestApi {
     }
 
     async getEventActions() {
-        return await this._request.get(this._serviceUrl + '/evnt/').then((response) => {
+        return await this._request.get(this._serviceUrl + this._events + '/').then((response) => {
             return response.body;
         }).catch((error) => {
             return error;

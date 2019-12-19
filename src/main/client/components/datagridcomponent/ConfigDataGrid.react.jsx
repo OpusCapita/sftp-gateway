@@ -50,7 +50,7 @@ class ConfigDataGrid extends Components.ContextComponent {
 
     render() {
         const {i18n} = this.context;
-        const {rows} = this.state;
+        const {rows} = this.props;
 
         return (
             <div>

@@ -1,6 +1,7 @@
 package com.opuscapita.transaction.service;
 
 import com.opuscapita.auth.model.AuthResponse;
+import com.opuscapita.sftp.model.SftpServiceConfigEntity;
 import com.opuscapita.transaction.config.TNTConfiguration;
 import com.opuscapita.transaction.model.Tx;
 import com.opuscapita.transaction.model.properties.Version;
@@ -12,17 +13,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
-import org.springframework.stereotype.Service;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.web.client.RestTemplate;
 
-@Service
+//import org.springframework.stereotype.Service;
+
+
 public class TxService {
 
     private final Logger log = LoggerFactory.getLogger(TxService.class);
-    private final TNTConfiguration tntConfiguration;
 
+    @Getter
+    private final TNTConfiguration tntConfiguration;
+    @Getter
+    private final SftpServiceConfigEntity configEntity;
     @Getter
     @Setter
     private Tx transaction = TxUtils.createEventTx(
@@ -32,14 +37,17 @@ public class TxService {
             "{senderBusinessparner}",
             "{gatewayId}");
 
+    //TODO: TopicName aus der properties
     public static final String TOPICNAME = "sftp-gateway";
 
     private KafkaTemplate<String, String> kafkaTemplate;
 
     public TxService(
+            final SftpServiceConfigEntity _configEntity,
             final KafkaTemplate<String, String> _kafkaTemplate,
             final TNTConfiguration _configuration
     ) {
+        this.configEntity = _configEntity;
         this.kafkaTemplate = _kafkaTemplate;
         this.tntConfiguration = _configuration;
     }

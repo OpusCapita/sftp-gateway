@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/api/health")
 public class HealthController extends AbstractRestController{
 

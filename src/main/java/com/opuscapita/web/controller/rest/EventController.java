@@ -13,8 +13,7 @@ import java.util.List;
 import java.util.Objects;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
-@RequestMapping("/api/evnt/")
+@RequestMapping("/api/evnts")
 public class EventController extends AbstractRestController {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -30,7 +29,7 @@ public class EventController extends AbstractRestController {
 
     @GetMapping(value = "/{evntActionId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ResponseEntity<UploadListenerService.EventEntry> getAllEventsActions(
+    public ResponseEntity<UploadListenerService.EventEntry> getEventAction(
             @RequestHeader(name = "X-User-Id-Token") String jwt,
             @PathVariable String evntActionId
     ) {
@@ -41,7 +40,7 @@ public class EventController extends AbstractRestController {
             new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         UploadListenerService.EventEntry eventEntry = this.uploadListenerService.getFileUploadListenerAsEventEntryById(evntActionId);
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(eventEntry, HttpStatus.OK);
     }
 
     @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)

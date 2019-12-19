@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @Service
 public class UploadListenerService {
 
-
     private final SftpServiceConfigRepository serviceConfigRepository;
 
     public UploadListenerService(

@@ -24,6 +24,7 @@
   "gateway.sftp.button.edit": "Bearbeiten",
   "gateway.sftp.button.cancel": "Abbrechen",
   "gateway.sftp.button.delete": "Löschen",
+  "gateway.sftp.button.save": "Speichern",
   "gateway.sftp.button.add": "Hinzufügen",
   "gateway.sftp.modal.new": "Neu",
   "gateway.sftp.modal.edit": "Bearbeiten"
