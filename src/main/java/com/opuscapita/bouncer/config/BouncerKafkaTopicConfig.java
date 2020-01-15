@@ -1,11 +1,13 @@
 package com.opuscapita.bouncer.config;
 
+import com.opuscapita.SFTPjApplication;
 import lombok.Getter;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
@@ -13,6 +15,7 @@ import org.springframework.kafka.core.KafkaAdmin;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Configuration
 @PropertySource(value = "classpath:application-bouncer.properties")
@@ -21,8 +24,8 @@ public class BouncerKafkaTopicConfig {
     @Value(value = "${bouncer.service-name}")
     private String serviceName;
     @Getter
-    @Value(value = "${bouncer.kafka.bootstrapAddress}")
-    private String bootstrapAddress;
+    @Value(value = "${bouncer.kafka.service-name:kafka}")
+    private String kafkaServiceName;
     @Getter
     @Value(value = "${bouncer.kafka.topicName}")
     private String topic;
@@ -33,11 +36,38 @@ public class BouncerKafkaTopicConfig {
     @Value(value = "${bouncer.kafka.replicationFactor}")
     private short replicationFactor;
 
+    private final DiscoveryClient discoveryClient;
+
+    @Autowired
+    public BouncerKafkaTopicConfig(
+            final DiscoveryClient _discoveryClient
+    ) {
+        this.discoveryClient = _discoveryClient;
+    }
+
+    private Optional<ServiceInstance> serviceUrl() {
+        Optional<ServiceInstance> opt = Optional.empty();
+        for (ServiceInstance si : this.discoveryClient.getInstances(this.getKafkaServiceName())) {
+            opt = Optional.of(si);
+            break;
+        }
+
+        return opt;
+    }
+
+    public String getBootstrapUri() {
+        Optional<ServiceInstance> opt = this.serviceUrl();
+        if (Boolean.parseBoolean(System.getProperty(SFTPjApplication.LOCALPROPERTY))) {
+            return opt.map(serviceInstance -> this.kafkaServiceName + ':' + serviceInstance.getPort()).orElse("");
+        }
+        return opt.map(serviceInstance -> serviceInstance.getHost() + ":" + serviceInstance.getPort()).orElse("");
+    }
+
     @Bean
     public KafkaAdmin bouncerKafkaAdmin() {
         Map<String, Object> configs = new HashMap<>();
-        configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
-        configs.put(AdminClientConfig.RECONNECT_BACKOFF_MS_CONFIG, 5000);
+        configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, getBootstrapUri());
+        configs.put(AdminClientConfig.RECONNECT_BACKOFF_MS_CONFIG, 10000);
         return new KafkaAdmin(configs);
     }
 

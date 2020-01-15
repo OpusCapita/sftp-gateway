@@ -4,6 +4,7 @@ services:
     build: .
     image: opuscapita/sftp-gateway:dev
     depends_on:
+      - kafka
       - mysql
       - consul
       - registrator
@@ -13,7 +14,6 @@ services:
       - blob
       - acl
       - tnt
-      - kafka
     labels:
       SERVICE_NAME: ${SERVICE_NAME}
       SERVICE_TAGS: external,gateway
@@ -24,7 +24,7 @@ services:
       SERVICE_3058_NAME: ${SERVICE_NAME}
       SERVICE_3058_CHECK_HTTP: /api/health/check
       SERVICE_3058_CHECK_INTERVAL: 15s
-      SERVICE_3058_CHECK_TIMEOUT: 3s
+      SERVICE_3058_CHECK_TIMEOUT: 5s
       MYSQL_DATABASE: ${SECRET_develop_MYSQL_DATABASE}
       MYSQL_ROOT_PASSWORD: ${SECRET_develop_MYSQL_ROOT_PASSWORD}
       MYSQL_ROOT_USER: ${SECRET_develop_MYSQL_ROOT_USER}
@@ -43,7 +43,7 @@ services:
       SERVICE_TAGS: external
     environment:
       REDIS_AUTH: ${SECRET_develop_REDIS_AUTH}
-      MYSQL_DATABASE: ${SECRET_develop_MYSQL_DATABASE}
+      MYSQL_DATABASE: "${SECRET_develop_MYSQL_DATABASE}_TNT"
       MYSQL_ROOT_PASSWORD: ${SECRET_develop_MYSQL_ROOT_PASSWORD}
       RABBITMQ_USER: ${SECRET_develop_RABBITMQ_USER}
       RABBITMQ_PASS: ${SECRET_develop_RABBITMQ_PASS}
@@ -52,6 +52,13 @@ services:
       RET_PERIOD: ${RET_PERIOD}
       REP_NAME: ${REP_NAME}
       REP_CONTAINER: ${REP_CONTAINER}
+      STUCK_TRANSACTIONS_USER: $STUCK_TRANSACTIONS_USER
+      STUCK_TRANSACTIONS_PASSWORD: $STUCK_TRANSACTIONS_PASSWORD
+      STUCK_TRANSACTIONS_SERVICE: $STUCK_TRANSACTIONS_SERVICE
+      STUCK_TRANSACTIONS_DATABASE: "${SECRET_develop_MYSQL_DATABASE}_TNT"
+      STUCK_TRANSACTIONS_POPULATE_TEST_DATA: $STUCK_TRANSACTIONS_POPULATE_TEST_DATA
+      STUCK_TRANSACTIONS_START_WORKER: $STUCK_TRANSACTIONS_START_WORKER
+      STUCK_TRANSACTIONS_INSERT_TO_ELASTIC_SEARCH: $STUCK_TRANSACTIONS_INSERT_TO_ELASTIC_SEARCH
       SERVICE_3027_CHECK_HTTP: /api/health/check
       SERVICE_3027_CHECK_INTERVAL: 15s
       SERVICE_3027_CHECK_TIMEOUT: 3s
@@ -87,7 +94,7 @@ services:
       - 3046:3046
     environment:
       MYSQL_ROOT_PASSWORD: ${SECRET_develop_MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${SECRET_develop_MYSQL_DATABASE_B}
+      MYSQL_DATABASE: "${SECRET_develop_MYSQL_DATABASE}_BUSINESS_PARTNER"
       NODE_ENV: ${NODE_ENV}
       REDIS_AUTH: ${SECRET_develop_REDIS_AUTH}
       RABBITMQ_USER: ${SECRET_develop_RABBITMQ_USER}
@@ -109,7 +116,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV}
       MYSQL_ROOT_PASSWORD: ${SECRET_develop_MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${SECRET_develop_MYSQL_DATABASE_B}
+      MYSQL_DATABASE: "${SECRET_develop_MYSQL_DATABASE}_BUSINESS_LINK"
       RABBITMQ_USER: ${SECRET_develop_RABBITMQ_USER}
       RABBITMQ_PASS: ${SECRET_develop_RABBITMQ_PASS}
       REDIS_AUTH: ${SECRET_develop_REDIS_AUTH}
@@ -228,6 +235,7 @@ services:
     depends_on:
       - registrator
       - mysql
+      - rabbitmq
     command: 'npm run dev'
 
   mysql:

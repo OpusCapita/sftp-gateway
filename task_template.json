@@ -6,14 +6,14 @@
     "constraint": ["engine.labels.nodetype==worker"],
     "publish": [
       "mode=host,target=2222,published=2222,protocol=tcp",
-      "mode=host,target=2223,published=2223,protocol=tcp"
+      "mode=host,target=3058,published=3058,protocol=tcp"
     ],
     "host": ["consul:172.17.0.1"],
     "env": [
       "SERVICE_NAME=${serviceName}",
-      "SERVICE_2223_CHECK_HTTP=/api/health/check",
-      "SERVICE_2223_CHECK_INTERVAL=15s",
-      "SERVICE_2223_CHECK_TIMEOUT=3s",
+      "SERVICE_3058_CHECK_HTTP=/api/health/check",
+      "SERVICE_3058_CHECK_INTERVAL=15s",
+      "SERVICE_3058_CHECK_TIMEOUT=3s",
       "RABBITMQ_USER=${SECRET_:env_RABBITMQUSER}",
       "RABBITMQ_PASS=${SECRET_:env_RABBITMQPASS}"
     ],

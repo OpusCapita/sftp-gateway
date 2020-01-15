@@ -79,6 +79,11 @@
       "name": "auth.server.clientSecret",
       "type": "java.lang.String",
       "description": "Description for auth.server.clientSecret."
+    },
+    {
+      "name": "blob.service-name",
+      "type": "java.lang.String",
+      "description": "Description for blob.service-name."
     }
   ]
 }

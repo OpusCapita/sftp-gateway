@@ -1,47 +1,61 @@
 package com.opuscapita.auth.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import com.opuscapita.SFTPjApplication;
+import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
-@PropertySource(value = "classpath:application-auth.properties")
+import javax.annotation.PostConstruct;
+import java.util.Optional;
+
+//@PropertySource(value = "classpath:application-auth.properties")
+@Data
 @Configuration
-@ConfigurationProperties(prefix = "auth.server")
 public class AuthConfiguration {
-    private String url;
+    @Value(value = "${auth.server.endpoint}")
     private String endpoint;
+    @Value(value = "${auth.server.clientKey}")
     private String clientKey;
+    @Value("${service-client/username}")
+    private String opt;
+    @Value(value = "${auth.server.clientSecret}")
     private String clientSecret;
+    @Value(value = "${auth.service-name:auth}")
+    private String serviceName;
+
+    private final DiscoveryClient discoveryClient;
+
+    @Autowired
+    public AuthConfiguration(
+            final DiscoveryClient _discoveryClient
+    ) {
+        this.discoveryClient = _discoveryClient;
+    }
+
+    @PostConstruct
+    private void loadConfiguration() {
+        System.out.println(this.opt);
+    }
+
+    private Optional<ServiceInstance> serviceUrl() {
+        Optional<ServiceInstance> opt = Optional.empty();
+        for (ServiceInstance si : this.discoveryClient.getInstances(this.getServiceName())) {
+            opt = Optional.of(si);
+            break;
+        }
+
+        return opt;
+    }
 
     public String getUrl() {
-        return this.url;
-    }
-
-    public String getEndpoint() {
-        return this.endpoint;
-    }
-
-    public String getClientKey() {
-        return this.clientKey;
-    }
-
-    public String getClientSecret() {
-        return this.clientSecret;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
-    }
-
-    public void setClientKey(String clientKey) {
-        this.clientKey = clientKey;
-    }
-
-    public void setClientSecret(String clientSecret) {
-        this.clientSecret = clientSecret;
+        Optional<ServiceInstance> opt = this.serviceUrl();
+        if (Boolean.parseBoolean(System.getProperty(SFTPjApplication.LOCALPROPERTY))) {
+            return opt.map(serviceInstance -> serviceInstance.getUri().getScheme() + "://" + this.serviceName + ':' + serviceInstance.getPort()).orElse("");
+        }
+        return opt.map(serviceInstance -> serviceInstance.getUri().toString()).orElse("");
     }
 }

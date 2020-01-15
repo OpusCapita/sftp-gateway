@@ -41,7 +41,9 @@ import java.util.List;
 public class SFTPDaemon extends AbstractLoggingBean {
 
     private final SFTPConfiguration configuration;
+    @Getter
     private final Bouncer bouncer;
+    @Getter
     private SshServer sshd = SshServer.setUpDefaultServer();
     @Getter
     private final TNTConfiguration tntConfiguration;

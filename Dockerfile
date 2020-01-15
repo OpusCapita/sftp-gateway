@@ -40,7 +40,7 @@ RUN npm run webpack-build-dev
 # Adding source, compile and package into a fat jar
 
 
-RUN $WRKDIR/mvnw clean package
+RUN ./mvnw -DskipTests clean package
 RUN mkdir -p $APPDIR
 RUN mv $TRGTDIR/SFTPj-0.0.1.jar $APPDIR/SFTPj.jar
 RUN cp -rp $WRKDIR/src/main/resources/static/built/ $APPDIR/built/

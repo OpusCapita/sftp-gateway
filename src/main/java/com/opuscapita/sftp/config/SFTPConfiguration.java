@@ -10,7 +10,6 @@ import org.springframework.context.annotation.PropertySource;
 @Configuration
 @ConfigurationProperties(prefix = "sftp.server")
 public class SFTPConfiguration {
-
     private int port;
     private String welcome;
     private String hostKey;

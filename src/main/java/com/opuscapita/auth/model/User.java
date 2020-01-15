@@ -47,38 +47,39 @@ public class User {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             JsonNode jsonNode = objectMapper.readTree(jsonUser);
-            this.id = jsonNode.get("id").asText();
-            this.email = jsonNode.get("email").asText();
-            this.phoneNo = jsonNode.get("phoneNo").asText();
-            this.supplierId = jsonNode.get("supplierId").asText();
-            this.customerId = jsonNode.get("customerId").asText();
-            this.clientId = jsonNode.get("clientId").asText();
-            this.status = jsonNode.get("status").asText();
-            this.mayChangeSupplier = jsonNode.get("mayChangeSupplier").asBoolean();
-            this.mayChangeCustomer = jsonNode.get("mayChangeCustomer").asBoolean();
-            this.languageId = jsonNode.get("languageId").asText();
-            this.firstName = jsonNode.get("firstName").asText();
-            this.lastName = jsonNode.get("lastName").asText();
-            this.mustBeChanged = jsonNode.get("mustBeChanged").asText();
-            this.tenantName = jsonNode.get("tenantName").asText();
-            this.aud = jsonNode.get("aud").asInt();
-            this.exp = jsonNode.get("exp").asInt();
-            this.iat = jsonNode.get("iat").asInt();
-            this.iss = jsonNode.get("iss").asText();
+            this.id = Objects.requireNonNull(jsonNode.get("id")).asText();
+            this.email = Objects.requireNonNull(jsonNode.get("email")).asText();
+            this.phoneNo = Objects.requireNonNull(jsonNode.get("phoneNo")).asText();
+            this.supplierId = Objects.requireNonNull(jsonNode.get("supplierId"), "").asText();
+            this.customerId = Objects.requireNonNull(jsonNode.get("customerId"), "").asText();
+            this.clientId = Objects.requireNonNull(jsonNode.get("clientId"), "").asText();
+            this.status = Objects.requireNonNull(jsonNode.get("status")).asText();
+            this.mayChangeSupplier = Objects.requireNonNull(jsonNode.get("mayChangeSupplier"), "false").asBoolean();
+            this.mayChangeCustomer = Objects.requireNonNull(jsonNode.get("mayChangeCustomer"), "false").asBoolean();
+            this.languageId = Objects.requireNonNull(jsonNode.get("languageId")).asText();
+            this.firstName = Objects.requireNonNull(jsonNode.get("firstName"), "").asText();
+            this.lastName = Objects.requireNonNull(jsonNode.get("lastName"), "").asText();
+            this.mustBeChanged = Objects.requireNonNull(jsonNode.get("mustBeChanged"), "false").asText();
+            this.tenantName = Objects.requireNonNull(jsonNode.get("tenantName")).asText();
+            this.aud = Objects.requireNonNull(jsonNode.get("aud")).asInt();
+            this.exp = Objects.requireNonNull(jsonNode.get("exp")).asInt();
+            this.iat = Objects.requireNonNull(jsonNode.get("iat")).asInt();
+            this.iss = Objects.requireNonNull(jsonNode.get("iss")).asText();
 
-            JsonNode rolesNode = jsonNode.get("roles");
+            JsonNode rolesNode = Objects.requireNonNull(jsonNode.get("roles"));
             if (rolesNode.isArray()) {
                 for (JsonNode node : rolesNode) {
                     this.roles.add(node.asText());
                 }
             }
 
-            this.businessPartner.setId(jsonNode.get("businessPartner").get("id").asText());
-            this.businessPartner.setName(jsonNode.get("businessPartner").get("name").asText());
-            this.businessPartner.setIscustomer(jsonNode.get("businessPartner").get("iscustomer").asBoolean());
-            this.businessPartner.setIssupplier(jsonNode.get("businessPartner").get("issupplier").asBoolean());
-        } catch (Throwable e) {
+            this.businessPartner.setId(Objects.requireNonNull(jsonNode.get("businessPartner")).get("id").asText());
+            this.businessPartner.setName(Objects.requireNonNull(jsonNode.get("businessPartner")).get("name").asText());
+            this.businessPartner.setIscustomer(Objects.requireNonNull(jsonNode.get("businessPartner")).get("iscustomer").asBoolean());
+            this.businessPartner.setIssupplier(Objects.requireNonNull(jsonNode.get("businessPartner")).get("issupplier").asBoolean());
+        } catch (Exception e) {
             log.error("Can not parse the JSON Response: " + jsonUser);
+            log.error(e.getMessage());
         }
     }
 

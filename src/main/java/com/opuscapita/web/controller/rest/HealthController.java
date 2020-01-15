@@ -18,7 +18,6 @@ public class HealthController extends AbstractRestController{
 
     @GetMapping(value = "/check")
     public ResponseEntity<String> healthCheck() {
-        logger.info("HealthCheck successfull");
         return new ResponseEntity<>("Yes, I'm alive!", HttpStatus.OK);
     }
 }

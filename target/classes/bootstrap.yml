@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    include: auth,blob,sftp
   application:
     name: sftp-gateway
   cloud:
@@ -7,4 +9,15 @@ spring:
       port: 8500
       config:
         enabled: true
-        prefix: ""
+        prefix: ''
+#        prefix: ${spring.application.name}
+        format: PROPERTIES
+        data-key: data
+        name: 'auth'
+      discovery:
+        instance-id: ${spring.application.name}
+        enabled: true
+        health-check-path: /api/health/check
+        register-health-check: true
+        management-tags: gateway,external
+        prefer-ip-address: true
