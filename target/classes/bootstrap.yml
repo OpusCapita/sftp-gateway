@@ -10,10 +10,6 @@ spring:
       config:
         enabled: true
         prefix: ''
-#        prefix: ${spring.application.name}
-        format: PROPERTIES
-        data-key: data
-        name: 'auth'
       discovery:
         instance-id: ${spring.application.name}
         enabled: true

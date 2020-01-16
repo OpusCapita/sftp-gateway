@@ -44,7 +44,7 @@ public class Bouncer implements BouncerInterface {
         this.configuration = _configuration;
         this.serviceClient = _serviceClient;
         try {
-            _permissionMap = this.loadPermissions(this.configuration.getPermissionsFile());
+            _permissionMap = this.loadPermissions(this.configuration.getPermissions());
             this.log.info("Permissions were loaded");
         } catch (PermissionsFileNotExists e) {
             this.log.error(e.getMessage());
@@ -54,14 +54,32 @@ public class Bouncer implements BouncerInterface {
     }
 
     @Override
-    public Map<String, Permission> loadPermissions(String src) throws PermissionsFileNotExists {
-        File permissionsFile = new File(src);
+    public Map<String, Permission> loadPermissions(final File src) throws PermissionsFileNotExists {
+        File permissionsFile = src;
         if (!permissionsFile.exists() || !permissionsFile.canRead() || !permissionsFile.isFile()) {
             throw new PermissionsFileNotExists("\"" + src + "\" does not exists.");
         }
         Map<String, Permission> _permissionMap = new LinkedHashMap<>();
         try {
             String content = FileUtils.readFileToString(permissionsFile, StandardCharsets.UTF_8);
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(content);
+            for (Iterator<Map.Entry<String, JsonNode>> it = jsonNode.fields(); it.hasNext(); ) {
+                Map.Entry<String, JsonNode> elt = it.next();
+                _permissionMap.put(elt.getKey(), new Permission().fromJson(elt.getValue().toString()));
+            }
+        } catch (IOException e) {
+            throw new PermissionsFileNotExists("\"" + src + "\" does not exists.");
+        }
+
+        return _permissionMap;
+    }
+
+    @Override
+    public Map<String, Permission> loadPermissions(String src) throws PermissionsFileNotExists {
+        Map<String, Permission> _permissionMap = new LinkedHashMap<>();
+        try {
+            String content = src;
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(content);
             for (Iterator<Map.Entry<String, JsonNode>> it = jsonNode.fields(); it.hasNext(); ) {

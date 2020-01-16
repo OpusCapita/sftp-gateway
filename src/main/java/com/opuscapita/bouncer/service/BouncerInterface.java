@@ -7,12 +7,15 @@ import com.opuscapita.bouncer.exceptions.PermissionsNotRegistered;
 import com.opuscapita.bouncer.model.Permission;
 import com.opuscapita.bouncer.model.RetryConfig;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
 public interface BouncerInterface {
 
     Map<String, Permission> loadPermissions(final String src) throws PermissionsFileNotExists;
+
+    Map<String, Permission> loadPermissions(final File src) throws PermissionsFileNotExists;
 
     Map<String, Permission> loadPermissions(final List<String> src) throws PermissionsFileNotExists;
 

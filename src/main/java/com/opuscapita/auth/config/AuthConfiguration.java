@@ -7,22 +7,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 
-import javax.annotation.PostConstruct;
 import java.util.Optional;
 
-//@PropertySource(value = "classpath:application-auth.properties")
 @Data
 @Configuration
 public class AuthConfiguration {
-    @Value(value = "${auth.server.endpoint}")
+    @Value(value = "${auth.endpoint}")
     private String endpoint;
-    @Value(value = "${auth.server.clientKey}")
+    @Value(value = "${auth.client-key}")
     private String clientKey;
-    @Value("${service-client/username}")
-    private String opt;
-    @Value(value = "${auth.server.clientSecret}")
+    @Value(value = "${auth.client-secret}")
     private String clientSecret;
     @Value(value = "${auth.service-name:auth}")
     private String serviceName;
@@ -34,11 +29,6 @@ public class AuthConfiguration {
             final DiscoveryClient _discoveryClient
     ) {
         this.discoveryClient = _discoveryClient;
-    }
-
-    @PostConstruct
-    private void loadConfiguration() {
-        System.out.println(this.opt);
     }
 
     private Optional<ServiceInstance> serviceUrl() {

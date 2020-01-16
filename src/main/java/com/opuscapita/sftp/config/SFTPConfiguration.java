@@ -1,16 +1,18 @@
 package com.opuscapita.sftp.config;
 
 import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 
 @Data
-@PropertySource(value = "classpath:application-sftp.properties")
 @Configuration
-@ConfigurationProperties(prefix = "sftp.server")
 public class SFTPConfiguration {
+    @Value(value = "${sftp.service-name}")
+    private String serviceName;
+    @Value(value = "${sftp.server.port}")
     private int port;
+    @Value(value = "${sftp.server.welcome}")
     private String welcome;
+    @Value(value = "${sftp.server.host-key}")
     private String hostKey;
 }

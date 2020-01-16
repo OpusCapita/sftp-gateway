@@ -7,21 +7,19 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 
 import javax.annotation.PostConstruct;
 import java.util.Optional;
 
 @Data
 @Configuration
-@PropertySource(value = "classpath:application-blob.properties")
 public class BlobConfiguration {
     private String url;
     private String method;
     private int port;
-    @Value(value = "${blob.server.access}")
+    @Value(value = "${blob.access}")
     private String access;
-    @Value(value = "${blob.server.type}")
+    @Value(value = "${blob.type}")
     private String type;
     @Value(value = "${blob.service-name:blob}")
     private String serviceName;

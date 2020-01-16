@@ -16,6 +16,7 @@ import com.opuscapita.transaction.config.TNTConfiguration;
 import lombok.Getter;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
+import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 import org.apache.sshd.server.ServerAuthenticationManager;
 import org.apache.sshd.server.SshServer;

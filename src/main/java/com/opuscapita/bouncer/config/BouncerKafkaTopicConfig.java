@@ -18,22 +18,21 @@ import java.util.Map;
 import java.util.Optional;
 
 @Configuration
-@PropertySource(value = "classpath:application-bouncer.properties")
 public class BouncerKafkaTopicConfig {
     @Getter
-    @Value(value = "${bouncer.service-name}")
+    @Value(value = "${sftp.service-name}")
     private String serviceName;
     @Getter
-    @Value(value = "${bouncer.kafka.service-name:kafka}")
+    @Value(value = "${kafka.service-name:kafka}")
     private String kafkaServiceName;
     @Getter
-    @Value(value = "${bouncer.kafka.topicName}")
+    @Value(value = "${bouncer.topic-name}")
     private String topic;
     @Getter
-    @Value(value = "${bouncer.kafka.numberOfPartitions}")
+    @Value(value = "${kafka.number-of-partitions:12}")
     private int numberOfPartitions;
     @Getter
-    @Value(value = "${bouncer.kafka.replicationFactor}")
+    @Value(value = "${kafka.replication-factor:1}")
     private short replicationFactor;
 
     private final DiscoveryClient discoveryClient;

@@ -24,7 +24,6 @@ public class SFTPjApplication implements CommandLineRunner {
 
     public static void main(String[] args) {
         System.setProperty(LOCALPROPERTY, "false");
-        System.setProperty("bouncer.permissions.file", "./acl.json");
         for (String str : args) {
             switch (str) {
                 case "--create-database":
@@ -35,9 +34,6 @@ public class SFTPjApplication implements CommandLineRunner {
                     break;
                 case "--local":
                     System.setProperty(LOCALPROPERTY, "true");
-                    break;
-                case "--permissions":
-                    System.setProperty("bouncer.permissions.file", str.split("=")[1]);
                     break;
                 default:
                     break;

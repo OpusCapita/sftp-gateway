@@ -10,15 +10,13 @@ import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.web.client.RestTemplate;
-
-//import org.springframework.stereotype.Service;
-
 
 public class TxService {
 
@@ -37,8 +35,8 @@ public class TxService {
             "{senderBusinessparner}",
             "{gatewayId}");
 
-    //TODO: TopicName aus der properties
-    public static final String TOPICNAME = "sftp-gateway";
+    @Value(value = "${kafka.topic-name}")
+    public String topicname;
 
     private KafkaTemplate<String, String> kafkaTemplate;
 
@@ -81,7 +79,7 @@ public class TxService {
     }
 
     private void sendKafkaTx() {
-        ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send(TOPICNAME, this.transaction.toString());
+        ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send(topicname, this.transaction.toString());
 
         future.addCallback(new ListenableFutureCallback<SendResult<String, String>>() {
 

@@ -17,16 +17,15 @@ import java.util.Map;
 import java.util.Optional;
 
 @Configuration
-@PropertySource(value = "classpath:application-kafka.properties")
 public class TxKafkaTopicConfig {
 
     @Value(value = "${kafka.serviceName:kafka}")
     private String serviceName;
-    @Value(value = "${kafka.topicName}")
+    @Value(value = "${kafka.topic-name}")
     private String topic;
-    @Value(value = "${kafka.numberOfPartitions}")
+    @Value(value = "${kafka.number-of-partitions}")
     private int numberOfPartitions;
-    @Value(value = "${kafka.replicationFactor}")
+    @Value(value = "${kafka.replication-factor}")
     private short replicationFactor;
 
     private final DiscoveryClient discoveryClient;
