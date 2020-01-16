@@ -53,9 +53,6 @@ ENV JAVA_OPTS="-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap
 
 WORKDIR $APPDIR
 
-ADD host.ser $APPDIR/host.ser
-ADD acl.json $APPDIR/acl.json
-
 COPY --from=TEMP_BUILD_IMAGE $APPDIR/SFTPj.jar .
 COPY --from=TEMP_BUILD_IMAGE $APPDIR/built ./built
 
@@ -65,4 +62,4 @@ CMD netstat -an | grep 2222 > /dev/null; if [ 0 != $? ]; then exit 1; fi;
 EXPOSE 2222
 EXPOSE 3058
 
-ENTRYPOINT exec java $JAVA_OPTS -jar $APPDIR/SFTPj.jar --permissions=./acl.json
+ENTRYPOINT exec java $JAVA_OPTS -jar $APPDIR/SFTPj.jar

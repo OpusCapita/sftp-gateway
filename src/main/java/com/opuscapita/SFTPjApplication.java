@@ -25,18 +25,8 @@ public class SFTPjApplication implements CommandLineRunner {
     public static void main(String[] args) {
         System.setProperty(LOCALPROPERTY, "false");
         for (String str : args) {
-            switch (str) {
-                case "--create-database":
-                    System.setProperty("spring.jpa.hibernate.ddl-auto", "update");
-                    break;
-                case "--port":
-                    System.setProperty("sftp.server.port", str.split("=")[1]);
-                    break;
-                case "--local":
-                    System.setProperty(LOCALPROPERTY, "true");
-                    break;
-                default:
-                    break;
+            if ("--local".equals(str)) {
+                System.setProperty(LOCALPROPERTY, "true");
             }
         }
 

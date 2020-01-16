@@ -21,7 +21,6 @@ import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 import org.apache.sshd.server.ServerAuthenticationManager;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.command.Command;
-import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.subsystem.sftp.SftpErrorStatusDataHandler;
 import org.apache.sshd.server.subsystem.sftp.SftpSubsystemFactory;
 import org.apache.sshd.server.subsystem.sftp.UnsupportedAttributePolicy;
@@ -32,7 +31,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +63,7 @@ public class SFTPDaemon extends AbstractLoggingBean {
             Bouncer _bouncer,
             SftpServiceConfigRepository _sftpServiceConfigRepository,
             UploadListenerService _uploadListenerService
-    ) {
+    ) throws IOException {
         this.sftpServiceConfigRepository = _sftpServiceConfigRepository;
         this.uploadListenerService = _uploadListenerService;
         this.configuration = _configuration;
@@ -82,7 +80,7 @@ public class SFTPDaemon extends AbstractLoggingBean {
         subsystemFactories.add(this.createDefaultSftpSubsystem());
         this.sshd.setSubsystemFactories(subsystemFactories);
 
-        this.sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("host.ser").toPath()));
+        this.sshd.setKeyPairProvider(new FileKeyPairProvider(this.configuration.hostKeyFile()));
         this.sshd.setPort(this.configuration.getPort());
         PropertyResolverUtils.updateProperty(this.sshd, ServerAuthenticationManager.WELCOME_BANNER,
                 this.configuration.getWelcome());

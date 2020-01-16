@@ -13,8 +13,6 @@ public class BouncerConfiguration {
     private String serviceName;
     @Value(value = "${bouncer.service-name}")
     private String aclServiceName;
-    @Value(value = "${bouncer.permissions.file:acl.json}")
-    private String permissionsFile;
     @Value(value = "${bouncer.permissions}")
     private String permissions;
     @Value(value = "${bouncer.roles.allways-allow:''}")
