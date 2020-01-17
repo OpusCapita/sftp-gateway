@@ -1,5 +1,5 @@
 FROM openjdk:8 AS TEMP_BUILD_IMAGE
-LABEL author="Stefan Meier <Stefan.Meier@cdi-ag.de>"
+LABEL author="Stefan Meier <Ext-Stefan.Meier@opuscapita.com>"
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update
 RUN apt-get install -y apt-utils
@@ -23,7 +23,6 @@ WORKDIR $WRKDIR
 ADD src $WRKDIR/src
 
 ADD .mvn $WRKDIR/.mvn
-#ADD mvn $WRKDIR/mvn
 ADD mvnw $WRKDIR/mvnw
 ADD mvnw.cmd $WRKDIR/mvnw.cmd
 
@@ -38,10 +37,9 @@ ADD pom.xml $WRKDIR/pom.xml
 RUN npm install
 RUN npm run webpack-build-dev
 # Adding source, compile and package into a fat jar
-
-
 RUN ./mvnw -DskipTests clean package
 RUN mkdir -p $APPDIR
+ADD setup-consul.sh $APPDIR/setup-consul.sh
 RUN mv $TRGTDIR/SFTPj-0.0.1.jar $APPDIR/SFTPj.jar
 RUN cp -rp $WRKDIR/src/main/resources/static/built/ $APPDIR/built/
 
@@ -54,6 +52,7 @@ ENV JAVA_OPTS="-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap
 WORKDIR $APPDIR
 
 COPY --from=TEMP_BUILD_IMAGE $APPDIR/SFTPj.jar .
+COPY --from=TEMP_BUILD_IMAGE $APPDIR/setup-consul.sh .
 COPY --from=TEMP_BUILD_IMAGE $APPDIR/built ./built
 
 HEALTHCHECK --interval=15s --timeout=30s --start-period=40s --retries=15 \
@@ -62,4 +61,4 @@ CMD netstat -an | grep 2222 > /dev/null; if [ 0 != $? ]; then exit 1; fi;
 EXPOSE 2222
 EXPOSE 3058
 
-ENTRYPOINT exec java $JAVA_OPTS -jar $APPDIR/SFTPj.jar
+ENTRYPOINT if [${LOAD_CONSUL}]; then exec java $JAVA_OPTS -jar $APPDIR/SFTPj.jar --setup-consul; else exec java $JAVA_OPTS -jar $APPDIR/SFTPj.jar; fi

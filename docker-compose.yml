@@ -25,6 +25,7 @@ services:
       SERVICE_3058_CHECK_HTTP: /api/health/check
       SERVICE_3058_CHECK_INTERVAL: 15s
       SERVICE_3058_CHECK_TIMEOUT: 5s
+      LOAD_CONSUL: 'false'
       MYSQL_DATABASE: ${SECRET_develop_MYSQL_DATABASE}
       MYSQL_ROOT_PASSWORD: ${SECRET_develop_MYSQL_ROOT_PASSWORD}
       MYSQL_ROOT_USER: ${SECRET_develop_MYSQL_ROOT_USER}
@@ -32,6 +33,16 @@ services:
       KAFKA_PASSWORD: ${SECRET_develop_KAFKA_PASSWORD}
       TNT_USER: ${SECRET_develop_TNT_USER}
       TNT_PASSWORD: ${SECRET_develop_TNT_PASSWORD}
+      CLIENT_KEY: ${SECRET_develop_CLIENT_KEY}
+      CLIENT_SECRET: ${SECRET_develop_CLIENT_SECRET}
+      BLOB_ACCESS: 'public'
+      BLOB_TYPE: 'files'
+      ACL_TOPIC_NAME: 'pub.acl.resourceGroup'
+      TNT_ACTIVE: 'true'
+      WELCOME_MESSAGE: "OpusCapita SFTP Gateway"
+      KAFKA_TOPIC_NAME: 'routing.inbound.tx'
+      KAFKA_NUMBER_OF_PARTITIONS: 12
+      KAFKA_REPLICATION_FAKTOR: 1
     ports:
       - 2222:2222
       - 3058:3058

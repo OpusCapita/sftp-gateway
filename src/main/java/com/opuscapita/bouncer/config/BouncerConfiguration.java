@@ -13,7 +13,7 @@ public class BouncerConfiguration {
     private String serviceName;
     @Value(value = "${bouncer.service-name}")
     private String aclServiceName;
-    @Value(value = "${bouncer.permissions}")
+    @Value(value = "${bouncer.permissions:''}")
     private String permissions;
     @Value(value = "${bouncer.roles.allways-allow:''}")
     private List<String> rolesAllwaysAllow;
@@ -21,5 +21,4 @@ public class BouncerConfiguration {
     private List<String> rolesAllwaysDeny;
     @Value(value = "${bouncer.paths.public:''}")
     private List<String> publicPaths;
-
 }

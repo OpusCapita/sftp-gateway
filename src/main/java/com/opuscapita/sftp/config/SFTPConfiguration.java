@@ -1,7 +1,6 @@
 package com.opuscapita.sftp.config;
 
 import lombok.Data;
-import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +17,7 @@ public class SFTPConfiguration {
     private String serviceName;
     @Value(value = "${sftp.server.port}")
     private int port;
-    @Value(value = "${sftp.server.welcome}")
+    @Value(value = "${sftp.server.welcome-message}")
     private String welcome;
     @Value(value = "${sftp.server.host-key}")
     private String hostKey;

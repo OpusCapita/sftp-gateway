@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -40,17 +41,22 @@ public class Bouncer implements BouncerInterface {
             final BouncerConfiguration _configuration,
             final ServiceClient _serviceClient
     ) {
-        Map<String, Permission> _permissionMap;
         this.configuration = _configuration;
         this.serviceClient = _serviceClient;
+        this.permissionMap = new HashMap<>();
+    }
+
+    @PostConstruct
+    private void initializeAcl() {
+        Map<String, Permission> _permissionMap;
         try {
             _permissionMap = this.loadPermissions(this.configuration.getPermissions());
+            this.permissionMap.clear();
+            this.permissionMap.putAll(_permissionMap);
             this.log.info("Permissions were loaded");
         } catch (PermissionsFileNotExists e) {
             this.log.error(e.getMessage());
-            _permissionMap = new HashMap<>();
         }
-        this.permissionMap = _permissionMap;
     }
 
     @Override
@@ -79,9 +85,13 @@ public class Bouncer implements BouncerInterface {
     public Map<String, Permission> loadPermissions(String src) throws PermissionsFileNotExists {
         Map<String, Permission> _permissionMap = new LinkedHashMap<>();
         try {
-            String content = src;
+            String content = src.trim()
+                    .replace("\n", "")
+                    .replace("\t", "")
+                    .replace("\r", "");
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(content);
+            System.out.println(jsonNode.fields().hasNext());
             for (Iterator<Map.Entry<String, JsonNode>> it = jsonNode.fields(); it.hasNext(); ) {
                 Map.Entry<String, JsonNode> elt = it.next();
                 _permissionMap.put(elt.getKey(), new Permission().fromJson(elt.getValue().toString()));
