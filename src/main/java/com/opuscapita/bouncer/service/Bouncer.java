@@ -91,7 +91,7 @@ public class Bouncer implements BouncerInterface {
                     .replace("\r", "");
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(content);
-            System.out.println(jsonNode.fields().hasNext());
+
             for (Iterator<Map.Entry<String, JsonNode>> it = jsonNode.fields(); it.hasNext(); ) {
                 Map.Entry<String, JsonNode> elt = it.next();
                 _permissionMap.put(elt.getKey(), new Permission().fromJson(elt.getValue().toString()));

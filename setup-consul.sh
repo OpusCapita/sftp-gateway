@@ -16,7 +16,82 @@ putConsulData() {
     curl -s -X PUT -d 'bouncer' http://consul:8500/v1/kv/sftp-gateway/bouncer/service-name &&
     curl -s -X PUT -d 'admin' http://consul:8500/v1/kv/sftp-gateway/bouncer/roles/allways-allow &&
     curl -s -X PUT -d '' http://consul:8500/v1/kv/sftp-gateway/bouncer/roles/allways-deny &&
-    curl -s -X PUT -d '' http://consul:8500/v1/kv/sftp-gateway/bouncer/permissions &&
+    curl -s -X PUT -d '{
+  "rest-permissions": {
+    "name": {
+      "en": "SFTP- Gateway Rest",
+      "de": "SFTP- Gateway Rest DE"
+    },
+    "description": {
+      "en": "Configuration of the SFTP Rest",
+      "de": "Configuration of the SFTP Rest DE"
+    },
+    "resources": [
+      {
+        "roleIds": [
+          "*"
+        ],
+        "type": [
+          "rest"
+        ],
+        "resourceId": "^/api/configs/*",
+        "actions": [
+          "view",
+          "edit",
+          "delete"
+        ]
+      },
+      {
+        "roleIds": [
+          "*"
+        ],
+        "type": [
+          "rest"
+        ],
+        "resourceId": "^/api/evnts/*",
+        "actions": [
+          "view"
+        ]
+      },
+      {
+        "roleIds": [
+          "*"
+        ],
+        "type": [
+          "rest"
+        ],
+        "resourceId": "^/static/js/*",
+        "actions": [
+          "view"
+        ]
+      }
+    ]
+  },
+  "health-permissions": {
+    "name": {
+      "en": "SFTP- Gateway Healthcheck",
+      "de": "SFTP- Gateway Healthcheck DE"
+    },
+    "description": {
+      "en": "Configuration of the SFTP Healthcheck",
+      "de": "Configuration of the SFTP Healthcheck DE"
+    },
+    "resources": [
+      {
+        "roleIds": [
+          "*"
+        ],
+        "type": [
+          "rest"
+        ],
+        "resourceId": "^/api/health/check",
+        "actions": [
+          "view"
+        ]
+      }
+    ]
+  }
+}' http://consul:8500/v1/kv/sftp-gateway/bouncer/permissions &&
     curl -s -X PUT -d '' http://consul:8500/v1/kv/sftp-gateway/bouncer/paths/public &&
     curl -s -X PUT -d ${ACL_TOPIC_NAME} http://consul:8500/v1/kv/sftp-gateway/bouncer/topic-name &&
     curl -s -X PUT -d '/api/sftp/**' http://consul:8500/v1/kv/sftp-gateway/web/security/jwt/uri &&

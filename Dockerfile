@@ -18,7 +18,7 @@ ENV JAVA_OPTS="-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap
 
 ENV NODE_ENV=development
 ENV NODE_PATH=$WRKDIR/node_modules
- 
+
 WORKDIR $WRKDIR
 ADD src $WRKDIR/src
 
@@ -60,5 +60,7 @@ CMD netstat -an | grep 2222 > /dev/null; if [ 0 != $? ]; then exit 1; fi;
 
 EXPOSE 2222
 EXPOSE 3058
+RUN echo "${JAR_ARGS}"
 
-ENTRYPOINT if [${LOAD_CONSUL}]; then exec java $JAVA_OPTS -jar $APPDIR/SFTPj.jar --setup-consul; else exec java $JAVA_OPTS -jar $APPDIR/SFTPj.jar; fi
+#ENTRYPOINT if [${LOAD_CONSUL}]; then exec java $JAVA_OPTS -jar $APPDIR/SFTPj.jar --setup-consul; else exec java $JAVA_OPTS -jar $APPDIR/SFTPj.jar; fi
+ENTRYPOINT exec java $JAVA_OPTS -jar $APPDIR/SFTPj.jar ${JAR_ARGS}
